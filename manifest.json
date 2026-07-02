@@ -1,7 +1,7 @@
 {
   "name": "Bingo Beats",
   "short_name": "Bingo Beats",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#07120f",

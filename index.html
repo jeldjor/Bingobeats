@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bingo Beats</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="screen-orientation" content="portrait">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app">
+  <section id="licenseScreen" class="licenseScreen">
+    <div class="licenseCard">
+      <img src="bb_logo_gold.png" class="bbLogoHero bbLogoGold" alt="Bingo Beats">
+      
+      <h2>Licentie activeren</h2>
+      <p class="small">Voer je licentiecode in om verder te gaan.</p>
+      <input id="licenseInput" placeholder="Bijv. TEST-2026" autocomplete="off">
+      <button id="licenseBtn">Activeren</button>
+      <p id="licenseStatus" class="small"></p>
+    </div>
+  </section>
+
+  <header id="mainHeader" class="hidden">
+    <img src="bb_logo_lime.png" class="bbLogoHeader bbLogoLime" alt="Bingo Beats">
+    
+    <p id="modeText">🎤 Host</p>
+  </header>
+
+  <main id="hostApp" class="hidden">
+    <section class="panel">
+      <h2>1. Spotify</h2>
+      <button id="loginBtn">🔐 Login met Spotify</button>
+      <button id="logoutBtn" class="secondary">Uitloggen</button>
+      <p id="loginStatus" class="small">Nog niet ingelogd.</p>
+      <button id="activateBtn" disabled>▶️ Activeer Spotify-speler</button>
+    </section>
+
+    <section class="panel">
+      <h2>2. CSV uploaden</h2>
+      <input id="csvFile" type="file" accept=".csv,text/csv">
+      <button id="resetUsedBtn" class="secondary">Gespeelde nummers resetten</button>
+      <p id="csvStatus" class="small">Nog geen CSV geladen.</p>
+    </section>
+
+    <section class="panel">
+      <h2>3. Categorieën</h2>
+      <div class="grid">
+        <label>🟡 Goud<input id="cat-yellow" value="Voor of na 2001"></label>
+        <label>🩵 Aqua<input id="cat-pink" value="Naam van artiest"></label>
+        <label>🟠 Oranje<input id="cat-purple" value="Decennium"></label>
+        <label>🟢 Lime<input id="cat-blue" value="Jaartal +/- 2"></label>
+        <label>🔴 Koraal<input id="cat-green" value="Titel van track"></label>
+      </div>
+        
+
+        
+
+    </section>
+
+    <section class="panel">
+      <h2>4. Kamer</h2>
+      <button id="newRoomBtn">🎫 Nieuwe kamer maken</button>
+      <button id="newGameBtn" class="secondary">🔄 Nieuw spel starten</button>
+      <button id="soundBtn" class="secondary"></button>
+      <p id="soundStatus" class="small"></p>
+
+      <div id="roomBox" class="box hidden">
+        <h3>Spelcode: <span id="roomCodeText"></span></h3>
+        <input id="joinLink" readonly>
+        <button id="copyRoomLinkBtn" type="button" class="copyRoomLinkBtn">📋 Kopieer link</button>
+      </div>
+
+      <h3>Spelers</h3>
+      <div id="hostPlayers" class="list">Nog geen spelers.</div>
+      <p id="hostStatus" class="small">Maak een kamer.</p>
+    </section>
+
+    <section class="panel">
+      <h2>5. Instellingen</h2>
+      <label>Fragment
+        <select id="duration">
+          <option value="10">10 seconden</option>
+          <option value="20" selected>20 seconden</option>
+          <option value="30">30 seconden</option>
+          <option value="40">40 seconden</option>
+          <option value="50">50 seconden</option>
+          <option value="60">60 seconden</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="randomStart" checked> Random startpunt</label>
+      <label class="check"><input type="checkbox" id="noRepeat" checked> Geen herhaling</label>
+    </section>
+
+    <section class="panel stage">
+      <button id="startRoundBtn">🎲 START RONDE</button>
+      <div id="hostPickerArea" class="pickerIntro">🎮<br>Klaar om te spelen</div>
+      <button id="playBtn" disabled>🎵 Speel verborgen nummer</button>
+      <button id="stopBtn" disabled class="secondary">⏹ Stop</button>
+      <button id="showAnswerBtn" disabled>🐵 Toon antwoord</button>
+      <div id="hostAnswerArea"></div>
+    </section>
+
+    <section id="hostScorePanel" class="panel hidden">
+      <h2>📊 Scorebord host</h2>
+      <p id="hostRoundInfo" class="small"></p>
+      <div id="hostScoreboard" class="scoreBoard"></div>
+      <button id="lockBtn" class="secondary">🔒 Antwoorden vergrendelen</button>
+      <button id="publishBtn">🐵 Resultaten naar spelers sturen</button>
+    </section>
+
+    <section id="hostBingoPanel" class="panel hidden">
+      <div id="hostBingoMessage" class="winner">🏆</div>
+    </section>
+  </main>
+
+  
+  <main id="playerApp" class="hidden">
+    <section id="screenJoin" class="joinPanel">
+      <h2>🎫 Meedoen</h2>
+      <p>Spelcode: <strong id="playerRoomCode"></strong></p>
+      <input id="playerNameInput" placeholder="Jouw naam">
+      <button id="joinBtn">Meedoen</button>
+      <p id="joinStatus" class="small"></p>
+    </section>
+
+    <section id="screenDashboard" class="compactDashboard hidden">
+      <div class="dashTop">
+        <div class="dashPill"><span id="dashRoundNo">Speler</span></div>
+        <div class="dashPill timerPill">⏱️ <span id="dashTimer">--</span></div>
+        <div class="dashPill">👥 <span id="dashPlayerCount">0</span></div>
+      </div>
+
+      <div class="dashGrid">
+        <section class="dashPanel answerPanel" id="dashAnswerPanel">
+          <div class="panelTitle">✍️ ANTWOORD</div>
+          <div id="dashAnswerBlock"></div>
+        </section>
+
+        <section class="dashPanel scorePanel">
+          <div class="panelTitle">📊 SCOREBORD</div>
+          <div id="dashScoreboard" class="compactScoreboard"></div>
+        </section>
+
+        <section class="dashPanel cardPanel">
+          <div class="panelTitle">🎯 BINGOKAART</div>
+          <div id="dashCardHint" class="dashHint">Wachten op beoordeling...</div>
+          <div id="dashOwnCard" class="compactBingoCard"></div>
+          <div id="dashCardStatus" class="dashStatus">Nog geen vakje gekozen</div>
+        </section>
+
+        <section class="dashPanel pickerPanel">
+          <div class="panelTitle">🎨 KLEUR & CATEGORIE</div>
+          <div id="dashPickerArea" class="dashPicker">Wachten op host...</div>
+        </section>
+      </div>
+
+      <div id="winnerPanel" class="hidden">
+        <div id="winnerMessage" class="winner">🏆</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+
+<div id="hbHostStartOverlay" class="hbHostStartOverlay hidden">
+  <div class="hbHostStartModal">
+    <img src="bb_logo_purple.png" class="bbLogoPopup bbLogoPurple" alt="Bingo Beats">
+    <h2>🎵 Voor je begint</h2>
+    <p class="small">Controleer dit even voordat je de ronde start.</p>
+
+    <div id="hbLastRoomLine" class="hbLastRoomLine hidden">
+      Laatste kamer: <strong id="hbLastRoomCode"></strong>
+    </div>
+
+    <div class="hbChecklist">
+      <div>🐵 Zorg dat je Spotify-app geopend is</div>
+      <div>🐵 Zorg dat Spotify niet actief is op een ander apparaat</div>
+      <div>🐵 Kies Spotify of controleer je eigen muzieklijst</div>
+    </div>
+
+    <div class="hbStartButtons">
+      <button id="hbResumeRoomBtn" class="hbResumeBtn" disabled>🔄 Hervat kamer</button>
+      <button id="hbNewRoomModalBtn" class="hbNewBtn">🎫 Nieuwe kamer</button>
+      <button id="hbCloseModalBtn" class="secondary">Sluiten</button>
+    </div>
+
+    <p class="small">
+      Spotify login, apparaat activeren en CSV uploaden mogen de kamer niet verbreken.
+      Alleen “Nieuwe kamer” maakt bewust een nieuwe spelcode.
+    </p>
+  </div>
+</div>
+
+
+<div id="bingoFullOverlay" class="bingoFullOverlay hidden">
+  <div class="bingoFullCard">
+    <img src="bb_logo_orange.png" class="bbLogoBingo bbLogoOrange" alt="Bingo Beats">
+    <div class="bingoFullCrown">✅</div>
+    <div class="bingoFullTitle">BINGO!</div>
+    <div id="bingoFullName" class="bingoFullName">Speler</div>
+    <div class="bingoFullSub">HEEFT GEWONNEN</div>
+    <div class="bingoFullCup">🏆</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+
+<div id="newGameModal" class="modalOverlay hidden">
+  <div class="modalCard">
+    <img src="bb_logo_aqua.png" class="bbLogoModal bbLogoAqua" alt="Bingo Beats">
+    <h2>Nieuw spel starten?</h2>
+    <p>Weet je het zeker?</p>
+    <ul>
+      <li>Alle spelers blijven in dezelfde kamer.</li>
+      <li>Alle spelers krijgen een nieuwe bingokaart.</li>
+      <li>Huidige bingo’s worden gewist.</li>
+      <li>De winnaar wordt gewist.</li>
+      <li>De kamercode blijft hetzelfde.</li>
+      <li>Gespeelde nummers blijven onthouden.</li>
+    </ul>
+    <div class="modalActions">
+      <button id="cancelNewGameBtn" class="secondary">Annuleren</button>
+      <button id="confirmNewGameBtn">Ja, nieuw spel starten</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// V56 nood-fix: bind de knop pas nadat de hele pagina geladen is.
+(function(){
+  function el(id){ return document.getElementById(id); }
+  function openModal(){
+    if(typeof currentRoomCode !== "undefined" && !currentRoomCode){ alert("Maak eerst een kamer."); return; }
+    const modal = el("newGameModal");
+    if(modal){
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+    }
+  }
+  function closeModal(){
+    const modal = el("newGameModal");
+    if(modal){
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+  }
+  function startSameRoom(){
+    try{
+      if(typeof bbStartNewGameSameRoom === "function"){
+        bbStartNewGameSameRoom();
+        return;
+      }
+      alert("Nieuw spel starten is nog niet geladen. Refresh de pagina en probeer opnieuw.");
+    }catch(e){
+      alert("Nieuw spel starten mislukt: " + e.message);
+    }
+  }
+  function bind(){
+    const btn = el("newGameBtn");
+    const cancel = el("cancelNewGameBtn");
+    const confirm = el("confirmNewGameBtn");
+    const modal = el("newGameModal");
+    if(btn) btn.onclick = openModal;
+    if(cancel) cancel.onclick = closeModal;
+    if(confirm) confirm.onclick = startSameRoom;
+    if(modal) modal.onclick = function(e){ if(e.target === modal) closeModal(); };
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
+  setTimeout(bind, 500);
+  setTimeout(bind, 1500);
+})();
+</script>
+
+</body>
+</html>

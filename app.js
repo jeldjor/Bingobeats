@@ -4224,11 +4224,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const rows = Object.entries(room.players||{}).map(([pid,p])=>{
         const st = cor[pid];
         const a = ans[pid]?.answer || 'Geen antwoord';
+        const statusIcon = st===true ? '✅' : st===false ? '❌' : '❔';
         return `<div class="bbHostJuryRow ${st===true?'good':st===false?'bad':'wait'}">
-          <div><strong>${E(p.name||'Speler')}</strong><span>${E(a)}</span></div>
+          <div class="bbHostJuryName"><strong>${E(p.name||'Speler')}</strong></div>
+          <div class="bbHostJuryAnswer">${E(a)}</div>
+          <div class="bbHostJuryStatus" aria-label="Status">${statusIcon}</div>
           <div class="bbHostJuryBtns">
-            <button type="button" onclick="bbHostPlayerSetJudge('${E(pid)}',true)">✅ Goed</button>
-            <button type="button" onclick="bbHostPlayerSetJudge('${E(pid)}',false)">❌ Fout</button>
+            <button type="button" class="bbJudgeGood" title="Goed" aria-label="Goed" onclick="bbHostPlayerSetJudge('${E(pid)}',true)">✅</button>
+            <button type="button" class="bbJudgeBad" title="Fout" aria-label="Fout" onclick="bbHostPlayerSetJudge('${E(pid)}',false)">❌</button>
           </div>
         </div>`;
       }).join('');

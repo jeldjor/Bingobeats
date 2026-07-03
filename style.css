@@ -7359,3 +7359,105 @@ body.bbHostPlayerMode .bbV142MainBtn{
   body.bbHostPlayerMode .bbV146LiveList,
   body.bbHostPlayerMode .bbV144ScoreList.live{max-height:calc(100dvh - 145px) !important;}
 }
+
+/* =========================
+   V155 - Host speelt mee: compacte Jury / Overrule lijst
+   ========================= */
+.bbHostJuryModal{
+  padding:10px !important;
+  align-items:center !important;
+}
+.bbHostJuryCard{
+  width:min(720px,94vw) !important;
+  max-height:82svh !important;
+  border-radius:24px !important;
+  padding:16px !important;
+  overflow:auto !important;
+}
+.bbHostJuryCard h2{
+  font-size:clamp(24px,5.6vw,40px) !important;
+  line-height:1.05 !important;
+  margin:0 54px 8px 0 !important;
+}
+.bbHostJuryCard .small{
+  font-size:clamp(14px,3.4vw,18px) !important;
+  line-height:1.25 !important;
+  margin:0 0 12px 0 !important;
+  opacity:.82 !important;
+}
+.bbHostJuryClose{
+  width:44px !important;
+  height:44px !important;
+  min-width:44px !important;
+  min-height:44px !important;
+  right:14px !important;
+  top:14px !important;
+  border-radius:50% !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  line-height:1 !important;
+  font-size:26px !important;
+}
+.bbHostJuryList{
+  display:grid !important;
+  gap:6px !important;
+  margin-top:8px !important;
+}
+.bbHostJuryRow{
+  display:grid !important;
+  grid-template-columns:minmax(74px,.9fr) minmax(90px,1.45fr) 34px auto !important;
+  align-items:center !important;
+  gap:8px !important;
+  padding:8px 9px !important;
+  min-height:48px !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.065) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+}
+.bbHostJuryRow.good{border-color:rgba(126,217,87,.75) !important;}
+.bbHostJuryRow.bad{border-color:rgba(255,90,95,.75) !important;}
+.bbHostJuryName strong{
+  display:block !important;
+  font-size:clamp(15px,3.7vw,18px) !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.bbHostJuryAnswer{
+  font-size:clamp(14px,3.4vw,17px) !important;
+  opacity:.92 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.bbHostJuryStatus{
+  text-align:center !important;
+  font-size:20px !important;
+  line-height:1 !important;
+}
+.bbHostJuryBtns{
+  display:flex !important;
+  gap:6px !important;
+  justify-content:flex-end !important;
+}
+.bbHostJuryBtns button{
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  min-height:38px !important;
+  border-radius:12px !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:20px !important;
+  line-height:1 !important;
+}
+@media(max-width:420px){
+  .bbHostJuryCard{width:94vw !important;padding:14px !important;}
+  .bbHostJuryRow{grid-template-columns:minmax(58px,.75fr) minmax(72px,1.25fr) 28px auto !important;gap:5px !important;padding:7px !important;}
+  .bbHostJuryBtns button{width:34px !important;height:34px !important;min-width:34px !important;min-height:34px !important;font-size:18px !important;}
+  .bbHostJuryStatus{font-size:18px !important;}
+}

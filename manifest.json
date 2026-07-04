@@ -1,0 +1,11 @@
+{
+  "name": "Bingo Beats",
+  "short_name": "Bingo Beats",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07120f",
+  "theme_color": "#07120f",
+  "icons": [],
+  "scope": "./"
+}

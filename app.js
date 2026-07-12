@@ -4819,3 +4819,104 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     }catch(e){return oldWinner(name)}
   };
 })();
+
+/* =========================
+   V169 - compacte lobby, vaste dieren overal, betrouwbare automatische READY-start,
+          toetsenbordvaste antwoordweergave en betere metadata-weetjes
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const ANIMALS=['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
+  let startBusy=false,lastStartedRound='';
+  function hash(s){let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+  function clean(n){return String(n||'Speler').replace(/^[🎤👤]\s*/,'').trim()||'Speler'}
+  function animal(pid,p){return p?.emoji||ANIMALS[hash(pid)%ANIMALS.length]}
+  function playerEntries(room){return Object.entries(room?.players||{})}
+
+  async function persistAnimals(room){
+    if(!currentRoomCode||!room?.players)return;
+    const used=new Set(Object.values(room.players).map(p=>p?.emoji).filter(Boolean)),up={};
+    for(const [pid,p] of playerEntries(room)){
+      if(p?.emoji)continue;
+      let start=hash(pid)%ANIMALS.length,pick='';
+      for(let i=0;i<ANIMALS.length;i++){const e=ANIMALS[(start+i)%ANIMALS.length];if(!used.has(e)){pick=e;break}}
+      pick=pick||ANIMALS[start];used.add(pick);up[`rooms/${currentRoomCode}/players/${pid}/emoji`]=pick;
+    }
+    if(Object.keys(up).length) try{await db.ref().update(up)}catch(e){console.warn('emoji update',e)}
+  }
+
+  function identifyPlayer(text,room){
+    const normalized=clean(String(text||'').replace(/\bjij\b/gi,'').replace(/\bhost\b/gi,''));
+    return playerEntries(room).find(([,p])=>clean(p?.name)===normalized) || playerEntries(room).find(([,p])=>normalized.includes(clean(p?.name)));
+  }
+  function decoratePlayers(root,room){
+    if(!root||!room)return;
+    const selectors=['.bbV160PlayerName','.bbV160HostChip span','.bbV160AnswerName','.bbV144Who strong','.bbScoreWho strong','.bbHostJuryName'];
+    root.querySelectorAll(selectors.join(',')).forEach(el=>{
+      const found=identifyPlayer(el.textContent,room); if(!found)return;
+      const [pid,p]=found, own=pid===currentPlayerId, host=!!p?.isHost;
+      el.innerHTML=`<span class="bbAnimalAvatar">${animal(pid,p)}</span><span class="bbAnimalName">${E(clean(p.name))}</span>${own?' <em>jij</em>':''}${host?' <small class="bbHostTag">HOST</small>':''}`;
+    });
+    root.querySelectorAll('.bbV144Avatar,.bbAvatar,.bbV160Avatar').forEach(el=>el.remove());
+  }
+
+  function makeFact(a){
+    const t=String(a?.track||'').trim(), ar=String(a?.artist||'').trim(), al=String(a?.album||'').trim(), y=Number(String(a?.year||'').match(/\d{4}/)?.[0]||0);
+    const candidates=[];
+    const decade=y?`${Math.floor(y/10)*10}`:'';
+    const artists=ar.split(/,|&| feat\.? | ft\.? | featuring /i).map(x=>x.trim()).filter(Boolean);
+    const words=t.split(/\s+/).filter(Boolean);
+    if(y&&decade)candidates.push(`Dit nummer komt uit de jaren ${decade}. De productie en klank uit die periode zijn vaak al binnen enkele seconden herkenbaar.`);
+    if(artists.length>1)candidates.push(`Dit nummer is een samenwerking van ${artists.length} artiesten: ${artists.join(', ')}.`);
+    if(/feat\.?|ft\.?|featuring/i.test(t+' '+ar))candidates.push(`Bij dit nummer speelt een gastartiest mee. Zulke samenwerkingen werden vooral vanaf de jaren 90 steeds vaker in de titel vermeld.`);
+    if(al&&t&&al.toLowerCase()!==t.toLowerCase())candidates.push(`“${t}” staat op het album “${al}”. De titel van het album is dus anders dan die van het nummer.`);
+    if(y)candidates.push(`“${t||'Dit nummer'}” verscheen in ${y}${al?` en staat op het album “${al}”`:''}.`);
+    if(words.length===1)candidates.push(`De titel van dit nummer bestaat uit maar één woord: “${t}”. Korte titels blijven vaak extra makkelijk hangen.`);
+    if(words.length>=6)candidates.push(`De titel “${t}” telt ${words.length} woorden en is daarmee opvallend lang voor een songtitel.`);
+    if(/[!?]/.test(t))candidates.push(`De titel bevat een leesteken. Dat maakt “${t}” visueel extra herkenbaar tussen andere nummers.`);
+    if(!candidates.length&&al)candidates.push(`Dit nummer is afkomstig van het album “${al}”.`);
+    if(!candidates.length&&ar)candidates.push(`${ar} is de uitvoerende artiest van dit nummer.`);
+    if(!candidates.length)candidates.push('Bij muziekherkenning geven stem, ritme, instrumenten en productie ieder een eigen aanwijzing.');
+    const seed=hash([t,ar,al,y,activeRound?.id||''].join('|'));
+    return candidates[seed%candidates.length];
+  }
+
+  function polish(room,r){
+    const root=q('screenDashboard');
+    decoratePlayers(root,room);
+    const p=root?.querySelector('.bbV167FactCard p'); if(p&&r?.correctAnswer)p.textContent=makeFact(r.correctAnswer);
+  }
+
+  // Betrouwbare host-autostart: de READY-status zelf is de trigger, nooit navigatie.
+  async function checkAutoStart(){
+    if(startBusy||!window.hostPlayerMode||!currentRoomCode||!currentPlayerId)return;
+    try{
+      const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{};
+      const me=room.players?.[currentPlayerId],r=room.currentRound||{},ps=Object.values(room.players||{});
+      persistAnimals(room); polish(room,r);
+      const inNextLobby=!!r.id && ['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
+      if(!me?.isHost||!inNextLobby||!ps.length||!ps.every(p=>p.ready)||lastStartedRound===r.id)return;
+      startBusy=true;
+      const claim=db.ref(`rooms/${currentRoomCode}/readyAutoStart/${r.id}`);
+      const tx=await claim.transaction(v=>v||{by:currentPlayerId,at:firebase.database.ServerValue.TIMESTAMP});
+      if(tx.committed&&tx.snapshot.val()?.by===currentPlayerId){
+        const latest=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},lr=latest.currentRound||{};
+        if(lr.id===r.id&&Object.values(latest.players||{}).length&&Object.values(latest.players||{}).every(p=>p.ready)){
+          lastStartedRound=r.id;
+          if(typeof window.bbHostPlayerStart==='function') await window.bbHostPlayerStart(false); else if(typeof startRound==='function') startRound();
+        }
+      }
+    }catch(e){console.error('V169 auto start',e)}finally{setTimeout(()=>startBusy=false,700)}
+  }
+  setInterval(checkAutoStart,450);
+
+  // iPhone-toetsenbord: houd vraag, timer en invoerveld in het zicht.
+  function keyboardMode(on){document.body.classList.toggle('bbKeyboardOpen',!!on);const inp=q('bbStageAnswerInput')||q('scoreAnswerInput');if(on&&inp)setTimeout(()=>inp.scrollIntoView({block:'start',behavior:'instant'}),30)}
+  document.addEventListener('focusin',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))keyboardMode(true)});
+  document.addEventListener('focusout',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setTimeout(()=>keyboardMode(false),120)});
+  if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>keyboardMode(window.visualViewport.height<window.innerHeight*.82));}
+
+  const obs=new MutationObserver(()=>{const room=window.bbV160LastRoom||{};polish(room,room.currentRound||activeRound||{})});
+  document.addEventListener('DOMContentLoaded',()=>{const root=q('screenDashboard');if(root)obs.observe(root,{childList:true,subtree:true});});
+})();

@@ -7705,3 +7705,124 @@ body.bbHostPlayerMode .bbV142MainBtn{
 .playlistPreview span{opacity:.82;font-size:.92em}
 .playlistOk{color:#7ED957!important;font-weight:800}
 .playlistErr{color:#FF5A5F!important;font-weight:800}
+
+/* =========================
+   V167 Juist antwoord - compact + Wist je dat
+   ========================= */
+.bbV144Correct .bbV144Shell{
+  height:calc(100dvh - 84px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+  overflow:hidden!important;
+  padding:8px 10px 92px!important;
+}
+.bbV144Correct .bbV144HeroCard{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.bbV144Correct .bbV144Record,
+.bbV144Correct .bbV144RecordInner,
+.bbV144Correct .bbV144AnswerGrid,
+.bbV144Correct .bbV144Kicker{
+  display:none!important;
+}
+.bbV167AnswerCard,
+.bbV167FactCard{
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.045));
+  box-shadow:0 18px 45px rgba(0,0,0,.26);
+}
+.bbV167AnswerCard{
+  flex:0 0 auto;
+  padding:18px 16px 16px;
+  text-align:left;
+}
+.bbV167Kicker{
+  color:#FFCC33;
+  font-size:14px;
+  font-weight:950;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.bbV167TrackTitle{
+  font-size:clamp(28px,8vw,42px);
+  line-height:1.05;
+  font-weight:950;
+  color:#fff;
+  margin-bottom:14px;
+  overflow-wrap:anywhere;
+}
+.bbV167MetaGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.bbV167MetaGrid>div{
+  min-width:0;
+  border-radius:15px;
+  padding:10px 11px;
+  background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.09);
+}
+.bbV167MetaGrid>div:last-child{
+  grid-column:1 / -1;
+}
+.bbV167MetaGrid span{
+  display:block;
+  font-size:10px;
+  letter-spacing:1px;
+  font-weight:900;
+  color:rgba(255,255,255,.58);
+  margin-bottom:4px;
+}
+.bbV167MetaGrid strong{
+  display:block;
+  font-size:15px;
+  line-height:1.25;
+  color:#fff;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.bbV167FactCard{
+  flex:1 1 auto;
+  min-height:0;
+  padding:18px 16px;
+  background:linear-gradient(145deg,rgba(255,204,51,.15),rgba(0,212,199,.09));
+  border-color:rgba(255,204,51,.25);
+  overflow-y:auto;
+}
+.bbV167FactTitle{
+  font-size:21px;
+  line-height:1.1;
+  font-weight:950;
+  color:#FFCC33;
+  margin-bottom:10px;
+}
+.bbV167FactCard p{
+  margin:0!important;
+  color:#fff!important;
+  font-size:17px!important;
+  line-height:1.5!important;
+  font-weight:700;
+}
+@media(max-width:390px){
+  .bbV144Correct .bbV144Shell{gap:9px!important;padding:5px 8px 84px!important}
+  .bbV167AnswerCard{padding:14px 13px 13px}
+  .bbV167TrackTitle{font-size:28px;margin-bottom:11px}
+  .bbV167MetaGrid{gap:7px}
+  .bbV167MetaGrid>div{padding:8px 9px}
+  .bbV167MetaGrid strong{font-size:13px}
+  .bbV167FactCard{padding:14px 13px}
+  .bbV167FactTitle{font-size:19px}
+  .bbV167FactCard p{font-size:15px!important}
+}

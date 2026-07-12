@@ -4585,3 +4585,83 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 
   document.addEventListener('DOMContentLoaded', () => setTimeout(wirePlaylistImport, 250));
 })();
+
+/* =========================
+   V167 - Juist antwoord: compact trackblok + Wist je dat
+   - Verwijdert de grote BB-cirkel/plaat
+   - Toont Titel, Artiest, Album en Jaar compact
+   - Toont daaronder een apart Wist-je-dat-venster
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+
+  function factText(a){
+    const track = String(a?.track || '').trim();
+    const artist = String(a?.artist || '').trim();
+    const album = String(a?.album || '').trim();
+    const year = String(a?.year || '').trim();
+
+    if(album && year){
+      return `“${track || 'Dit nummer'}” staat op het album “${album}” en verscheen in ${year}.`;
+    }
+    if(album){
+      return `“${track || 'Dit nummer'}” staat op het album “${album}”.`;
+    }
+    if(year){
+      return `“${track || 'Dit nummer'}” van ${artist || 'deze artiest'} verscheen in ${year}.`;
+    }
+    if(track && artist){
+      return `Je luisterde naar “${track}” van ${artist}.`;
+    }
+    return 'Iedere ronde ontdek je opnieuw een nummer uit jullie eigen playlist.';
+  }
+
+  function enhanceCorrectAnswer(room, r){
+    const root = q('screenDashboard');
+    if(!root || !root.classList.contains('bbV144Correct')) return;
+    const hero = root.querySelector('.bbV144HeroCard');
+    if(!hero || hero.dataset.bbV167Done === '1') return;
+    hero.dataset.bbV167Done = '1';
+
+    const a = r?.correctAnswer || {};
+    const info = `
+      <div class="bbV167AnswerCard">
+        <div class="bbV167Kicker">🎵 JUIST ANTWOORD</div>
+        <div class="bbV167TrackTitle">${E(a.track || '-')}</div>
+        <div class="bbV167MetaGrid">
+          <div><span>ARTIEST</span><strong>${E(a.artist || '-')}</strong></div>
+          <div><span>ALBUM</span><strong>${E(a.album || '-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year || '-')}</strong></div>
+        </div>
+      </div>
+      <div class="bbV167FactCard">
+        <div class="bbV167FactTitle">💡 Wist je dat...</div>
+        <p>${E(factText(a))}</p>
+      </div>`;
+    hero.innerHTML = info;
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const previous = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const result = previous.apply(this,arguments);
+      setTimeout(()=>enhanceCorrectAnswer(room,r),0);
+      setTimeout(()=>enhanceCorrectAnswer(room,r),80);
+      return result;
+    };
+  }
+
+  // Extra vangnet voor Firebase/DOM-updates die het scherm opnieuw tekenen.
+  const observer = new MutationObserver(()=>{
+    try{
+      const room = window.bbV160LastRoom || {};
+      const r = room.currentRound || activeRound || {};
+      enhanceCorrectAnswer(room,r);
+    }catch(e){}
+  });
+  document.addEventListener('DOMContentLoaded',()=>{
+    const root=q('screenDashboard');
+    if(root) observer.observe(root,{childList:true,subtree:true});
+  });
+})();

@@ -24,6 +24,23 @@ body.playerMode #hostApp{display:none!important}body.playerMode #playerApp{displ
 #screenPicker{
   text-align:center;
 }
+
+/* V170: het afgeschafte dashboard met vier panelen mag nooit meer verschijnen. */
+.bbPlayerLoading{
+  min-height:calc(100dvh - 92px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  color:rgba(255,255,255,.82);
+  font-size:16px;
+  text-align:center;
+}
+.bbPlayerLoading img{width:min(190px,48vw);height:auto;filter:drop-shadow(0 14px 28px rgba(0,0,0,.35))}
+/* Extra vangnet: ook een vertraagde oude renderer kan de vier-vakken-layout niet terugbrengen. */
+#screenDashboard > .dashTop,
+#screenDashboard > .dashGrid{display:none!important}
 #playerPickerArea{
   min-height:320px;
 }

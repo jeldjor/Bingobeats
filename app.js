@@ -4821,7 +4821,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 })();
 
 /* =========================
-   V169 - compacte lobby, vaste dieren overal, betrouwbare automatische READY-start,
+   V170 - compacte lobby, vaste dieren overal, betrouwbare automatische READY-start,
           toetsenbordvaste antwoordweergave en betere metadata-weetjes
    ========================= */
 (function(){

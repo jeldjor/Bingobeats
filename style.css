@@ -7826,3 +7826,66 @@ body.bbHostPlayerMode .bbV142MainBtn{
   .bbV167FactTitle{font-size:19px}
   .bbV167FactCard p{font-size:15px!important}
 }
+
+/* =========================
+   V168 - Eén donkere groene Bingo Beats-huisstijl
+   ========================= */
+:root{--bb-green-0:#001a13;--bb-green-1:#00261b;--bb-green-2:#073b2b;--bb-gold:#ffcc33;--bb-orange:#ff941f}
+html,body{background:#001a13!important}
+body,body.playerMode,body.bbHostPlayerMode{
+  background:
+    radial-gradient(circle at 20% 12%,rgba(44,139,88,.22),transparent 32%),
+    radial-gradient(circle at 82% 88%,rgba(255,174,42,.10),transparent 34%),
+    linear-gradient(165deg,#001d15 0%,#00261b 48%,#00150f 100%)!important;
+  color:#fff!important;
+}
+#hostApp,#playerApp,.compactDashboard,.bbStageDashboard,.bbV144Stage,.bbV160LobbyStage,.bbV160LiveStage{background:transparent!important}
+.panel,.bbStageShell,.bbV144Shell,.bbV160LobbyBox,.bbV160AnswerList,.bbV167AnswerCard,.bbV167FactCard,.bbV144HeroCard,.bbV144ScoreList{
+  background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;
+}
+.bbV160LiveHead>span,.bbV144ScoreTitleIcon,.bbV160ReadyCount,.bbAvatar,.bbV160Avatar{display:none!important}
+.bbV160LiveHead,.bbV160Hero{text-align:left!important;margin-bottom:10px!important}
+.bbV160LiveHead h2,.bbV160Hero h2{font-size:clamp(28px,8vw,42px)!important;text-transform:uppercase;margin:0!important}
+.bbV160LiveSub,.bbV160Hero p{color:rgba(255,255,255,.72)!important}
+.bbV160AnswerList,.bbV160PlayerGrid,.bbStageScoreList{padding:0!important}
+.bbV160AnswerRow,.bbV160PlayerChip,.bbStageScoreRow,.bbV160HostRow{
+  background:rgba(2,43,29,.62)!important;border:1px solid rgba(126,217,87,.55)!important;
+  box-shadow:none!important;border-radius:18px!important;
+}
+.bbV160PlayerChip{min-height:58px!important}
+.bbAnimalAvatar{font-size:25px;display:inline-flex;align-items:center;justify-content:center;width:34px}
+.bbHostTag{font-size:9px!important;letter-spacing:.8px;color:var(--bb-gold)!important;border:1px solid rgba(255,204,51,.5);border-radius:999px;padding:2px 6px;margin-left:5px}
+.bbV160OwnMiniCard,.bbStageBingo{filter:saturate(.95)}
+.bbV160ReadyBtn,.bbReadyBig,.bbV144BottomBtn,.bbStageSubmit,.bingoFullBtn,.bbV168Decision button{
+  background:linear-gradient(90deg,var(--bb-gold),var(--bb-orange))!important;color:#07130e!important;border:0!important;
+  box-shadow:0 12px 30px rgba(255,168,31,.22)!important;font-weight:950!important;
+}
+.bbHostStartFloat{display:none!important}
+
+/* Juist antwoord en weetje zonder losse vakken */
+.bbV144Correct .bbV144Shell{padding:12px 22px 96px!important;gap:18px!important}
+.bbV167AnswerCard,.bbV167FactCard{padding:0!important;border-radius:0!important;overflow:visible!important;flex:0 0 auto!important}
+.bbV167Kicker{font-size:14px!important;margin-bottom:10px!important}
+.bbV167TrackTitle{font-size:clamp(34px,9vw,52px)!important;margin-bottom:20px!important}
+.bbV167MetaGrid{display:block!important}
+.bbV167MetaGrid>div,.bbV167MetaGrid>div:last-child{display:flex!important;gap:10px;padding:6px 0!important;background:transparent!important;border:0!important}
+.bbV167MetaGrid span{width:76px;margin:0!important;color:rgba(255,255,255,.55)!important}
+.bbV167MetaGrid strong{font-size:16px!important}
+.bbV167FactCard{margin-top:14px!important;padding-top:18px!important;border-top:1px solid rgba(255,204,51,.30)!important}
+.bbV167FactTitle{font-size:23px!important}.bbV167FactCard p{font-size:17px!important;line-height:1.55!important}
+
+/* Winnaar zonder kader om logo en zonder grote transparante kaart */
+#bingoFullOverlay{background:rgba(0,20,14,.96)!important}
+#bingoFullOverlay .bingoFullCard{background:transparent!important;border:0!important;box-shadow:none!important;max-width:620px!important;padding:24px!important;text-align:center}
+.bbV168WinnerLogo img{width:min(270px,58vw);height:auto;display:block;margin:0 auto 8px;filter:drop-shadow(0 14px 24px rgba(0,0,0,.38))}
+.bbV168Check{font-size:70px;color:#58df6d;line-height:1}.bingoFullCard h1{color:var(--bb-gold)!important;font-size:50px!important;margin:8px 0!important}
+.bingoFullCard h2{font-size:36px!important;margin:4px 0!important}.bingoFullCard>p{letter-spacing:3px;font-weight:900}.bbV168Cup{font-size:58px;margin:12px}
+.bbV168Decision{display:grid;gap:12px;margin-top:20px}.bbV168Decision h3{font-size:20px;margin:0 0 6px}.bbV168Decision button{min-height:58px;border-radius:18px;font-size:17px}
+.bbV168Decision button.secondary{background:transparent!important;color:#fff!important;border:1px solid rgba(126,217,87,.65)!important;box-shadow:none!important}
+.bbV168Decision button.danger{background:transparent!important;color:#ff8d8d!important;border:1px solid rgba(255,90,95,.65)!important;box-shadow:none!important}
+.bbV168Waiting{padding:30px 10px;font-size:18px;color:rgba(255,255,255,.82)}
+
+/* Host en speler exact dezelfde groene basis */
+body.bbHostPlayerMode .bbV144Stage,body.bbHostPlayerMode .compactDashboard,body.bbHostPlayerMode #playerApp{background:transparent!important}
+body.bbHostPlayerMode:before{content:none!important}
+@media(max-width:390px){.bbV144Correct .bbV144Shell{padding:8px 16px 86px!important}.bbV167TrackTitle{font-size:34px!important}.bbV168WinnerLogo img{width:210px}.bingoFullCard h1{font-size:42px!important}}

@@ -4665,3 +4665,157 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     if(root) observer.observe(root,{childList:true,subtree:true});
   });
 })();
+
+/* =========================
+   V168 - Groene huisstijl, vaste dieren, veilige READY-flow en bingo-besluit
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const ANIMALS=['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
+  let emojiRoom='', emojiBusy=false, decisionRef=null, autoRef=null, autoBusy=false;
+
+  function hash(s){let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+  function emojiFor(pid,p){return p?.emoji||ANIMALS[hash(pid)%ANIMALS.length]}
+  function cleanName(n){return String(n||'Speler').replace(/^🎤\s*/,'').trim()||'Speler'}
+  function isHost(p){return !!p?.isHost||/^🎤/.test(String(p?.name||''))}
+
+  async function ensurePlayerEmojis(roomCode, room){
+    if(!roomCode||emojiBusy)return;
+    const ps=room?.players||{}; const used=new Set(Object.values(ps).map(p=>p?.emoji).filter(Boolean)); const up={};
+    for(const [pid,p] of Object.entries(ps)){
+      if(p?.emoji) continue;
+      let start=hash(pid)%ANIMALS.length, chosen='';
+      for(let i=0;i<ANIMALS.length;i++){const e=ANIMALS[(start+i)%ANIMALS.length];if(!used.has(e)){chosen=e;break}}
+      chosen=chosen||ANIMALS[start]; used.add(chosen); up[`rooms/${roomCode}/players/${pid}/emoji`]=chosen;
+    }
+    if(Object.keys(up).length){emojiBusy=true;try{await db.ref().update(up)}finally{emojiBusy=false}}
+  }
+
+  function attachRoomHelpers(roomCode){
+    if(!roomCode||emojiRoom===roomCode)return; emojiRoom=roomCode;
+    if(autoRef)try{autoRef.off()}catch(e){}
+    autoRef=db.ref('rooms/'+roomCode);
+    autoRef.on('value',async s=>{
+      const room=s.val()||{}; ensurePlayerEmojis(roomCode,room);
+      const r=room.currentRound||{}, ps=Object.values(room.players||{}), me=room.players?.[currentPlayerId];
+      // Automatisch starten terwijl de host nog in de meespelenmodus zit.
+      // Navigeren naar het hostscherm is daardoor nooit meer de trigger.
+      if(!me?.isHost||r.status!=='judged'||!r.id||!ps.length||!ps.every(p=>p.ready)||Object.values(room.bingos||{}).some(b=>b?.roundId===r.id)||autoBusy)return;
+      autoBusy=true;
+      const claim=db.ref(`rooms/${roomCode}/autoStartClaims/${r.id}`);
+      try{
+        const tx=await claim.transaction(v=>v||{by:currentPlayerId,at:firebase.database.ServerValue.TIMESTAMP});
+        if(tx.committed&&tx.snapshot.val()?.by===currentPlayerId){
+          const latest=(await db.ref('rooms/'+roomCode).once('value')).val()||{}, lr=latest.currentRound||{};
+          if(lr.id===r.id&&lr.status==='judged'&&Object.values(latest.players||{}).every(p=>p.ready)) startRound();
+        }
+      }catch(e){console.error(e)}finally{setTimeout(()=>autoBusy=false,1200)}
+    });
+  }
+
+  const oldEnter=window.bbEnterHostPlayerMode;
+  if(oldEnter) window.bbEnterHostPlayerMode=async function(){const x=await oldEnter.apply(this,arguments);setTimeout(()=>attachRoomHelpers(currentRoomCode),50);return x};
+  document.addEventListener('DOMContentLoaded',()=>setInterval(()=>{if(currentRoomCode)attachRoomHelpers(currentRoomCode)},1200));
+
+  function replacePeopleWithAnimals(root,room){
+    if(!root||!room)return;
+    root.querySelectorAll('[data-view-card]').forEach(el=>{
+      const pid=el.getAttribute('data-view-card'),p=room.players?.[pid]; if(!p)return;
+      const name=el.querySelector('.bbV160PlayerName,.bbReadyName,.bbScoreWho strong');
+      if(name) name.innerHTML=`<span class="bbAnimalAvatar">${emojiFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}`;
+    });
+    const rows=root.querySelectorAll('.bbV160AnswerRow,.bbStageScoreRow,.bbV160HostRow');
+    rows.forEach((el,i)=>{
+      const entries=Object.entries(room.players||{}); const [pid,p]=entries[i]||[]; if(!p)return;
+      const name=el.querySelector('.bbV160AnswerName,.bbScoreWho strong,.bbV160HostName');
+      if(name) name.innerHTML=`<span class="bbAnimalAvatar">${emojiFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}`;
+      el.querySelector('.bbAvatar,.bbV160Avatar')?.remove();
+    });
+  }
+
+  function factTextV168(a){
+    const t=String(a?.track||'').trim(), ar=String(a?.artist||'').trim(), al=String(a?.album||'').trim(), y=String(a?.year||'').trim();
+    const facts=[];
+    if(al&&y) facts.push(`Dit nummer verscheen in ${y} en is afkomstig van het album “${al}”.`);
+    if(ar&&al) facts.push(`${ar} bracht “${t||'dit nummer'}” uit als onderdeel van “${al}”.`);
+    if(t&&y) facts.push(`“${t}” komt uit ${y}. Herkende jij het tijdperk meteen?`);
+    if(ar&&t) facts.push(`Je luisterde naar “${t}” van ${ar}.`);
+    if(al) facts.push(`Het nummer staat op het album “${al}”.`);
+    if(y) facts.push(`De oorspronkelijke release dateert uit ${y}.`);
+    facts.push('Muziekherkenning werkt vaak al binnen enkele seconden: melodie, stem en productie geven elk hun eigen aanwijzing.');
+    const key=hash(t+'|'+ar+'|'+al+'|'+y+'|'+(activeRound?.id||'')); return facts[key%facts.length];
+  }
+
+  function polish(root,room,r){
+    if(!root)return;
+    replacePeopleWithAnimals(root,room);
+    root.querySelectorAll('.bbV160LiveHead>span,.bbV160ReadyCount,.bbV144ScoreTitleIcon,.bbAvatar,.bbV160Avatar').forEach(x=>x.remove());
+    const fact=root.querySelector('.bbV167FactCard p'); if(fact&&r?.correctAnswer) fact.textContent=factTextV168(r.correctAnswer);
+    root.querySelectorAll('.bbV167Kicker').forEach(x=>x.textContent='JUISTE ANTWOORD');
+  }
+  if(typeof renderCompactDashboard==='function'){
+    const prev=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){const out=prev.apply(this,arguments);setTimeout(()=>polish(q('screenDashboard'),room,r),0);setTimeout(()=>polish(q('screenDashboard'),room,r),100);return out};
+  }
+
+  function bingoDecisionHtml(name,room){
+    const me=room?.players?.[currentPlayerId]||{}, host=isHost(me);
+    return `<div class="bbV168WinnerLogo"><img src="bb_logo.png" alt="Bingo Beats"></div><div class="bbV168Check">✓</div><h1>BINGO!</h1><h2>${E(cleanName(name))}</h2><p>HEEFT GEWONNEN</p><div class="bbV168Cup">🏆</div>${host?`<div class="bbV168Decision"><h3>Wie beslist wat er nu gebeurt?</h3><button onclick="bbV168ChooseDecision('host')">HOST BESLIST</button><button class="secondary" onclick="bbV168ChooseDecision('majority')">MEERDERHEID BESLIST</button></div>`:`<div class="bbV168Waiting">De host kiest wie er beslist.</div>`}`;
+  }
+  function decisionActions(mode){
+    const title=mode==='majority'?'Breng je stem uit':'Kies wat er nu gebeurt';
+    return `<div class="bbV168Decision"><h3>${title}</h3><button onclick="bbV168Action('continue')">VERDER SPELEN</button><button onclick="bbV168Action('newround')">NIEUWE RONDE</button><button class="danger" onclick="bbV168Action('end')">SPEL BEËINDIGEN</button></div>`;
+  }
+  function renderDecision(state,room){
+    const card=q('bingoFullOverlay')?.querySelector('.bingoFullCard'); if(!card)return;
+    const me=room?.players?.[currentPlayerId]||{}, host=isHost(me), mode=state?.mode;
+    if(!mode){card.innerHTML=bingoDecisionHtml(state?.winner||q('bingoFullName')?.textContent||'Speler',room);return}
+    if(mode==='host') card.innerHTML=host?decisionActions('host'):`<div class="bbV168Waiting"><h2>De host beslist</h2><p>Even wachten op de keuze van de host.</p></div>`;
+    else {
+      const voted=state?.votes?.[currentPlayerId];
+      card.innerHTML=voted?`<div class="bbV168Waiting"><h2>Stem ontvangen</h2><p>Wachten op de overige spelers.</p></div>`:decisionActions('majority');
+    }
+  }
+  function watchDecision(roomCode){
+    if(decisionRef)try{decisionRef.off()}catch(e){}
+    decisionRef=db.ref('rooms/'+roomCode+'/postBingo');
+    decisionRef.on('value',async s=>{
+      const state=s.val()||{}, room=(await db.ref('rooms/'+roomCode).once('value')).val()||{};
+      if(state.active) renderDecision(state,room);
+      if(state.mode==='majority'&&!state.resolved){
+        const ps=Object.keys(room.players||{}), votes=state.votes||{}; if(!ps.length||ps.some(pid=>!votes[pid]))return;
+        const totals={continue:0,newround:0,end:0};
+        for(const pid of ps){const v=votes[pid];if(totals[v]!==undefined)totals[v]+=room.players[pid]?.isHost?2:1}
+        const best=Object.entries(totals).sort((a,b)=>b[1]-a[1]); let action=best[0][0];
+        // Alleen de host claimt en voert de uitslag uit.
+        if(room.players?.[currentPlayerId]?.isHost){
+          const tx=await db.ref('rooms/'+roomCode+'/postBingo/resolved').transaction(v=>v||action);
+          if(tx.committed&&tx.snapshot.val()===action) executeAction(action);
+        }
+      }
+    });
+  }
+  function executeAction(action){
+    const overlay=q('bingoFullOverlay'); if(overlay)overlay.classList.add('hidden');
+    db.ref('rooms/'+currentRoomCode+'/postBingo').update({active:false,finishedAt:firebase.database.ServerValue.TIMESTAMP});
+    if(action==='continue'){ if(typeof window.bbBingoVerderSpelen==='function') window.bbBingoVerderSpelen(); }
+    else if(action==='newround'){ if(typeof window.bbBingoNieuweRonde==='function') window.bbBingoNieuweRonde(); }
+    else db.ref('rooms/'+currentRoomCode).update({ended:true,currentRound:{status:'ended'},endedAt:firebase.database.ServerValue.TIMESTAMP});
+  }
+  window.bbV168ChooseDecision=function(mode){db.ref('rooms/'+currentRoomCode+'/postBingo').update({mode,votes:null,resolved:null})};
+  window.bbV168Action=function(action){
+    db.ref('rooms/'+currentRoomCode+'/postBingo').once('value').then(s=>{const st=s.val()||{};if(st.mode==='majority')return db.ref('rooms/'+currentRoomCode+'/postBingo/votes/'+currentPlayerId).set(action);executeAction(action)});
+  };
+
+  const oldWinner=showWinner;
+  showWinner=function(name){
+    try{
+      const overlay=q('bingoFullOverlay'); if(overlay)overlay.classList.remove('hidden');
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
+        const room=s.val()||{}; return db.ref('rooms/'+currentRoomCode+'/postBingo').set({active:true,winner:name||'Speler',roundId:room.currentRound?.id||'',createdAt:firebase.database.ServerValue.TIMESTAMP}).then(()=>{renderDecision({active:true,winner:name},room);watchDecision(currentRoomCode)});
+      });
+      if(typeof confetti==='function')confetti(); if(typeof tune==='function')tune();
+    }catch(e){return oldWinner(name)}
+  };
+})();

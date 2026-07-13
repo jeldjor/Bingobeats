@@ -7874,3 +7874,125 @@ body.bbKeyboardOpen{overflow:hidden!important}body.bbKeyboardOpen #screenDashboa
 body.bbKeyboardOpen #screenDashboard>.bbStageShell,body.bbKeyboardOpen #screenDashboard>.bbV144Shell,body.bbKeyboardOpen #screenDashboard .bbStageShell,body.bbKeyboardOpen #screenDashboard .bbV144Shell{height:100%!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:none!important;padding-top:max(6px,env(safe-area-inset-top))!important}
 body.bbKeyboardOpen #bbStageAnswerInput,body.bbKeyboardOpen #scoreAnswerInput{font-size:16px!important;scroll-margin-top:8px!important}
 @media(max-width:390px){.bbV160Hero h2{font-size:22px!important}.bbV160LobbyBox{max-height:118px!important}.bbV160PlayerGrid{max-height:70px!important}.bbV160PlayerChip{height:32px!important;min-height:32px!important}.bbV160ReadyBtn{height:46px!important;min-height:46px!important}}
+
+/* =========================
+   V172 - speler en Host-doet-mee exact dezelfde responsieve flow
+   ========================= */
+:root{--bb-theme-green-0:#03140e;--bb-theme-green-1:#08271b;--bb-theme-green-2:#10422e}
+body.playerMode,
+body.bbV144Mode.playerMode,
+body.bbHostPlayerMode{
+  background:
+    radial-gradient(circle at 18% 7%,rgba(39,224,131,.20),transparent 31%),
+    radial-gradient(circle at 86% 10%,rgba(0,212,199,.12),transparent 34%),
+    linear-gradient(165deg,var(--bb-theme-green-0),var(--bb-theme-green-1) 55%,#020a07)!important;
+  background-color:var(--bb-theme-green-0)!important;
+}
+body.playerMode .app,body.playerMode #playerApp,body.playerMode #screenDashboard,
+body.bbHostPlayerMode .app,body.bbHostPlayerMode #playerApp,body.bbHostPlayerMode #screenDashboard,
+.bbStageDashboard,.bbV144Shell{background:transparent!important}
+.bbStageShell{
+  background:linear-gradient(150deg,rgba(16,66,46,.94),rgba(3,20,14,.96))!important;
+  border-color:rgba(126,217,87,.24)!important;
+}
+.bbV144Shell:before{background:linear-gradient(135deg,rgba(126,217,87,.09),transparent 34%,rgba(0,212,199,.07))!important}
+.bbV144HeroCard,.bbV144SentCard,.bbV144Stats>div,.bbV144ScoreRow,.bbV144ReadyRow,.bbV160PlayerChip,.bbV160AnswerRow{
+  background:rgba(7,51,35,.72)!important;
+  border-color:rgba(126,217,87,.25)!important;
+}
+.bbV144TopTitle>span{background:linear-gradient(135deg,#16794f,#00a98f)!important}
+.bbV144RecordInner{background:radial-gradient(circle,#164b35 0 35%,#03140e 36% 100%)!important}
+.bbHostJuryCard,.bbOtherCardBox{background:linear-gradient(160deg,#0e3a29,#03140e)!important;border:1px solid rgba(126,217,87,.30)!important}
+.bingoFullOverlay,#bbWheelFullOverlayV92,.bbWheelInlineV110{
+  background:radial-gradient(circle at 50% 15%,rgba(39,224,131,.18),transparent 35%),linear-gradient(165deg,#08271b,#020a07)!important;
+}
+.bingoFullCard,.bbWheelFullCardV92{background:linear-gradient(150deg,rgba(16,66,46,.96),rgba(3,20,14,.98))!important;border-color:rgba(126,217,87,.28)!important}
+
+/* Oude host-only scoreboardwijzigingen volledig terugdraaien: dezelfde layout als speler. */
+body.bbHostPlayerMode .bbV144ScoreRow,
+body.bbHostPlayerMode .bbV143ScoreRow,
+body.bbHostPlayerMode .bbV142ScoreRow,
+body.bbHostPlayerMode .bbV146LiveList .bbV144ScoreRow{
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr) auto!important;
+  gap:10px!important;
+  padding:10px!important;
+  align-items:center!important;
+  border-radius:18px!important;
+}
+body.bbHostPlayerMode .bbV144Avatar,
+body.bbHostPlayerMode .bbV143Avatar,
+body.bbHostPlayerMode .bbV142Avatar,
+body.bbHostPlayerMode .bbV146LiveList .bbV144Avatar{
+  display:flex!important;width:42px!important;height:42px!important;
+  align-items:center!important;justify-content:center!important;
+}
+body.bbHostPlayerMode .bbV144State,
+body.bbHostPlayerMode .bbV143State,
+body.bbHostPlayerMode .bbV142State{display:block!important}
+body.bbHostPlayerMode .bbV144Who{
+  min-width:0!important;display:flex!important;flex-direction:column!important;
+  gap:2px!important;align-items:stretch!important;
+}
+body.bbHostPlayerMode .bbV144Who strong,body.bbHostPlayerMode .bbV144Who span{
+  font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+body.bbHostPlayerMode .bbV146LiveOnly,body.bbHostPlayerMode .bbV144Live{padding-top:0!important}
+body.bbHostPlayerMode .bbV146LiveList,body.bbHostPlayerMode .bbV144ScoreList.live{
+  gap:8px!important;max-height:calc(100dvh - 295px)!important;padding:2px 2px 6px!important;
+}
+body.bbHostPlayerMode .bbV144Bottom,body.bbHostPlayerMode .bbV143Bottom,body.bbHostPlayerMode .bbV142Bottom{padding-bottom:0!important}
+body.bbHostPlayerMode .bbV144MainBtn,body.bbHostPlayerMode .bbV143MainBtn,body.bbHostPlayerMode .bbV142MainBtn{
+  min-height:unset!important;height:auto!important;padding:16px!important;border-radius:22px!important;font-size:18px!important;
+}
+
+/* Tekstknoppen bovenin; geen overlappende handmatige startknop meer. */
+body.bbHostPlayerMode .bbHostTopBtn{
+  top:calc(env(safe-area-inset-top,0px) + 8px)!important;
+  width:auto!important;min-width:58px!important;height:34px!important;
+  padding:0 11px!important;margin:0!important;border-radius:12px!important;
+  font-size:11px!important;line-height:34px!important;letter-spacing:.5px!important;
+  color:#eafff3!important;background:rgba(3,35,23,.92)!important;
+  border:1px solid rgba(126,217,87,.55)!important;box-shadow:0 5px 16px rgba(0,0,0,.28)!important;
+  text-shadow:none!important;backdrop-filter:blur(8px)!important;
+}
+body.bbHostPlayerMode .bbHostTopExit{left:10px!important}
+body.bbHostPlayerMode .bbHostTopJury{right:10px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.bbHostStartFloat{display:none!important}
+
+/* iOS + Android: alleen de werkelijk zichtbare ruimte boven het toetsenbord gebruiken. */
+html.bbKeyboardOpen,body.bbKeyboardOpen{overflow:hidden!important;height:var(--bb-visible-height,100dvh)!important}
+body.bbKeyboardOpen #mainHeader{display:none!important}
+body.bbKeyboardOpen #screenDashboard{
+  position:fixed!important;left:0!important;right:0!important;
+  top:var(--bb-visible-top,0px)!important;bottom:auto!important;
+  width:100%!important;height:var(--bb-visible-height,100dvh)!important;
+  min-height:0!important;padding:4px 8px!important;margin:0!important;
+  overflow:hidden!important;z-index:4000!important;box-sizing:border-box!important;
+}
+body.bbKeyboardOpen #screenDashboard.compactDashboard.bbStageDashboard{align-items:stretch!important;justify-content:flex-start!important}
+body.bbKeyboardOpen #screenDashboard.stageAnswer .bbStageShell{
+  width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;
+  padding:5px 8px!important;gap:4px!important;justify-content:flex-start!important;
+  overflow-y:auto!important;border-radius:17px!important;box-sizing:border-box!important;
+}
+body.bbKeyboardOpen .stageAnswer .bbStageLogo{display:none!important}
+body.bbKeyboardOpen .stageAnswer .bbRoundBadge{min-height:25px!important;padding:4px 8px!important;font-size:12px!important;line-height:1!important;margin:0!important}
+body.bbKeyboardOpen .stageAnswer .bbCountdownBig{width:58px!important;height:58px!important;min-height:58px!important;flex:0 0 58px!important;margin:0 auto!important}
+body.bbKeyboardOpen .stageAnswer .bbCountdownBig:after{inset:6px!important}
+body.bbKeyboardOpen .stageAnswer .bbCountdownBig span{font-size:27px!important}
+body.bbKeyboardOpen .stageAnswer .bbCategoryTitle,
+body.bbKeyboardOpen .stageAnswer .bbStageShell h2{font-size:18px!important;line-height:1.05!important;margin:1px 0!important;min-height:20px!important}
+body.bbKeyboardOpen .stageAnswer .bbStageInput{height:43px!important;min-height:43px!important;margin:1px 0!important;padding:8px 11px!important;font-size:16px!important;border-radius:13px!important;flex:0 0 43px!important}
+body.bbKeyboardOpen .stageAnswer .bbStageSubmit{height:43px!important;min-height:43px!important;margin:1px 0!important;padding:0 12px!important;font-size:16px!important;border-radius:13px!important;flex:0 0 43px!important}
+
+/* Android/tablet/landscape: breedte en veilige randen blijven beheerst. */
+@media(min-width:700px){
+  body.playerMode #screenDashboard{width:min(100%,780px)!important;margin-left:auto!important;margin-right:auto!important}
+  body.bbKeyboardOpen #screenDashboard{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(100%,780px)!important}
+}
+@media(max-width:420px){
+  body.bbHostPlayerMode .bbV144ScoreRow,body.bbHostPlayerMode .bbV146LiveList .bbV144ScoreRow{grid-template-columns:38px minmax(0,1fr) auto!important;gap:7px!important;padding:8px!important}
+  body.bbHostPlayerMode .bbV144Avatar{width:38px!important;height:38px!important}
+}

@@ -1,4 +1,4 @@
-/* Bingo Beats V171 - veilige herstelbouw op werkende V167 */
+/* Bingo Beats V172 - uniforme speler en Host-doet-mee flow op V171 */
 const CLIENT_ID="4765b89201b44558a7d5141f9b93c178",REDIRECT_URI=location.origin+location.pathname,SCOPES=["streaming","user-read-email","user-read-private","user-read-playback-state","user-modify-playback-state","playlist-read-private","playlist-read-collaborative"].join(" ");
 const firebaseConfig={apiKey:"AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY",authDomain:"hitster-bingo-cb792.firebaseapp.com",databaseURL:"https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app",projectId:"hitster-bingo-cb792",storageBucket:"hitster-bingo-cb792.firebasestorage.app",messagingSenderId:"98696776977",appId:"1:98696776977:web:e797e555e2d9b38bcc99b0"};
 const COLORS=[{key:"yellow",name:"GOUD",emoji:"🟡",input:"cat-yellow",hex:"#FFCC33"},{key:"pink",name:"AQUA",emoji:"🩵",input:"cat-pink",hex:"#00D4C7"},{key:"purple",name:"ORANJE",emoji:"🟠",input:"cat-purple",hex:"#FF8A1F"},{key:"blue",name:"LIME",emoji:"🟢",input:"cat-blue",hex:"#7ED957"},{key:"green",name:"KORAAL",emoji:"🔴",input:"cat-green",hex:"#FF5A5F"}];
@@ -49,10 +49,10 @@ function scoreboardClick(e){let btn=e.target.closest("button[data-pid]");if(!btn
 function publishResults(){db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},r=room.currentRound||{},up={};up[`rooms/${currentRoomCode}/currentRound/status`]="judged";Object.entries(room.players||{}).forEach(([pid,p])=>{let good=room.correct?.[r.id]?.[pid]===true;if(!good)up[`rooms/${currentRoomCode}/players/${pid}/ready`]=true});return db.ref().update(up)}).then(()=>{if($("hostStatus"))$("hostStatus").textContent="Resultaten verzonden."})}
 function openNewGameModal(){if(!currentRoomCode)return alert("Maak eerst een kamer.");let m=$("newGameModal");if(m){m.classList.remove("hidden");m.style.display="flex"}}function closeNewGameModal(){let m=$("newGameModal");if(m){m.classList.add("hidden");m.style.display="none"}}function bbStartNewGameSameRoom(){if(!currentRoomCode){closeNewGameModal();return}db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},up={};Object.keys(room.players||{}).forEach(pid=>{up[`rooms/${currentRoomCode}/players/${pid}/card`]=genCard();up[`rooms/${currentRoomCode}/players/${pid}/marked`]={};up[`rooms/${currentRoomCode}/players/${pid}/bingo`]=false;up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false;up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null});up[`rooms/${currentRoomCode}/currentRound`]=null;up[`rooms/${currentRoomCode}/answers`]=null;up[`rooms/${currentRoomCode}/correct`]=null;up[`rooms/${currentRoomCode}/bingos`]=null;return db.ref().update(up)}).then(()=>{closeNewGameModal();$("hostBingoPanel")?.classList.add("hidden");if($("hostStatus"))$("hostStatus").textContent="Nieuw spel gestart in dezelfde kamer."})}
 function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoom()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
-function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName){listenPlayer();showDashboard()}}
+function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName)listenPlayer()}
 function genCard(){let colors=["yellow","pink","purple","blue","green"],pool=[];for(let i=0;i<24;i++)pool.push(colors[i%5]);for(let i=pool.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}let card=[],k=0;for(let i=0;i<25;i++)card.push(i===12?"free":pool[k++]);return card}
-function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer();showDashboard()})}
-function showDashboard(){$("screenJoin")?.classList.add("hidden");$("screenDashboard")?.classList.remove("hidden")}function listenPlayer(){db.ref("rooms/"+currentRoomCode).off();db.ref("rooms/"+currentRoomCode).on("value",s=>{let room=s.val()||{},r=room.currentRound||{};activeRound=r;showDashboard();renderCompactDashboard(room,r)});listenBingo(currentRoomCode)}
+function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer()})}
+function showDashboard(){$("screenJoin")?.classList.add("hidden");$("screenDashboard")?.classList.remove("hidden")}function listenPlayer(){db.ref("rooms/"+currentRoomCode).off();db.ref("rooms/"+currentRoomCode).on("value",s=>{let room=s.val()||{},r=room.currentRound||{};activeRound=r;renderCompactDashboard(room,r);showDashboard()});listenBingo(currentRoomCode)}
 function colorHex(k){return{yellow:"#FFCC33",pink:"#00D4C7",purple:"#FF8A1F",blue:"#7ED957",green:"#FF5A5F",free:"#FFCC33"}[k]||"rgba(255,255,255,.18)"}function colorEmoji(k){return{yellow:"🟡",pink:"🩵",purple:"🟠",blue:"🟢",green:"🔴",free:"🐵"}[k]||""}
 function renderCompactDashboard(room,r){renderCompactTop(room,r);renderCompactAnswer(room,r);renderCompactScore(room,r);renderCompactCard(room,r);renderCompactPicker(room,r)}
 function renderCompactTop(room,r){if($("dashRoundNo"))$("dashRoundNo").textContent=currentPlayerName||"Speler";if($("dashPlayerCount"))$("dashPlayerCount").textContent=Object.keys(room.players||{}).length;clearInterval(dashTimer);dashTimer=setInterval(()=>{let el=$("dashTimer");if(!el)return;if(r?.status==="answering"&&r.deadlineMs){let left=Math.max(0,Math.ceil((r.deadlineMs-Date.now())/1000));el.textContent="00:"+String(left).padStart(2,"0");if(left<=0)clearInterval(dashTimer)}else if(r?.status==="locked"||r?.status==="judged")el.textContent="00:00";else el.textContent="--"},300)}
@@ -172,8 +172,12 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function setKeyboard(open){
     document.body.classList.toggle('bbKeyboardOpen',open);
-    const height=window.visualViewport?.height||window.innerHeight;
+    document.documentElement.classList.toggle('bbKeyboardOpen',open);
+    const viewport=window.visualViewport;
+    const height=viewport?.height||window.innerHeight;
+    const top=viewport?.offsetTop||0;
     document.documentElement.style.setProperty('--bb-visible-height',Math.round(height)+'px');
+    document.documentElement.style.setProperty('--bb-visible-top',Math.round(top)+'px');
     if(open){const input=q('bbStageAnswerInput')||q('scoreAnswerInput');setTimeout(()=>input?.scrollIntoView({block:'nearest'}),30)}
   }
   document.addEventListener('focusin',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setKeyboard(true)});
@@ -4137,7 +4141,6 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     q('hostApp')?.classList.add('hidden');
     q('playerApp')?.classList.remove('hidden');
     q('screenJoin')?.classList.add('hidden');
-    q('screenDashboard')?.classList.remove('hidden');
     startHostPlayerListener(room);
   }
 
@@ -4164,13 +4167,16 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const data = s.val() || {}, r = data.currentRound || {};
       activeRound = r;
       try{ renderCompactDashboard(data,r); }catch(e){ console.error(e); }
+      q('screenJoin')?.classList.add('hidden');
+      q('screenDashboard')?.classList.remove('hidden');
       setTimeout(()=>enhanceHostLobby(data,r),20);
       setTimeout(()=>enhanceHostLobby(data,r),250);
       const players = Object.values(data.players || {});
-      const nextLobby = r.id && r.status === 'judged';
+      const startableLobby = !r.id || ['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
       const hasBingo = Object.values(data.bingos || {}).some(b=>b?.roundId===r.id);
-      if(hostPlayerMode && nextLobby && !hasBingo && players.length && players.every(p=>p.ready) && autoStartedRound!==r.id){
-        autoStartedRound = r.id;
+      const roundKey = r.id || '__first_round__';
+      if(hostPlayerMode && startableLobby && !hasBingo && players.length && players.every(p=>p.ready) && autoStartedRound!==roundKey){
+        autoStartedRound = roundKey;
         setTimeout(()=>window.bbHostPlayerStart(false),250);
       }
     });
@@ -4233,7 +4239,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     exitBtn.className = 'bbHostTopBtn bbHostTopExit';
     exitBtn.title = 'Terug naar hostscherm';
     exitBtn.setAttribute('aria-label','Terug naar hostscherm');
-    exitBtn.innerHTML = '🚪';
+    exitBtn.textContent = 'TERUG';
     exitBtn.onclick = window.bbHostPlayerExit;
     document.body.appendChild(exitBtn);
 
@@ -4243,20 +4249,12 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       juryBtn.className = 'bbHostTopBtn bbHostTopJury';
       juryBtn.title = 'Jury / overrule';
       juryBtn.setAttribute('aria-label','Jury / overrule');
-      juryBtn.innerHTML = '⚖️';
+      juryBtn.textContent = 'JURY';
       juryBtn.onclick = window.bbHostPlayerOpenJury;
       document.body.appendChild(juryBtn);
     }
 
-    // In de lobby mag de host de ronde starten, maar compact en zonder schermruimte te blokkeren.
-    if(isLobby && (!r || !['picking','ready','answering','locked'].includes(r.status))){
-      const startBtn = document.createElement('button');
-      startBtn.type = 'button';
-      startBtn.className = 'bbHostStartFloat';
-      startBtn.textContent = '▶️ Start ronde';
-      startBtn.onclick = () => window.bbHostPlayerStart(false);
-      document.body.appendChild(startBtn);
-    }
+    // Starten gebeurt altijd automatisch zodra host en alle spelers READY zijn.
   }
 
   window.bbHostPlayerOpenJury = function(){

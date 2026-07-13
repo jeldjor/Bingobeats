@@ -24,23 +24,6 @@ body.playerMode #hostApp{display:none!important}body.playerMode #playerApp{displ
 #screenPicker{
   text-align:center;
 }
-
-/* V170: het afgeschafte dashboard met vier panelen mag nooit meer verschijnen. */
-.bbPlayerLoading{
-  min-height:calc(100dvh - 92px);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:14px;
-  color:rgba(255,255,255,.82);
-  font-size:16px;
-  text-align:center;
-}
-.bbPlayerLoading img{width:min(190px,48vw);height:auto;filter:drop-shadow(0 14px 28px rgba(0,0,0,.35))}
-/* Extra vangnet: ook een vertraagde oude renderer kan de vier-vakken-layout niet terugbrengen. */
-#screenDashboard > .dashTop,
-#screenDashboard > .dashGrid{display:none!important}
 #playerPickerArea{
   min-height:320px;
 }
@@ -429,6 +412,40 @@ body.playerMode #playerApp{
   .dashWheel{width:68px;height:68px}
   .dashColorBig{font-size:34px}
   .dashColorText{font-size:18px}
+}
+
+/* =========================
+   V171 - veilige verbeteringen bovenop werkende V167
+   ========================= */
+.bbAnimalAvatar{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;font-size:22px;line-height:1}
+.bbHostTag{font-size:9px;line-height:1;border:1px solid rgba(255,204,51,.55);color:#FFCC33;border-radius:999px;padding:3px 5px;margin-left:3px}
+.bbV160PlayerName,.bbV160AnswerName,.bbV160HostChip>span,.bbV144Who strong{display:flex;align-items:center;gap:4px;min-width:0}
+.bbV160HostChip .bbAnimalAvatar{font-size:17px;width:20px;flex-basis:20px}
+
+/* Lobby blijft compact; kaart en alle spelers blijven tegelijk bruikbaar. */
+.bbV160LobbyStage{padding-bottom:66px!important;gap:6px!important}
+.bbV160Hero{padding:6px 4px!important}.bbV160Hero h2{font-size:25px!important;margin:0 0 3px!important}.bbV160Hero p{font-size:12px!important;margin:0!important}
+.bbV160LobbyBox{min-height:112px!important;max-height:128px!important;padding:7px!important}
+.bbV160PlayerGrid{height:auto!important;max-height:76px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;overflow-y:auto!important}
+.bbV160PlayerChip{height:34px!important;min-height:34px!important;padding:0 7px!important;border-radius:12px!important;font-size:11px!important}
+.bbV160ReadyCount{height:20px!important;font-size:11px!important;margin-bottom:4px!important}
+.bbV160Hint{height:14px!important;line-height:14px!important;font-size:10px!important;margin-top:3px!important}
+.bbV160Bottom{left:14px!important;right:14px!important;bottom:max(7px,env(safe-area-inset-bottom))!important}
+.bbV160ReadyBtn{height:49px!important;min-height:49px!important;border-radius:20px!important;font-size:19px!important}
+.bbV160OwnTitle{font-size:14px!important}.bbV160OwnMiniCard{width:min(57vw,265px)!important;gap:4px!important}.bbV160MiniCell{border-radius:9px!important}
+.bbV160HostGrid{max-height:112px!important}.bbV160HostChip{height:27px!important}
+
+/* iPhone-toetsenbord: gebruik de echte zichtbare schermhoogte en laat de antwoordzone bovenaan staan. */
+body.bbKeyboardOpen{overflow:hidden!important}
+body.bbKeyboardOpen #screenDashboard{position:fixed!important;inset:0!important;height:var(--bb-visible-height,100dvh)!important;min-height:0!important;overflow:hidden!important;background:inherit!important;z-index:1000!important}
+body.bbKeyboardOpen #screenDashboard>.bbStageShell,
+body.bbKeyboardOpen #screenDashboard>.bbV144Shell,
+body.bbKeyboardOpen #screenDashboard .bbStageShell,
+body.bbKeyboardOpen #screenDashboard .bbV144Shell{height:100%!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:none!important;padding-top:max(6px,env(safe-area-inset-top))!important}
+body.bbKeyboardOpen #bbStageAnswerInput,body.bbKeyboardOpen #scoreAnswerInput{font-size:16px!important;scroll-margin-top:8px!important}
+@media(max-width:390px){
+  .bbV160Hero h2{font-size:22px!important}.bbV160LobbyBox{max-height:118px!important}.bbV160PlayerGrid{max-height:70px!important}
+  .bbV160PlayerChip{height:32px!important;min-height:32px!important}.bbV160ReadyBtn{height:46px!important;min-height:46px!important}
 }
 
 /* =========================
@@ -7844,126 +7861,16 @@ body.bbHostPlayerMode .bbV142MainBtn{
   .bbV167FactCard p{font-size:15px!important}
 }
 
-/* =========================
-   V168 - Eén donkere groene Bingo Beats-huisstijl
-   ========================= */
-:root{--bb-green-0:#001a13;--bb-green-1:#00261b;--bb-green-2:#073b2b;--bb-gold:#ffcc33;--bb-orange:#ff941f}
-html,body{background:#001a13!important}
-body,body.playerMode,body.bbHostPlayerMode{
-  background:
-    radial-gradient(circle at 20% 12%,rgba(44,139,88,.22),transparent 32%),
-    radial-gradient(circle at 82% 88%,rgba(255,174,42,.10),transparent 34%),
-    linear-gradient(165deg,#001d15 0%,#00261b 48%,#00150f 100%)!important;
-  color:#fff!important;
-}
-#hostApp,#playerApp,.compactDashboard,.bbStageDashboard,.bbV144Stage,.bbV160LobbyStage,.bbV160LiveStage{background:transparent!important}
-.panel,.bbStageShell,.bbV144Shell,.bbV160LobbyBox,.bbV160AnswerList,.bbV167AnswerCard,.bbV167FactCard,.bbV144HeroCard,.bbV144ScoreList{
-  background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;
-}
-.bbV160LiveHead>span,.bbV144ScoreTitleIcon,.bbV160ReadyCount,.bbAvatar,.bbV160Avatar{display:none!important}
-.bbV160LiveHead,.bbV160Hero{text-align:left!important;margin-bottom:10px!important}
-.bbV160LiveHead h2,.bbV160Hero h2{font-size:clamp(28px,8vw,42px)!important;text-transform:uppercase;margin:0!important}
-.bbV160LiveSub,.bbV160Hero p{color:rgba(255,255,255,.72)!important}
-.bbV160AnswerList,.bbV160PlayerGrid,.bbStageScoreList{padding:0!important}
-.bbV160AnswerRow,.bbV160PlayerChip,.bbStageScoreRow,.bbV160HostRow{
-  background:rgba(2,43,29,.62)!important;border:1px solid rgba(126,217,87,.55)!important;
-  box-shadow:none!important;border-radius:18px!important;
-}
-.bbV160PlayerChip{min-height:58px!important}
-.bbAnimalAvatar{font-size:25px;display:inline-flex;align-items:center;justify-content:center;width:34px}
-.bbHostTag{font-size:9px!important;letter-spacing:.8px;color:var(--bb-gold)!important;border:1px solid rgba(255,204,51,.5);border-radius:999px;padding:2px 6px;margin-left:5px}
-.bbV160OwnMiniCard,.bbStageBingo{filter:saturate(.95)}
-.bbV160ReadyBtn,.bbReadyBig,.bbV144BottomBtn,.bbStageSubmit,.bingoFullBtn,.bbV168Decision button{
-  background:linear-gradient(90deg,var(--bb-gold),var(--bb-orange))!important;color:#07130e!important;border:0!important;
-  box-shadow:0 12px 30px rgba(255,168,31,.22)!important;font-weight:950!important;
-}
-.bbHostStartFloat{display:none!important}
-
-/* Juist antwoord en weetje zonder losse vakken */
-.bbV144Correct .bbV144Shell{padding:12px 22px 96px!important;gap:18px!important}
-.bbV167AnswerCard,.bbV167FactCard{padding:0!important;border-radius:0!important;overflow:visible!important;flex:0 0 auto!important}
-.bbV167Kicker{font-size:14px!important;margin-bottom:10px!important}
-.bbV167TrackTitle{font-size:clamp(34px,9vw,52px)!important;margin-bottom:20px!important}
-.bbV167MetaGrid{display:block!important}
-.bbV167MetaGrid>div,.bbV167MetaGrid>div:last-child{display:flex!important;gap:10px;padding:6px 0!important;background:transparent!important;border:0!important}
-.bbV167MetaGrid span{width:76px;margin:0!important;color:rgba(255,255,255,.55)!important}
-.bbV167MetaGrid strong{font-size:16px!important}
-.bbV167FactCard{margin-top:14px!important;padding-top:18px!important;border-top:1px solid rgba(255,204,51,.30)!important}
-.bbV167FactTitle{font-size:23px!important}.bbV167FactCard p{font-size:17px!important;line-height:1.55!important}
-
-/* Winnaar zonder kader om logo en zonder grote transparante kaart */
-#bingoFullOverlay{background:rgba(0,20,14,.96)!important}
-#bingoFullOverlay .bingoFullCard{background:transparent!important;border:0!important;box-shadow:none!important;max-width:620px!important;padding:24px!important;text-align:center}
-.bbV168WinnerLogo img{width:min(270px,58vw);height:auto;display:block;margin:0 auto 8px;filter:drop-shadow(0 14px 24px rgba(0,0,0,.38))}
-.bbV168Check{font-size:70px;color:#58df6d;line-height:1}.bingoFullCard h1{color:var(--bb-gold)!important;font-size:50px!important;margin:8px 0!important}
-.bingoFullCard h2{font-size:36px!important;margin:4px 0!important}.bingoFullCard>p{letter-spacing:3px;font-weight:900}.bbV168Cup{font-size:58px;margin:12px}
-.bbV168Decision{display:grid;gap:12px;margin-top:20px}.bbV168Decision h3{font-size:20px;margin:0 0 6px}.bbV168Decision button{min-height:58px;border-radius:18px;font-size:17px}
-.bbV168Decision button.secondary{background:transparent!important;color:#fff!important;border:1px solid rgba(126,217,87,.65)!important;box-shadow:none!important}
-.bbV168Decision button.danger{background:transparent!important;color:#ff8d8d!important;border:1px solid rgba(255,90,95,.65)!important;box-shadow:none!important}
-.bbV168Waiting{padding:30px 10px;font-size:18px;color:rgba(255,255,255,.82)}
-
-/* Host en speler exact dezelfde groene basis */
-body.bbHostPlayerMode .bbV144Stage,body.bbHostPlayerMode .compactDashboard,body.bbHostPlayerMode #playerApp{background:transparent!important}
-body.bbHostPlayerMode:before{content:none!important}
-@media(max-width:390px){.bbV144Correct .bbV144Shell{padding:8px 16px 86px!important}.bbV167TrackTitle{font-size:34px!important}.bbV168WinnerLogo img{width:210px}.bingoFullCard h1{font-size:42px!important}}
-
-/* =========================
-   V169 - compacte, groene en overzichtelijke spelweergave
-   ========================= */
-html,body,#hostApp,#playerApp,#screenDashboard,.compactDashboard,.bbV144Stage,.bbV160LobbyStage,.bbV160LiveStage{
-  background-color:#001a13!important;
-  background-image:radial-gradient(circle at 20% 10%,rgba(36,128,81,.18),transparent 30%),radial-gradient(circle at 82% 88%,rgba(255,174,42,.08),transparent 32%),linear-gradient(165deg,#001d15,#00261b 52%,#00150f)!important;
-}
-body::before,body::after,.compactDashboard::before,.compactDashboard::after,.bbV144Stage::before,.bbV144Stage::after{display:none!important;content:none!important}
-
-/* Lobby: kop en spelerslijst veel compacter */
-.bbV160LobbyStage{height:calc(100dvh - 82px)!important;padding:2px 12px 82px!important;gap:7px!important;overflow:hidden!important;display:flex!important;flex-direction:column!important}
-.bbV160Hero{padding:4px 2px 2px!important;margin:0!important;flex:0 0 auto!important}
-.bbV160Hero h2{font-size:clamp(20px,6vw,29px)!important;line-height:1!important;margin:0 0 3px!important;letter-spacing:.2px!important}
-.bbV160Hero p{font-size:12px!important;line-height:1.2!important;margin:0!important;opacity:.7!important}
-.bbV160LobbyBox{flex:0 0 auto!important;min-height:0!important;max-height:132px!important;height:auto!important;padding:0!important;margin:0!important;overflow:hidden!important}
-.bbV160PlayerGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;max-height:104px!important;height:auto!important;overflow-y:auto!important;padding:0 1px!important}
-.bbV160PlayerChip{height:42px!important;min-height:42px!important;padding:0 9px!important;border-radius:13px!important;font-size:12px!important;grid-template-columns:minmax(0,1fr) 22px!important}
-.bbV160Hint{height:16px!important;margin:3px 0 0!important;font-size:10px!important;line-height:16px!important}
-.bbAnimalAvatar{font-size:22px!important;width:27px!important;flex:0 0 27px!important;vertical-align:middle!important}
-.bbAnimalName{vertical-align:middle!important}
-.bbV160PlayerName{display:flex!important;align-items:center!important;gap:4px!important}
-.bbV160OwnCardWrap{justify-content:flex-start!important;gap:4px!important;padding-top:3px!important}
-.bbV160OwnTitle{font-size:15px!important;line-height:1.1!important}
-.bbV160OwnMiniCard{width:min(58vw,275px)!important;gap:5px!important}
-.bbV160MiniCell{border-radius:10px!important;font-size:14px!important}
-.bbV160Bottom{left:16px!important;right:16px!important;bottom:max(7px,env(safe-area-inset-bottom))!important}
-.bbV160ReadyBtn{height:56px!important;border-radius:24px!important;font-size:21px!important}
-
-/* Scoreboard en live antwoorden: vaste dierenavatar links, compacte regels */
-.bbV144TopTitle>span{display:none!important}
-.bbV144TopTitle h2{font-size:clamp(24px,7vw,34px)!important;margin:0!important}
-.bbV144ScoreRow,.bbStageScoreRow,.bbV160AnswerRow{min-height:48px!important;height:auto!important;padding:7px 10px!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;border-radius:13px!important;margin-bottom:5px!important}
-.bbV144Who strong,.bbScoreWho strong,.bbV160AnswerName{display:flex!important;align-items:center!important;gap:4px!important;font-size:14px!important}
-.bbV144Who span,.bbV144Who small{font-size:12px!important}
-.bbV144State{min-width:52px!important}
-.bbV144Avatar,.bbAvatar,.bbV160Avatar{display:none!important}
-.bbV160LiveHead{padding:2px 0 0!important;margin:0!important}
-.bbV160LiveHead h2{font-size:27px!important}
-.bbV160LiveSub{font-size:12px!important;margin:0 0 4px!important}
-.bbV160AnswerList{border:0!important;background:transparent!important}
-
-/* Juist antwoord: altijd groen en geen paarse laag */
-.bbV144Correct,.bbV144Correct .bbV144Shell,.bbV144Correct .bbV144HeroCard{background:transparent!important}
-.bbV167AnswerCard,.bbV167FactCard{background:transparent!important}
-
-/* Tijdens typen blijft de volledige vraagkop met timer en invoer boven het toetsenbord zichtbaar. */
-body.bbKeyboardOpen{overflow:hidden!important}
-body.bbKeyboardOpen #screenDashboard{position:fixed!important;inset:0!important;height:100dvh!important;overflow:hidden!important;padding-top:max(4px,env(safe-area-inset-top))!important;background:#001a13!important}
-body.bbKeyboardOpen .bbStageDashboard,body.bbKeyboardOpen .bbV144Stage,body.bbKeyboardOpen .compactDashboard{height:100%!important;min-height:0!important;overflow:hidden!important;justify-content:flex-start!important}
-body.bbKeyboardOpen #bbStageAnswerInput,body.bbKeyboardOpen #scoreAnswerInput{position:relative!important;z-index:10!important;font-size:16px!important;scroll-margin-top:8px!important}
-body.bbKeyboardOpen .bbStageAnswerBox,body.bbKeyboardOpen .bbV144AnswerBox,body.bbKeyboardOpen .stageAnswer{position:sticky!important;top:0!important;z-index:20!important;background:#00261b!important;padding-top:4px!important}
-
-@media(max-width:390px){
-  .bbV160LobbyStage{padding-left:9px!important;padding-right:9px!important}
-  .bbV160Hero h2{font-size:22px!important}.bbV160Hero p{font-size:11px!important}
-  .bbV160LobbyBox{max-height:120px!important}.bbV160PlayerGrid{max-height:94px!important}
-  .bbV160PlayerChip{height:39px!important;min-height:39px!important;font-size:11px!important;padding:0 7px!important}
-  .bbV160OwnMiniCard{width:min(57vw,250px)!important;gap:4px!important}
-  .bbV160ReadyBtn{height:52px!important;font-size:20px!important}
-}
+/* V171 definitieve compacte lobby- en toetsenbordregels (moeten als laatste winnen). */
+.bbV160LobbyStage{padding-bottom:66px!important;gap:6px!important}
+.bbV160Hero{padding:6px 4px!important}.bbV160Hero h2{font-size:25px!important;margin:0 0 3px!important}.bbV160Hero p{font-size:12px!important;margin:0!important}
+.bbV160LobbyBox{min-height:112px!important;max-height:128px!important;padding:7px!important}
+.bbV160PlayerGrid{height:auto!important;max-height:76px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;overflow-y:auto!important}
+.bbV160PlayerChip{height:34px!important;min-height:34px!important;padding:0 7px!important;border-radius:12px!important;font-size:11px!important}
+.bbV160ReadyCount{height:20px!important;font-size:11px!important;margin-bottom:4px!important}.bbV160Hint{height:14px!important;line-height:14px!important;font-size:10px!important;margin-top:3px!important}
+.bbV160Bottom{left:14px!important;right:14px!important;bottom:max(7px,env(safe-area-inset-bottom))!important}.bbV160ReadyBtn{height:49px!important;min-height:49px!important;border-radius:20px!important;font-size:19px!important}
+.bbV160OwnTitle{font-size:14px!important}.bbV160OwnMiniCard{width:min(57vw,265px)!important;gap:4px!important}.bbV160MiniCell{border-radius:9px!important}.bbV160HostGrid{max-height:112px!important}.bbV160HostChip{height:27px!important}
+body.bbKeyboardOpen{overflow:hidden!important}body.bbKeyboardOpen #screenDashboard{position:fixed!important;inset:0!important;height:var(--bb-visible-height,100dvh)!important;min-height:0!important;overflow:hidden!important;background:inherit!important;z-index:1000!important}
+body.bbKeyboardOpen #screenDashboard>.bbStageShell,body.bbKeyboardOpen #screenDashboard>.bbV144Shell,body.bbKeyboardOpen #screenDashboard .bbStageShell,body.bbKeyboardOpen #screenDashboard .bbV144Shell{height:100%!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:none!important;padding-top:max(6px,env(safe-area-inset-top))!important}
+body.bbKeyboardOpen #bbStageAnswerInput,body.bbKeyboardOpen #scoreAnswerInput{font-size:16px!important;scroll-margin-top:8px!important}
+@media(max-width:390px){.bbV160Hero h2{font-size:22px!important}.bbV160LobbyBox{max-height:118px!important}.bbV160PlayerGrid{max-height:70px!important}.bbV160PlayerChip{height:32px!important;min-height:32px!important}.bbV160ReadyBtn{height:46px!important;min-height:46px!important}}

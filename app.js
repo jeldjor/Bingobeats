@@ -1,7 +1,9 @@
-/* Bingo Beats V114 SPOTIFY ITEMS ENDPOINT - WORKING IMPORT */
+/* Bingo Beats V171 - veilige herstelbouw op werkende V167 */
 const CLIENT_ID="4765b89201b44558a7d5141f9b93c178",REDIRECT_URI=location.origin+location.pathname,SCOPES=["streaming","user-read-email","user-read-private","user-read-playback-state","user-modify-playback-state","playlist-read-private","playlist-read-collaborative"].join(" ");
 const firebaseConfig={apiKey:"AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY",authDomain:"hitster-bingo-cb792.firebaseapp.com",databaseURL:"https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app",projectId:"hitster-bingo-cb792",storageBucket:"hitster-bingo-cb792.firebasestorage.app",messagingSenderId:"98696776977",appId:"1:98696776977:web:e797e555e2d9b38bcc99b0"};
 const COLORS=[{key:"yellow",name:"GOUD",emoji:"🟡",input:"cat-yellow",hex:"#FFCC33"},{key:"pink",name:"AQUA",emoji:"🩵",input:"cat-pink",hex:"#00D4C7"},{key:"purple",name:"ORANJE",emoji:"🟠",input:"cat-purple",hex:"#FF8A1F"},{key:"blue",name:"LIME",emoji:"🟢",input:"cat-blue",hex:"#7ED957"},{key:"green",name:"KORAAL",emoji:"🔴",input:"cat-green",hex:"#FF5A5F"}];
+const BB_PLAYER_ANIMALS=["🦁","🐯","🐼","🦊","🐨","🐸","🐵","🦄","🐙","🦋","🐧","🦉","🐬","🦖","🐝","🐢","🦜","🐺","🦩","🐳","🦔","🐿️","🦦","🐮","🐷","🐰","🐱","🐶","🐹","🐻"];
+function bbAnimalFor(id,p){if(p?.emoji)return p.emoji;let h=2166136261;for(const c of String(id||"speler")){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return BB_PLAYER_ANIMALS[(h>>>0)%BB_PLAYER_ANIMALS.length]}
 const TEST_LICENSE_CODE="TEST-2026",$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])),pick=a=>a[Math.floor(Math.random()*a.length)];
 let db,player,deviceId="",accessToken=localStorage.spotify_access_token||"",refreshToken=localStorage.spotify_refresh_token||"",expiresAt=Number(localStorage.spotify_expires_at||0),tracks=JSON.parse(localStorage.hb_csv_tracks||"[]"),currentTrack=null,currentRoomCode="",currentRoundId="",currentPlayerId=localStorage.hb_player_id||"",currentPlayerName=localStorage.hb_player_name||"",activeRound=null,stopTimer=null,lockTimer=null,dashTimer=null,audioCtx=null,bingoSeenKey=localStorage.hb_last_bingo_key||"";
 const feedbackSeen={};
@@ -49,7 +51,7 @@ function openNewGameModal(){if(!currentRoomCode)return alert("Maak eerst een kam
 function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoom()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
 function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName){listenPlayer();showDashboard()}}
 function genCard(){let colors=["yellow","pink","purple","blue","green"],pool=[];for(let i=0;i<24;i++)pool.push(colors[i%5]);for(let i=pool.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}let card=[],k=0;for(let i=0;i<25;i++)card.push(i===12?"free":pool[k++]);return card}
-function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer();showDashboard()})}
+function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer();showDashboard()})}
 function showDashboard(){$("screenJoin")?.classList.add("hidden");$("screenDashboard")?.classList.remove("hidden")}function listenPlayer(){db.ref("rooms/"+currentRoomCode).off();db.ref("rooms/"+currentRoomCode).on("value",s=>{let room=s.val()||{},r=room.currentRound||{};activeRound=r;showDashboard();renderCompactDashboard(room,r)});listenBingo(currentRoomCode)}
 function colorHex(k){return{yellow:"#FFCC33",pink:"#00D4C7",purple:"#FF8A1F",blue:"#7ED957",green:"#FF5A5F",free:"#FFCC33"}[k]||"rgba(255,255,255,.18)"}function colorEmoji(k){return{yellow:"🟡",pink:"🩵",purple:"🟠",blue:"🟢",green:"🔴",free:"🐵"}[k]||""}
 function renderCompactDashboard(room,r){renderCompactTop(room,r);renderCompactAnswer(room,r);renderCompactScore(room,r);renderCompactCard(room,r);renderCompactPicker(room,r)}
@@ -144,6 +146,39 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
 
   document.addEventListener("DOMContentLoaded", () => setTimeout(forceNameFirstV84, 500));
+})();
+
+/* =========================
+   V171 - veilige afwerking op V167
+   Alleen decoratie en iPhone viewport; de werkende renderer blijft leidend.
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  function cleanName(s){return String(s||'').replace(/^🎤\s*/,'').replace(/\bjij\b/gi,'').trim()}
+  function decorate(room){
+    const root=q('screenDashboard');if(!root||!room?.players)return;
+    const entries=Object.entries(room.players);
+    root.querySelectorAll('.bbV144ScoreRow').forEach(row=>{
+      const nameEl=row.querySelector('.bbV144Who strong');if(!nameEl)return;
+      const shown=cleanName(nameEl.textContent);
+      const found=entries.find(([,p])=>cleanName(p?.name)===shown);if(!found)return;
+      const [pid,p]=found,avatar=row.querySelector('.bbV144Avatar');
+      if(avatar){avatar.textContent=bbAnimalFor(pid,p);avatar.classList.add('bbAnimalAvatarCell')}
+    });
+  }
+  if(typeof renderCompactDashboard==='function'){
+    const previous=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){const result=previous.apply(this,arguments);decorate(room);return result};
+  }
+  function setKeyboard(open){
+    document.body.classList.toggle('bbKeyboardOpen',open);
+    const height=window.visualViewport?.height||window.innerHeight;
+    document.documentElement.style.setProperty('--bb-visible-height',Math.round(height)+'px');
+    if(open){const input=q('bbStageAnswerInput')||q('scoreAnswerInput');setTimeout(()=>input?.scrollIntoView({block:'nearest'}),30)}
+  }
+  document.addEventListener('focusin',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setKeyboard(true)});
+  document.addEventListener('focusout',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setTimeout(()=>setKeyboard(false),120)});
+  window.visualViewport?.addEventListener('resize',()=>{if(document.body.classList.contains('bbKeyboardOpen'))setKeyboard(true)});
 })();
 
 
@@ -4022,6 +4057,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   let hostPlayerListenerActive = false;
   let hostPlayerRoomRef = null;
   let hostPlayerMode = false;
+  let autoStartedRound = '';
 
   function hostPid(){
     let id = localStorage.bb_host_player_id || '';
@@ -4083,6 +4119,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     const ex = snap.val() || {};
     await ref.update({
       name: currentPlayerName,
+      emoji: ex.emoji || bbAnimalFor(currentPlayerId,ex),
       isHost: true,
       isPlayer: true,
       online: true,
@@ -4129,6 +4166,13 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       try{ renderCompactDashboard(data,r); }catch(e){ console.error(e); }
       setTimeout(()=>enhanceHostLobby(data,r),20);
       setTimeout(()=>enhanceHostLobby(data,r),250);
+      const players = Object.values(data.players || {});
+      const nextLobby = r.id && r.status === 'judged';
+      const hasBingo = Object.values(data.bingos || {}).some(b=>b?.roundId===r.id);
+      if(hostPlayerMode && nextLobby && !hasBingo && players.length && players.every(p=>p.ready) && autoStartedRound!==r.id){
+        autoStartedRound = r.id;
+        setTimeout(()=>window.bbHostPlayerStart(false),250);
+      }
     });
     listenBingo(room);
   }
@@ -4297,8 +4341,8 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     const rc = readyCount(room);
     const rows = allPlayers(room).map(([pid,p])=>{
       const own = pid === currentPlayerId;
-      return `<button type="button" class="bbV160PlayerChip ${p.ready?'ready':'wait'} ${own?'own':''}" onclick="bbV160ShowCard('${E(pid)}')">
-        <span class="bbV160PlayerName">${isHost(p)?'🎤':'👤'} ${E(cleanName(p.name))}${own?' <em>jij</em>':''}</span>
+      return `<button type="button" class="bbV160PlayerChip ${p.ready?'ready':'wait'} ${own?'own':''}" data-view-card="${E(pid)}" onclick="bbV160ShowCard('${E(pid)}')">
+        <span class="bbV160PlayerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${own?' <em>jij</em>':''}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span>
         <span class="bbV160ReadyIcon">${p.ready?'✅':'⏳'}</span>
       </button>`;
     }).join('');
@@ -4340,7 +4384,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     }
     modal.innerHTML = `<div class="bbV160CardPop">
       <button type="button" class="bbV160Close" onclick="bbV160CloseCard()">×</button>
-      <h2>${isHost(p)?'🎤':'👤'} ${E(cleanName(p.name))}</h2>
+      <h2>${bbAnimalFor(pid,p)} ${E(cleanName(p.name))}</h2>
       ${miniCard(p.card, p.marked||{})}
     </div>`;
     modal.classList.remove('hidden');
@@ -4353,7 +4397,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
       const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Geen antwoord';
       return `<div class="bbV160AnswerRow ${has?'sent':'wait'}">
-        <div class="bbV160AnswerName">${isHost(p)?'🎤':'👤'} ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}</div>
+        <div class="bbV160AnswerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}</div>
         <div class="bbV160AnswerText">${E(text)}</div>
       </div>`;
     }).join('');
@@ -4410,7 +4454,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const box = q('hostPlayers');
       if(!box) return;
       const rc = readyCount(room);
-      const rows = allPlayers(room).map(([pid,p])=>`<div class="bbV160HostChip ${p.ready?'ready':'wait'}"><span>${isHost(p)?'🎤':'👤'} ${E(cleanName(p.name))}</span><b>${p.ready?'✅':'⏳'}</b></div>`).join('');
+      const rows = allPlayers(room).map(([pid,p])=>`<div class="bbV160HostChip ${p.ready?'ready':'wait'}"><span><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span><b>${p.ready?'✅':'⏳'}</b></div>`).join('');
       box.innerHTML = `<div class="bbV160ReadyCount host">👥 ${rc.ready} / ${rc.total} READY</div><div class="bbV160HostGrid">${rows || '<div class="small">Nog geen spelers.</div>'}</div>`;
     };
   }
@@ -4600,21 +4644,20 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     const track = String(a?.track || '').trim();
     const artist = String(a?.artist || '').trim();
     const album = String(a?.album || '').trim();
-    const year = String(a?.year || '').trim();
-
-    if(album && year){
-      return `“${track || 'Dit nummer'}” staat op het album “${album}” en verscheen in ${year}.`;
-    }
-    if(album){
-      return `“${track || 'Dit nummer'}” staat op het album “${album}”.`;
-    }
-    if(year){
-      return `“${track || 'Dit nummer'}” van ${artist || 'deze artiest'} verscheen in ${year}.`;
-    }
-    if(track && artist){
-      return `Je luisterde naar “${track}” van ${artist}.`;
-    }
-    return 'Iedere ronde ontdek je opnieuw een nummer uit jullie eigen playlist.';
+    const year = Number(String(a?.year || '').match(/\d{4}/)?.[0] || 0);
+    const facts=[];
+    const titleWords=track.split(/\s+/).filter(Boolean);
+    const artists=artist.split(/,|&| feat\.? | ft\.? | featuring /i).map(x=>x.trim()).filter(Boolean);
+    if(year) facts.push(`Dit nummer komt uit de jaren ${Math.floor(year/10)*10}. Aan de productie, instrumenten en zangstijl is een muziekperiode vaak sneller te herkennen dan aan de tekst.`);
+    if(artists.length>1) facts.push(`Aan dit nummer werken ${artists.length} uitvoerende artiesten mee: ${artists.join(', ')}.`);
+    if(album && track && album.toLowerCase()!==track.toLowerCase()) facts.push(`De albumtitel “${album}” is anders dan de songtitel “${track}”.`);
+    if(titleWords.length===1) facts.push(`De titel bestaat uit maar één woord: “${track}”. Zulke korte titels zijn vaak makkelijker te onthouden.`);
+    if(titleWords.length>=6) facts.push(`De titel “${track}” telt ${titleWords.length} woorden en is daarmee opvallend lang voor een songtitel.`);
+    if(/[!?]/.test(track)) facts.push(`In de officiële titel staat een leesteken. Daardoor valt “${track}” ook visueel extra op.`);
+    if(year&&album) facts.push(`Het nummer verscheen in ${year} op het album “${album}”.`);
+    if(!facts.length) facts.push('Je brein kan een bekend nummer soms al aan enkele noten herkennen, nog voordat je bewust weet welke titel erbij hoort.');
+    let h=0;for(const c of `${track}|${artist}|${album}|${year}`)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;
+    return facts[h%facts.length];
   }
 
   function enhanceCorrectAnswer(room, r){
@@ -4666,257 +4709,19 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   });
 })();
 
-/* =========================
-   V168 - Groene huisstijl, vaste dieren, veilige READY-flow en bingo-besluit
-   ========================= */
+/* V171 laatste renderlaag: alleen dieren toevoegen, zonder schermen te vervangen. */
 (function(){
-  const q=id=>document.getElementById(id);
-  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
-  const ANIMALS=['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
-  let emojiRoom='', emojiBusy=false, decisionRef=null, autoRef=null, autoBusy=false;
-
-  function hash(s){let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-  function emojiFor(pid,p){return p?.emoji||ANIMALS[hash(pid)%ANIMALS.length]}
-  function cleanName(n){return String(n||'Speler').replace(/^🎤\s*/,'').trim()||'Speler'}
-  function isHost(p){return !!p?.isHost||/^🎤/.test(String(p?.name||''))}
-
-  async function ensurePlayerEmojis(roomCode, room){
-    if(!roomCode||emojiBusy)return;
-    const ps=room?.players||{}; const used=new Set(Object.values(ps).map(p=>p?.emoji).filter(Boolean)); const up={};
-    for(const [pid,p] of Object.entries(ps)){
-      if(p?.emoji) continue;
-      let start=hash(pid)%ANIMALS.length, chosen='';
-      for(let i=0;i<ANIMALS.length;i++){const e=ANIMALS[(start+i)%ANIMALS.length];if(!used.has(e)){chosen=e;break}}
-      chosen=chosen||ANIMALS[start]; used.add(chosen); up[`rooms/${roomCode}/players/${pid}/emoji`]=chosen;
-    }
-    if(Object.keys(up).length){emojiBusy=true;try{await db.ref().update(up)}finally{emojiBusy=false}}
-  }
-
-  function attachRoomHelpers(roomCode){
-    if(!roomCode||emojiRoom===roomCode)return; emojiRoom=roomCode;
-    if(autoRef)try{autoRef.off()}catch(e){}
-    autoRef=db.ref('rooms/'+roomCode);
-    autoRef.on('value',async s=>{
-      const room=s.val()||{}; ensurePlayerEmojis(roomCode,room);
-      const r=room.currentRound||{}, ps=Object.values(room.players||{}), me=room.players?.[currentPlayerId];
-      // Automatisch starten terwijl de host nog in de meespelenmodus zit.
-      // Navigeren naar het hostscherm is daardoor nooit meer de trigger.
-      if(!me?.isHost||r.status!=='judged'||!r.id||!ps.length||!ps.every(p=>p.ready)||Object.values(room.bingos||{}).some(b=>b?.roundId===r.id)||autoBusy)return;
-      autoBusy=true;
-      const claim=db.ref(`rooms/${roomCode}/autoStartClaims/${r.id}`);
-      try{
-        const tx=await claim.transaction(v=>v||{by:currentPlayerId,at:firebase.database.ServerValue.TIMESTAMP});
-        if(tx.committed&&tx.snapshot.val()?.by===currentPlayerId){
-          const latest=(await db.ref('rooms/'+roomCode).once('value')).val()||{}, lr=latest.currentRound||{};
-          if(lr.id===r.id&&lr.status==='judged'&&Object.values(latest.players||{}).every(p=>p.ready)) startRound();
-        }
-      }catch(e){console.error(e)}finally{setTimeout(()=>autoBusy=false,1200)}
+  function cleanName(s){return String(s||'').replace(/^🎤\s*/,'').replace(/\bjij\b/gi,'').trim()}
+  function decorateLast(room){
+    const root=document.getElementById('screenDashboard');if(!root||!room?.players)return;
+    const entries=Object.entries(room.players);
+    root.querySelectorAll('.bbV144ScoreRow').forEach(row=>{
+      const name=row.querySelector('.bbV144Who strong'),avatar=row.querySelector('.bbV144Avatar');if(!name||!avatar)return;
+      const shown=cleanName(name.textContent),found=entries.find(([,p])=>cleanName(p?.name)===shown);if(found)avatar.textContent=bbAnimalFor(found[0],found[1]);
     });
-  }
-
-  const oldEnter=window.bbEnterHostPlayerMode;
-  if(oldEnter) window.bbEnterHostPlayerMode=async function(){const x=await oldEnter.apply(this,arguments);setTimeout(()=>attachRoomHelpers(currentRoomCode),50);return x};
-  document.addEventListener('DOMContentLoaded',()=>setInterval(()=>{if(currentRoomCode)attachRoomHelpers(currentRoomCode)},1200));
-
-  function replacePeopleWithAnimals(root,room){
-    if(!root||!room)return;
-    root.querySelectorAll('[data-view-card]').forEach(el=>{
-      const pid=el.getAttribute('data-view-card'),p=room.players?.[pid]; if(!p)return;
-      const name=el.querySelector('.bbV160PlayerName,.bbReadyName,.bbScoreWho strong');
-      if(name) name.innerHTML=`<span class="bbAnimalAvatar">${emojiFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}`;
-    });
-    const rows=root.querySelectorAll('.bbV160AnswerRow,.bbStageScoreRow,.bbV160HostRow');
-    rows.forEach((el,i)=>{
-      const entries=Object.entries(room.players||{}); const [pid,p]=entries[i]||[]; if(!p)return;
-      const name=el.querySelector('.bbV160AnswerName,.bbScoreWho strong,.bbV160HostName');
-      if(name) name.innerHTML=`<span class="bbAnimalAvatar">${emojiFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}`;
-      el.querySelector('.bbAvatar,.bbV160Avatar')?.remove();
-    });
-  }
-
-  function factTextV168(a){
-    const t=String(a?.track||'').trim(), ar=String(a?.artist||'').trim(), al=String(a?.album||'').trim(), y=String(a?.year||'').trim();
-    const facts=[];
-    if(al&&y) facts.push(`Dit nummer verscheen in ${y} en is afkomstig van het album “${al}”.`);
-    if(ar&&al) facts.push(`${ar} bracht “${t||'dit nummer'}” uit als onderdeel van “${al}”.`);
-    if(t&&y) facts.push(`“${t}” komt uit ${y}. Herkende jij het tijdperk meteen?`);
-    if(ar&&t) facts.push(`Je luisterde naar “${t}” van ${ar}.`);
-    if(al) facts.push(`Het nummer staat op het album “${al}”.`);
-    if(y) facts.push(`De oorspronkelijke release dateert uit ${y}.`);
-    facts.push('Muziekherkenning werkt vaak al binnen enkele seconden: melodie, stem en productie geven elk hun eigen aanwijzing.');
-    const key=hash(t+'|'+ar+'|'+al+'|'+y+'|'+(activeRound?.id||'')); return facts[key%facts.length];
-  }
-
-  function polish(root,room,r){
-    if(!root)return;
-    replacePeopleWithAnimals(root,room);
-    root.querySelectorAll('.bbV160LiveHead>span,.bbV160ReadyCount,.bbV144ScoreTitleIcon,.bbAvatar,.bbV160Avatar').forEach(x=>x.remove());
-    const fact=root.querySelector('.bbV167FactCard p'); if(fact&&r?.correctAnswer) fact.textContent=factTextV168(r.correctAnswer);
-    root.querySelectorAll('.bbV167Kicker').forEach(x=>x.textContent='JUISTE ANTWOORD');
   }
   if(typeof renderCompactDashboard==='function'){
-    const prev=renderCompactDashboard;
-    renderCompactDashboard=function(room,r){const out=prev.apply(this,arguments);setTimeout(()=>polish(q('screenDashboard'),room,r),0);setTimeout(()=>polish(q('screenDashboard'),room,r),100);return out};
+    const previous=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){const result=previous.apply(this,arguments);decorateLast(room);return result};
   }
-
-  function bingoDecisionHtml(name,room){
-    const me=room?.players?.[currentPlayerId]||{}, host=isHost(me);
-    return `<div class="bbV168WinnerLogo"><img src="bb_logo.png" alt="Bingo Beats"></div><div class="bbV168Check">✓</div><h1>BINGO!</h1><h2>${E(cleanName(name))}</h2><p>HEEFT GEWONNEN</p><div class="bbV168Cup">🏆</div>${host?`<div class="bbV168Decision"><h3>Wie beslist wat er nu gebeurt?</h3><button onclick="bbV168ChooseDecision('host')">HOST BESLIST</button><button class="secondary" onclick="bbV168ChooseDecision('majority')">MEERDERHEID BESLIST</button></div>`:`<div class="bbV168Waiting">De host kiest wie er beslist.</div>`}`;
-  }
-  function decisionActions(mode){
-    const title=mode==='majority'?'Breng je stem uit':'Kies wat er nu gebeurt';
-    return `<div class="bbV168Decision"><h3>${title}</h3><button onclick="bbV168Action('continue')">VERDER SPELEN</button><button onclick="bbV168Action('newround')">NIEUWE RONDE</button><button class="danger" onclick="bbV168Action('end')">SPEL BEËINDIGEN</button></div>`;
-  }
-  function renderDecision(state,room){
-    const card=q('bingoFullOverlay')?.querySelector('.bingoFullCard'); if(!card)return;
-    const me=room?.players?.[currentPlayerId]||{}, host=isHost(me), mode=state?.mode;
-    if(!mode){card.innerHTML=bingoDecisionHtml(state?.winner||q('bingoFullName')?.textContent||'Speler',room);return}
-    if(mode==='host') card.innerHTML=host?decisionActions('host'):`<div class="bbV168Waiting"><h2>De host beslist</h2><p>Even wachten op de keuze van de host.</p></div>`;
-    else {
-      const voted=state?.votes?.[currentPlayerId];
-      card.innerHTML=voted?`<div class="bbV168Waiting"><h2>Stem ontvangen</h2><p>Wachten op de overige spelers.</p></div>`:decisionActions('majority');
-    }
-  }
-  function watchDecision(roomCode){
-    if(decisionRef)try{decisionRef.off()}catch(e){}
-    decisionRef=db.ref('rooms/'+roomCode+'/postBingo');
-    decisionRef.on('value',async s=>{
-      const state=s.val()||{}, room=(await db.ref('rooms/'+roomCode).once('value')).val()||{};
-      if(state.active) renderDecision(state,room);
-      if(state.mode==='majority'&&!state.resolved){
-        const ps=Object.keys(room.players||{}), votes=state.votes||{}; if(!ps.length||ps.some(pid=>!votes[pid]))return;
-        const totals={continue:0,newround:0,end:0};
-        for(const pid of ps){const v=votes[pid];if(totals[v]!==undefined)totals[v]+=room.players[pid]?.isHost?2:1}
-        const best=Object.entries(totals).sort((a,b)=>b[1]-a[1]); let action=best[0][0];
-        // Alleen de host claimt en voert de uitslag uit.
-        if(room.players?.[currentPlayerId]?.isHost){
-          const tx=await db.ref('rooms/'+roomCode+'/postBingo/resolved').transaction(v=>v||action);
-          if(tx.committed&&tx.snapshot.val()===action) executeAction(action);
-        }
-      }
-    });
-  }
-  function executeAction(action){
-    const overlay=q('bingoFullOverlay'); if(overlay)overlay.classList.add('hidden');
-    db.ref('rooms/'+currentRoomCode+'/postBingo').update({active:false,finishedAt:firebase.database.ServerValue.TIMESTAMP});
-    if(action==='continue'){ if(typeof window.bbBingoVerderSpelen==='function') window.bbBingoVerderSpelen(); }
-    else if(action==='newround'){ if(typeof window.bbBingoNieuweRonde==='function') window.bbBingoNieuweRonde(); }
-    else db.ref('rooms/'+currentRoomCode).update({ended:true,currentRound:{status:'ended'},endedAt:firebase.database.ServerValue.TIMESTAMP});
-  }
-  window.bbV168ChooseDecision=function(mode){db.ref('rooms/'+currentRoomCode+'/postBingo').update({mode,votes:null,resolved:null})};
-  window.bbV168Action=function(action){
-    db.ref('rooms/'+currentRoomCode+'/postBingo').once('value').then(s=>{const st=s.val()||{};if(st.mode==='majority')return db.ref('rooms/'+currentRoomCode+'/postBingo/votes/'+currentPlayerId).set(action);executeAction(action)});
-  };
-
-  const oldWinner=showWinner;
-  showWinner=function(name){
-    try{
-      const overlay=q('bingoFullOverlay'); if(overlay)overlay.classList.remove('hidden');
-      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
-        const room=s.val()||{}; return db.ref('rooms/'+currentRoomCode+'/postBingo').set({active:true,winner:name||'Speler',roundId:room.currentRound?.id||'',createdAt:firebase.database.ServerValue.TIMESTAMP}).then(()=>{renderDecision({active:true,winner:name},room);watchDecision(currentRoomCode)});
-      });
-      if(typeof confetti==='function')confetti(); if(typeof tune==='function')tune();
-    }catch(e){return oldWinner(name)}
-  };
-})();
-
-/* =========================
-   V170 - compacte lobby, vaste dieren overal, betrouwbare automatische READY-start,
-          toetsenbordvaste antwoordweergave en betere metadata-weetjes
-   ========================= */
-(function(){
-  const q=id=>document.getElementById(id);
-  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
-  const ANIMALS=['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
-  let startBusy=false,lastStartedRound='';
-  function hash(s){let h=2166136261;for(const c of String(s||'')){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-  function clean(n){return String(n||'Speler').replace(/^[🎤👤]\s*/,'').trim()||'Speler'}
-  function animal(pid,p){return p?.emoji||ANIMALS[hash(pid)%ANIMALS.length]}
-  function playerEntries(room){return Object.entries(room?.players||{})}
-
-  async function persistAnimals(room){
-    if(!currentRoomCode||!room?.players)return;
-    const used=new Set(Object.values(room.players).map(p=>p?.emoji).filter(Boolean)),up={};
-    for(const [pid,p] of playerEntries(room)){
-      if(p?.emoji)continue;
-      let start=hash(pid)%ANIMALS.length,pick='';
-      for(let i=0;i<ANIMALS.length;i++){const e=ANIMALS[(start+i)%ANIMALS.length];if(!used.has(e)){pick=e;break}}
-      pick=pick||ANIMALS[start];used.add(pick);up[`rooms/${currentRoomCode}/players/${pid}/emoji`]=pick;
-    }
-    if(Object.keys(up).length) try{await db.ref().update(up)}catch(e){console.warn('emoji update',e)}
-  }
-
-  function identifyPlayer(text,room){
-    const normalized=clean(String(text||'').replace(/\bjij\b/gi,'').replace(/\bhost\b/gi,''));
-    return playerEntries(room).find(([,p])=>clean(p?.name)===normalized) || playerEntries(room).find(([,p])=>normalized.includes(clean(p?.name)));
-  }
-  function decoratePlayers(root,room){
-    if(!root||!room)return;
-    const selectors=['.bbV160PlayerName','.bbV160HostChip span','.bbV160AnswerName','.bbV144Who strong','.bbScoreWho strong','.bbHostJuryName'];
-    root.querySelectorAll(selectors.join(',')).forEach(el=>{
-      const found=identifyPlayer(el.textContent,room); if(!found)return;
-      const [pid,p]=found, own=pid===currentPlayerId, host=!!p?.isHost;
-      el.innerHTML=`<span class="bbAnimalAvatar">${animal(pid,p)}</span><span class="bbAnimalName">${E(clean(p.name))}</span>${own?' <em>jij</em>':''}${host?' <small class="bbHostTag">HOST</small>':''}`;
-    });
-    root.querySelectorAll('.bbV144Avatar,.bbAvatar,.bbV160Avatar').forEach(el=>el.remove());
-  }
-
-  function makeFact(a){
-    const t=String(a?.track||'').trim(), ar=String(a?.artist||'').trim(), al=String(a?.album||'').trim(), y=Number(String(a?.year||'').match(/\d{4}/)?.[0]||0);
-    const candidates=[];
-    const decade=y?`${Math.floor(y/10)*10}`:'';
-    const artists=ar.split(/,|&| feat\.? | ft\.? | featuring /i).map(x=>x.trim()).filter(Boolean);
-    const words=t.split(/\s+/).filter(Boolean);
-    if(y&&decade)candidates.push(`Dit nummer komt uit de jaren ${decade}. De productie en klank uit die periode zijn vaak al binnen enkele seconden herkenbaar.`);
-    if(artists.length>1)candidates.push(`Dit nummer is een samenwerking van ${artists.length} artiesten: ${artists.join(', ')}.`);
-    if(/feat\.?|ft\.?|featuring/i.test(t+' '+ar))candidates.push(`Bij dit nummer speelt een gastartiest mee. Zulke samenwerkingen werden vooral vanaf de jaren 90 steeds vaker in de titel vermeld.`);
-    if(al&&t&&al.toLowerCase()!==t.toLowerCase())candidates.push(`“${t}” staat op het album “${al}”. De titel van het album is dus anders dan die van het nummer.`);
-    if(y)candidates.push(`“${t||'Dit nummer'}” verscheen in ${y}${al?` en staat op het album “${al}”`:''}.`);
-    if(words.length===1)candidates.push(`De titel van dit nummer bestaat uit maar één woord: “${t}”. Korte titels blijven vaak extra makkelijk hangen.`);
-    if(words.length>=6)candidates.push(`De titel “${t}” telt ${words.length} woorden en is daarmee opvallend lang voor een songtitel.`);
-    if(/[!?]/.test(t))candidates.push(`De titel bevat een leesteken. Dat maakt “${t}” visueel extra herkenbaar tussen andere nummers.`);
-    if(!candidates.length&&al)candidates.push(`Dit nummer is afkomstig van het album “${al}”.`);
-    if(!candidates.length&&ar)candidates.push(`${ar} is de uitvoerende artiest van dit nummer.`);
-    if(!candidates.length)candidates.push('Bij muziekherkenning geven stem, ritme, instrumenten en productie ieder een eigen aanwijzing.');
-    const seed=hash([t,ar,al,y,activeRound?.id||''].join('|'));
-    return candidates[seed%candidates.length];
-  }
-
-  function polish(room,r){
-    const root=q('screenDashboard');
-    decoratePlayers(root,room);
-    const p=root?.querySelector('.bbV167FactCard p'); if(p&&r?.correctAnswer)p.textContent=makeFact(r.correctAnswer);
-  }
-
-  // Betrouwbare host-autostart: de READY-status zelf is de trigger, nooit navigatie.
-  async function checkAutoStart(){
-    if(startBusy||!window.hostPlayerMode||!currentRoomCode||!currentPlayerId)return;
-    try{
-      const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{};
-      const me=room.players?.[currentPlayerId],r=room.currentRound||{},ps=Object.values(room.players||{});
-      persistAnimals(room); polish(room,r);
-      const inNextLobby=!!r.id && ['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
-      if(!me?.isHost||!inNextLobby||!ps.length||!ps.every(p=>p.ready)||lastStartedRound===r.id)return;
-      startBusy=true;
-      const claim=db.ref(`rooms/${currentRoomCode}/readyAutoStart/${r.id}`);
-      const tx=await claim.transaction(v=>v||{by:currentPlayerId,at:firebase.database.ServerValue.TIMESTAMP});
-      if(tx.committed&&tx.snapshot.val()?.by===currentPlayerId){
-        const latest=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},lr=latest.currentRound||{};
-        if(lr.id===r.id&&Object.values(latest.players||{}).length&&Object.values(latest.players||{}).every(p=>p.ready)){
-          lastStartedRound=r.id;
-          if(typeof window.bbHostPlayerStart==='function') await window.bbHostPlayerStart(false); else if(typeof startRound==='function') startRound();
-        }
-      }
-    }catch(e){console.error('V169 auto start',e)}finally{setTimeout(()=>startBusy=false,700)}
-  }
-  setInterval(checkAutoStart,450);
-
-  // iPhone-toetsenbord: houd vraag, timer en invoerveld in het zicht.
-  function keyboardMode(on){document.body.classList.toggle('bbKeyboardOpen',!!on);const inp=q('bbStageAnswerInput')||q('scoreAnswerInput');if(on&&inp)setTimeout(()=>inp.scrollIntoView({block:'start',behavior:'instant'}),30)}
-  document.addEventListener('focusin',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))keyboardMode(true)});
-  document.addEventListener('focusout',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setTimeout(()=>keyboardMode(false),120)});
-  if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>keyboardMode(window.visualViewport.height<window.innerHeight*.82));}
-
-  const obs=new MutationObserver(()=>{const room=window.bbV160LastRoom||{};polish(room,room.currentRound||activeRound||{})});
-  document.addEventListener('DOMContentLoaded',()=>{const root=q('screenDashboard');if(root)obs.observe(root,{childList:true,subtree:true});});
 })();

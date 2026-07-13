@@ -151,10 +151,39 @@
       <p id="joinStatus" class="small"></p>
     </section>
 
-    <section id="screenDashboard" class="compactDashboard hidden" aria-live="polite">
-      <div class="bbPlayerLoading">
-        <img src="bb_logo.png" alt="Bingo Beats">
-        <strong>Spel wordt geladen…</strong>
+    <section id="screenDashboard" class="compactDashboard hidden">
+      <div class="dashTop">
+        <div class="dashPill"><span id="dashRoundNo">Speler</span></div>
+        <div class="dashPill timerPill">⏱️ <span id="dashTimer">--</span></div>
+        <div class="dashPill">👥 <span id="dashPlayerCount">0</span></div>
+      </div>
+
+      <div class="dashGrid">
+        <section class="dashPanel answerPanel" id="dashAnswerPanel">
+          <div class="panelTitle">✍️ ANTWOORD</div>
+          <div id="dashAnswerBlock"></div>
+        </section>
+
+        <section class="dashPanel scorePanel">
+          <div class="panelTitle">📊 SCOREBORD</div>
+          <div id="dashScoreboard" class="compactScoreboard"></div>
+        </section>
+
+        <section class="dashPanel cardPanel">
+          <div class="panelTitle">🎯 BINGOKAART</div>
+          <div id="dashCardHint" class="dashHint">Wachten op beoordeling...</div>
+          <div id="dashOwnCard" class="compactBingoCard"></div>
+          <div id="dashCardStatus" class="dashStatus">Nog geen vakje gekozen</div>
+        </section>
+
+        <section class="dashPanel pickerPanel">
+          <div class="panelTitle">🎨 KLEUR & CATEGORIE</div>
+          <div id="dashPickerArea" class="dashPicker">Wachten op host...</div>
+        </section>
+      </div>
+
+      <div id="winnerPanel" class="hidden">
+        <div id="winnerMessage" class="winner">🏆</div>
       </div>
     </section>
   </main>
@@ -275,4 +304,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V167 -->
+<!-- Bingo Beats V171 - herstelbasis V167 -->

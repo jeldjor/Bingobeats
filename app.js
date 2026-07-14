@@ -1,856 +1,5146 @@
-/* Bingo Beats V173 - clean rebuild */
-'use strict';
+/* Bingo Beats V174 - functionele stabilisatie met behoud van het V172-ontwerp */
+const CLIENT_ID="4765b89201b44558a7d5141f9b93c178",REDIRECT_URI=location.origin+location.pathname,SCOPES=["streaming","user-read-email","user-read-private","user-read-playback-state","user-modify-playback-state","playlist-read-private","playlist-read-collaborative"].join(" ");
+const firebaseConfig={apiKey:"AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY",authDomain:"hitster-bingo-cb792.firebaseapp.com",databaseURL:"https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app",projectId:"hitster-bingo-cb792",storageBucket:"hitster-bingo-cb792.firebasestorage.app",messagingSenderId:"98696776977",appId:"1:98696776977:web:e797e555e2d9b38bcc99b0"};
+const COLORS=[{key:"yellow",name:"GOUD",emoji:"🟡",input:"cat-yellow",hex:"#FFCC33"},{key:"pink",name:"AQUA",emoji:"🩵",input:"cat-pink",hex:"#00D4C7"},{key:"purple",name:"ORANJE",emoji:"🟠",input:"cat-purple",hex:"#FF8A1F"},{key:"blue",name:"LIME",emoji:"🟢",input:"cat-blue",hex:"#7ED957"},{key:"green",name:"KORAAL",emoji:"🔴",input:"cat-green",hex:"#FF5A5F"}];
+const BB_PLAYER_ANIMALS=["🦁","🐯","🐼","🦊","🐨","🐸","🐵","🦄","🐙","🦋","🐧","🦉","🐬","🦖","🐝","🐢","🦜","🐺","🦩","🐳","🦔","🐿️","🦦","🐮","🐷","🐰","🐱","🐶","🐹","🐻"];
+function bbAnimalFor(id,p){if(p?.emoji)return p.emoji;let h=2166136261;for(const c of String(id||"speler")){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return BB_PLAYER_ANIMALS[(h>>>0)%BB_PLAYER_ANIMALS.length]}
+const TEST_LICENSE_CODE="TEST-2026",$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])),pick=a=>a[Math.floor(Math.random()*a.length)];
+let db,player,deviceId="",accessToken=localStorage.spotify_access_token||"",refreshToken=localStorage.spotify_refresh_token||"",expiresAt=Number(localStorage.spotify_expires_at||0),tracks=JSON.parse(localStorage.hb_csv_tracks||"[]"),currentTrack=null,currentRoomCode="",currentRoundId="",currentPlayerId=localStorage.hb_player_id||"",currentPlayerName=localStorage.hb_player_name||"",activeRound=null,stopTimer=null,lockTimer=null,dashTimer=null,audioCtx=null,bingoSeenKey=localStorage.hb_last_bingo_key||"";
+const feedbackSeen={};
+function isPlayerPage(){return !!new URLSearchParams(location.search).get("room")}
+document.addEventListener("DOMContentLoaded",init);
+function init(){wireLicense();checkLicenseGate()}
+function wireLicense(){$("licenseBtn")?.addEventListener("click",activateLicense);$("licenseInput")?.addEventListener("keydown",e=>{if(e.key==="Enter")activateLicense()})}
+function checkLicenseGate(){let l=JSON.parse(localStorage.getItem("bb_license")||"null");(!l||l.code!==TEST_LICENSE_CODE||l.active!==true)?showLicenseScreen("Voer een geldige licentiecode in."):unlockApp()}
+function activateLicense(){let c=($("licenseInput")?.value||"").trim().toUpperCase();if(c!==TEST_LICENSE_CODE)return showLicenseScreen("Ongeldige licentiecode.");localStorage.setItem("bb_license",JSON.stringify({code:TEST_LICENSE_CODE,active:true,type:"test",activatedAt:new Date().toISOString()}));if($("licenseStatus")){$("licenseStatus").textContent="Licentie geactiveerd.";$("licenseStatus").className="small licenseSuccess"}setTimeout(unlockApp,350)}
+function showLicenseScreen(m){$("licenseScreen")?.classList.remove("hidden");$("mainHeader")?.classList.add("hidden");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.add("hidden");if($("licenseStatus")){$("licenseStatus").textContent=m||"";$("licenseStatus").className="small licenseError"}}
+function unlockApp(){$("licenseScreen")?.classList.add("hidden");$("mainHeader")?.classList.remove("hidden");if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();wireApp();handleRedirect().then(updateStatus).catch(console.error);isPlayerPage()?setupPlayerMode():setupHostMode()}
+function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["newRoomBtn",createRoom],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("csvFile")?.addEventListener("change",handleCsv);$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
+function setModeLabel(t){if($("modeText"))$("modeText").textContent=t}
+async function login(){let v=rand(96);localStorage.spotify_code_verifier=v;location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({response_type:"code",client_id:CLIENT_ID,scope:SCOPES,code_challenge_method:"S256",code_challenge:b64(await sha(v)),redirect_uri:REDIRECT_URI})}
+function rand(l){let c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",o="",b=new Uint8Array(l);crypto.getRandomValues(b);b.forEach(x=>o+=c[x%c.length]);return o}async function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))}function b64(b){return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_")}
+async function handleRedirect(){let code=new URLSearchParams(location.search).get("code");if(!code)return;let r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({client_id:CLIENT_ID,grant_type:"authorization_code",code,redirect_uri:REDIRECT_URI,code_verifier:localStorage.spotify_code_verifier||""})}),d=await r.json();if(d.access_token){saveTokens(d);history.replaceState({},document.title,REDIRECT_URI)}else alert("Spotify login fout.")}
+function saveTokens(d){accessToken=d.access_token;if(d.refresh_token)refreshToken=d.refresh_token;expiresAt=Date.now()+d.expires_in*1000-60000;localStorage.spotify_access_token=accessToken;if(refreshToken)localStorage.spotify_refresh_token=refreshToken;localStorage.spotify_expires_at=expiresAt}
+async function getToken(){if(accessToken&&Date.now()<expiresAt)return accessToken;if(!refreshToken)return"";let r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({grant_type:"refresh_token",refresh_token:refreshToken,client_id:CLIENT_ID})}),d=await r.json();if(d.access_token){saveTokens(d);return accessToken}return""}
+async function api(u,o={}){let t=await getToken();if(!t)throw Error("Niet ingelogd.");let headers={...(o.headers||{}),Authorization:"Bearer "+t};if(o.body)headers["Content-Type"]="application/json";let r=await fetch(u,{...o,headers});if(r.status===204)return{};let d=await r.json().catch(()=>({}));if(!r.ok){let m=d.error?.message||d.error_description||"Spotify fout";let shortUrl=String(u).replace(/^https:\/\/api\.spotify\.com\/v1\//,'');throw Error(`${r.status} ${r.statusText||""} — ${m} [${shortUrl}]`.trim())}return d}
+function logout(){["spotify_access_token","spotify_refresh_token","spotify_expires_at"].forEach(k=>localStorage.removeItem(k));accessToken=refreshToken="";expiresAt=0;updateStatus()}window.onSpotifyWebPlaybackSDKReady=()=>{};
+async function activatePlayer(){let t=await getToken();if(!t)return alert("Login eerst met Spotify.");if(!window.Spotify)return alert("Spotify speler nog niet geladen.");if(player){await player.connect();return}player=new Spotify.Player({name:"Bingo Beats",getOAuthToken:async cb=>cb(await getToken()),volume:.8});player.addListener("ready",({device_id})=>{deviceId=device_id;if($("loginStatus"))$("loginStatus").textContent+=" — speler actief."});await player.connect()}
+async function updateStatus(){if($("csvStatus"))$("csvStatus").textContent=tracks.length?`${tracks.length} nummers geladen.`:"Nog geen CSV geladen.";if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v174";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
+function parseCSV(t){let rows=[],r=[],c="",q=false;for(let i=0;i<t.length;i++){let ch=t[i],n=t[i+1];if(ch=='"'&&q&&n=='"'){c+='"';i++}else if(ch=='"')q=!q;else if(ch==","&&!q){r.push(c);c=""}else if((ch=="\n"||ch=="\r")&&!q){if(ch=="\r"&&n=="\n")i++;r.push(c);c="";if(r.some(v=>v.trim()))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(v=>v.trim()))rows.push(r);return rows}function norm(h){return String(h||"").toLowerCase().replace(/[^a-z0-9]/g,"")}function findI(h,n){let a=h.map(norm);for(let x of n){let i=a.indexOf(norm(x));if(i>=0)return i}return-1}function tid(u){let s=String(u||"").trim(),m=s.match(/spotify:track:([a-zA-Z0-9]+)/)||s.match(/track\/([a-zA-Z0-9]+)/);return m?m[1]:(/^[a-zA-Z0-9]{15,}$/.test(s)?s:"")}
+function handleCsv(e){let f=e.target.files?.[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{loadCsv(r.result)}catch(err){alert(err.message)}};r.readAsText(f)}
+function loadCsv(text){let rows=parseCSV(text),h=rows[0]||[],ui=findI(h,["Track URI","Spotify URI","URI"]),ti=findI(h,["Track Name","Name","Title"]),ai=findI(h,["Artist Name(s)","Artist Names","Artists","Artist"]),al=findI(h,["Album Name","Album"]),ri=findI(h,["Release Date","Release"]),di=findI(h,["Duration (ms)","Duration"]);if(ui<0||ti<0||ai<0)throw Error("CSV mist Track URI, Track Name of Artist Name(s).");let out=[],seen=new Set();for(let i=1;i<rows.length;i++){let row=rows[i],id=tid(row[ui]);if(!id||seen.has(id))continue;seen.add(id);out.push({id,uri:"spotify:track:"+id,name:row[ti]||"Onbekend",artists:row[ai]||"Onbekend",album:al>=0?row[al]||"":"",release_date:ri>=0?row[ri]||"":"",duration_ms:Number(row[di])||180000})}tracks=out;localStorage.hb_csv_tracks=JSON.stringify(tracks);updateStatus()}
+function chooseTrack(){if(!tracks.length)return null;let u=new Set(JSON.parse(localStorage.hb_used||"[]")),a=$("noRepeat")?.checked?tracks.filter(t=>!u.has(t.id)):tracks;if(!a.length){u=new Set();a=tracks}let t=pick(a);u.add(t.id);localStorage.hb_used=JSON.stringify([...u]);updateStatus();return t}
+function setupHostMode(){setModeLabel("🎤 Host");document.body.classList.remove("playerMode");$("hostApp")?.classList.remove("hidden");$("playerApp")?.classList.add("hidden");restoreHost();showStartPopup()}
+function getCats(){return{yellow:$("cat-yellow")?.value||"Voor of na 2001",pink:$("cat-pink")?.value||"Naam van artiest",purple:$("cat-purple")?.value||"Decennium",blue:$("cat-blue")?.value||"Jaartal +/- 2",green:$("cat-green")?.value||"Titel van track"}}function roomCode(){let c="",ch="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";for(let i=0;i<4;i++)c+=ch[Math.floor(Math.random()*ch.length)];return c}
+function createRoom(){currentRoomCode=roomCode();db.ref("rooms/"+currentRoomCode).set({createdAt:firebase.database.ServerValue.TIMESTAMP,categories:getCats()}).then(()=>{localStorage.hb_host_room=currentRoomCode;localStorage.hb_last_stable_room=currentRoomCode;renderRoomBox(currentRoomCode);listenHost(currentRoomCode);listenBingo(currentRoomCode)})}
+function restoreHost(){let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s&&!isPlayerPage()){currentRoomCode=s;renderRoomBox(s);listenHost(s);listenBingo(s)}}
+function qrUrl(t){return"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(t||"")}function renderRoomBox(code){if(!code||!$("roomBox"))return;let link=location.origin+location.pathname+"?room="+code;$("roomBox").classList.remove("hidden");$("roomBox").innerHTML=`<div class="hostRoomGridClean"><div class="hostRoomCodeClean"><div class="roomLabelClean">SPELCODE</div><div class="roomCodeClean">${esc(code)}</div></div><div class="hostRoomLinkClean"><div class="roomLabelClean">DEEL DE LINK</div><input id="joinLink" readonly value="${esc(link)}"><button id="copyRoomLinkBtn" type="button" class="copyRoomLinkBtn">📋 Kopieer link</button></div><img class="hostQrClean" alt="QR code" src="${qrUrl(link)}"></div>`}
+function copyRoomLink(){let input=$("joinLink"),btn=$("copyRoomLinkBtn"),code=currentRoomCode||localStorage.hb_host_room||"",link=input?.value||(code?location.origin+location.pathname+"?room="+code:"");if(!link)return;let done=()=>{if(btn){btn.textContent="✅ Gekopieerd";setTimeout(()=>btn.textContent="📋 Kopieer link",1500)}};if(navigator.clipboard?.writeText)navigator.clipboard.writeText(link).then(done).catch(()=>{input?.select?.();document.execCommand("copy");done()});else{input?.select?.();document.execCommand("copy");done()}}
+function listenHost(room){db.ref("rooms/"+room).off();db.ref("rooms/"+room).on("value",s=>{let d=s.val()||{};renderHostPlayers(d);renderHostScore(d);hostReadyState(d)})}
+function renderHostPlayers(room){let ps=room.players||{},list=Object.values(ps);if(!$("hostPlayers"))return;$("hostPlayers").innerHTML=list.length?list.map(p=>`<div class="playerRow ${p.ready?"ready":""}"><strong>${esc(p.name||"Speler")}</strong><span>${p.ready?"🐵 READY":"⏳ wacht"}</span></div>`).join(""):"Nog geen spelers."}function allReady(room){let ps=Object.values(room.players||{});return ps.length>0&&ps.every(p=>p.ready)}
+function hostReadyState(room){let r=room.currentRound||{},b=$("startRoundBtn");if(!b)return;if(["picking","ready","answering","locked"].includes(r.status))return;if(allReady(room)){b.disabled=false;b.textContent="🎲 START RONDE";if($("hostStatus"))$("hostStatus").textContent="Iedereen is READY."}else{b.disabled=true;b.textContent="⏳ Wachten op READY";let n=Object.values(room.players||{}).filter(p=>!p.ready).map(p=>p.name).join(", ");if($("hostStatus"))$("hostStatus").textContent=n?"Nog niet ready: "+n:"Wachten op spelers."}}
+function pickerHTML(){return`<div class="bbPickerClean"><img src="bb_logo_purple.png" class="bbPickerLogoClean" alt="Bingo Beats"><div class="bbPickerTitleClean">🐵 BB-aap kiest een kleur...</div><div class="bbPickerDotsClean"><span style="--c:#FFCC33"></span><span style="--c:#00D4C7"></span><span style="--c:#FF8A1F"></span><span style="--c:#7ED957"></span><span style="--c:#FF5A5F"></span></div><div class="bbPickerSmallClean">Nog even spannend...</div></div>`}
+function startRound(){if(!currentRoomCode)return alert("Maak eerst een kamer.");db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{};if(!allReady(room))return alert("Nog niet iedereen is READY.");currentTrack=chooseTrack();if(!currentTrack)return alert("Upload eerst CSV.");let up={};Object.keys(room.players||{}).forEach(pid=>up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false);return db.ref().update(up).then(()=>startRoundVisual(currentRoomCode))})}
+function startRoundVisual(room){if($("hostAnswerArea"))$("hostAnswerArea").innerHTML="";if($("playBtn")){$("playBtn").disabled=true;$("playBtn").textContent="🎵 Speel verborgen nummer"}if($("showAnswerBtn"))$("showAnswerBtn").disabled=true;if($("hostPickerArea"))$("hostPickerArea").innerHTML=pickerHTML();currentRoundId="r_"+Date.now();db.ref("rooms/"+room+"/currentRound").set({id:currentRoundId,status:"picking",pickerMode:"bb",pickerMarkup:pickerHTML(),pickerStartedAt:firebase.database.ServerValue.TIMESTAMP,seconds:Number($("duration")?.value)||20});setTimeout(()=>{flash();let color=pick(COLORS),cat=$(color.input)?.value||"Geen categorie";if($("hostPickerArea"))$("hostPickerArea").innerHTML=`<div class="colorDisplay">${color.emoji}<br>${color.name}</div><div class="categoryDisplay">${esc(cat)}</div>`;db.ref("rooms/"+room+"/currentRound").set({id:currentRoundId,status:"ready",pickerMode:"bb",pickerMarkup:pickerHTML(),colorKey:color.key,colorName:color.name,colorEmoji:color.emoji,category:cat,seconds:Number($("duration")?.value)||20});if($("playBtn"))$("playBtn").disabled=false;if($("showAnswerBtn"))$("showAnswerBtn").disabled=false;$("hostScorePanel")?.classList.remove("hidden");if($("hostStatus"))$("hostStatus").textContent="Kleur bekend. Klik nu op Speel verborgen nummer."},3000)}
+async function playHidden(){try{if(!currentTrack)return alert("Geen nummer gekozen. Druk eerst op START RONDE.");if($("playBtn")){$("playBtn").disabled=true;$("playBtn").textContent="🎵 Nummer speelt..."}if(!deviceId){await activatePlayer();await new Promise(r=>setTimeout(r,1200))}if(!deviceId){alert("Geen Spotify-speler actief. Klik eerst op Activeer Spotify-speler.");if($("playBtn")){$("playBtn").disabled=false;$("playBtn").textContent="🎵 Speel verborgen nummer"}return}let dur=(Number($("duration")?.value)||20)*1000,pos=0;if($("randomStart")?.checked&&currentTrack.duration_ms>dur+40000){let max=Math.max(0,currentTrack.duration_ms-dur-5000);pos=Math.floor(20000+Math.random()*Math.max(1,max-20000))}await api(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,{method:"PUT",body:JSON.stringify({uris:[currentTrack.uri],position_ms:pos})});let deadline=Date.now()+dur;await db.ref("rooms/"+currentRoomCode+"/currentRound").update({status:"answering",deadlineMs:deadline,musicStartedAt:firebase.database.ServerValue.TIMESTAMP});if($("stopBtn"))$("stopBtn").disabled=false;clearTimeout(lockTimer);lockTimer=setTimeout(lockRound,dur);clearTimeout(stopTimer);stopTimer=setTimeout(stopPlayback,dur);if($("hostStatus"))$("hostStatus").textContent="Muziek speelt. Spelers kunnen nu antwoorden."}catch(e){alert("Afspelen mislukt: "+e.message);if($("playBtn")){$("playBtn").disabled=false;$("playBtn").textContent="🎵 Speel verborgen nummer"}}}
+async function stopPlayback(){try{await api("https://api.spotify.com/v1/me/player/pause",{method:"PUT",body:"{}"})}catch(e){}if($("stopBtn"))$("stopBtn").disabled=true}function answerObject(){return currentTrack?{track:currentTrack.name||"",artist:currentTrack.artists||"",album:currentTrack.album||"",year:(currentTrack.release_date||"").slice(0,4)||""}:null}function showHostAnswer(a){if(!$("hostAnswerArea")||!a)return;$("hostAnswerArea").innerHTML=`<div class="correctBox"><h3>${esc(a.track||"-")}</h3><p>${esc(a.artist||"-")}</p><p>${esc(a.album||"-")} — ${esc(a.year||"-")}</p></div>`}function publishAnswer(){let a=answerObject();if(!currentRoomCode||!a)return Promise.resolve();showHostAnswer(a);return db.ref("rooms/"+currentRoomCode+"/currentRound").update({correctAnswer:a,correctAnswerShown:true})}function lockRound(){if(!currentRoomCode)return;publishAnswer().then(()=>db.ref("rooms/"+currentRoomCode+"/currentRound").update({status:"locked"})).then(()=>{if($("hostStatus"))$("hostStatus").textContent="Tijd voorbij. Antwoord automatisch zichtbaar bij spelers."}).catch(e=>alert("Timer/antwoord fout: "+e.message))}function showAnswer(){publishAnswer().catch(e=>alert("Antwoord tonen mislukt: "+e.message))}
+function renderHostScore(room){let r=room.currentRound||{};if(!r.id||!$("hostScoreboard"))return;$("hostScorePanel")?.classList.remove("hidden");if($("hostRoundInfo"))$("hostRoundInfo").textContent=`${r.colorEmoji||""} ${r.colorName||""} — ${r.category||""} — ${r.status||""}`;let ps=room.players||{},ans=room.answers?.[r.id]||{},cor=room.correct?.[r.id]||{};$("hostScoreboard").innerHTML=Object.entries(ps).map(([pid,p])=>{let st=cor[pid],cls=st===true?"scoreGood":st===false?"scoreBad":"scorePending";return`<div class="scoreCard ${cls}"><div>${esc(p.name||"Speler")}</div><div>${esc(ans[pid]?.answer||"Geen antwoord")}</div><div><button type="button" class="goodBtn ${st===true?"goodSelected":""}" data-pid="${pid}" data-good="true">✅</button><button type="button" class="badBtn ${st===false?"badSelected":""}" data-pid="${pid}" data-good="false">❌</button></div></div>`}).join("")}
+function scoreboardClick(e){let btn=e.target.closest("button[data-pid]");if(!btn)return;e.preventDefault();let pid=btn.dataset.pid,good=btn.dataset.good==="true";db.ref("rooms/"+currentRoomCode+"/currentRound").once("value").then(s=>{let r=s.val()||{};if(!r.id)throw Error("Geen actieve ronde.");return db.ref("rooms/"+currentRoomCode+"/correct/"+r.id+"/"+pid).set(good)}).then(()=>{if($("hostStatus"))$("hostStatus").textContent="🐵 Beoordeling opgeslagen."}).catch(e=>alert(e.message))}
+function publishResults(){db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},r=room.currentRound||{},up={};up[`rooms/${currentRoomCode}/currentRound/status`]="judged";Object.entries(room.players||{}).forEach(([pid,p])=>{let good=room.correct?.[r.id]?.[pid]===true;if(!good)up[`rooms/${currentRoomCode}/players/${pid}/ready`]=true});return db.ref().update(up)}).then(()=>{if($("hostStatus"))$("hostStatus").textContent="Resultaten verzonden."})}
+function openNewGameModal(){if(!currentRoomCode)return alert("Maak eerst een kamer.");let m=$("newGameModal");if(m){m.classList.remove("hidden");m.style.display="flex"}}function closeNewGameModal(){let m=$("newGameModal");if(m){m.classList.add("hidden");m.style.display="none"}}function bbStartNewGameSameRoom(){if(!currentRoomCode){closeNewGameModal();return}db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},up={};Object.keys(room.players||{}).forEach(pid=>{up[`rooms/${currentRoomCode}/players/${pid}/card`]=genCard();up[`rooms/${currentRoomCode}/players/${pid}/marked`]={};up[`rooms/${currentRoomCode}/players/${pid}/bingo`]=false;up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false;up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null});up[`rooms/${currentRoomCode}/currentRound`]=null;up[`rooms/${currentRoomCode}/answers`]=null;up[`rooms/${currentRoomCode}/correct`]=null;up[`rooms/${currentRoomCode}/bingos`]=null;return db.ref().update(up)}).then(()=>{closeNewGameModal();$("hostBingoPanel")?.classList.add("hidden");if($("hostStatus"))$("hostStatus").textContent="Nieuw spel gestart in dezelfde kamer."})}
+function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoom()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
+function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName)listenPlayer()}
+function genCard(){let colors=["yellow","pink","purple","blue","green"],pool=[];for(let i=0;i<24;i++)pool.push(colors[i%5]);for(let i=pool.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}let card=[],k=0;for(let i=0;i<25;i++)card.push(i===12?"free":pool[k++]);return card}
+function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer()})}
+function showDashboard(){$("screenJoin")?.classList.add("hidden");$("screenDashboard")?.classList.remove("hidden")}function listenPlayer(){db.ref("rooms/"+currentRoomCode).off();db.ref("rooms/"+currentRoomCode).on("value",s=>{let room=s.val()||{},r=room.currentRound||{};activeRound=r;renderCompactDashboard(room,r);showDashboard()});listenBingo(currentRoomCode)}
+function colorHex(k){return{yellow:"#FFCC33",pink:"#00D4C7",purple:"#FF8A1F",blue:"#7ED957",green:"#FF5A5F",free:"#FFCC33"}[k]||"rgba(255,255,255,.18)"}function colorEmoji(k){return{yellow:"🟡",pink:"🩵",purple:"🟠",blue:"🟢",green:"🔴",free:"🐵"}[k]||""}
+function renderCompactDashboard(room,r){renderCompactTop(room,r);renderCompactAnswer(room,r);renderCompactScore(room,r);renderCompactCard(room,r);renderCompactPicker(room,r)}
+function renderCompactTop(room,r){if($("dashRoundNo"))$("dashRoundNo").textContent=currentPlayerName||"Speler";if($("dashPlayerCount"))$("dashPlayerCount").textContent=Object.keys(room.players||{}).length;clearInterval(dashTimer);dashTimer=setInterval(()=>{let el=$("dashTimer");if(!el)return;if(r?.status==="answering"&&r.deadlineMs){let left=Math.max(0,Math.ceil((r.deadlineMs-Date.now())/1000));el.textContent="00:"+String(left).padStart(2,"0");if(left<=0)clearInterval(dashTimer)}else if(r?.status==="locked"||r?.status==="judged")el.textContent="00:00";else el.textContent="--"},300)}
+function renderCompactAnswer(room,r){let b=$("dashAnswerBlock");if(!b)return;if(!r?.id){b.innerHTML=`<h3>🎮 Wachten</h3><p class="small">Wachten op de host...</p>`;return}let own=room.answers?.[r.id]?.[currentPlayerId],ans=r.correctAnswer;if((r.status==="locked"||r.status==="judged")&&ans){b.innerHTML=`<h3>🐵 Juiste antwoord</h3><p>🎵 <strong>${esc(ans.track||"-")}</strong></p><p>🎤 ${esc(ans.artist||"-")}</p><p>📅 ${esc(ans.year||"-")}</p>`;return}if(r.status==="answering"){if(own){b.innerHTML=`<h3>🔒 Antwoord ingeleverd</h3><p>${esc(own.answer||"Leeg antwoord")}</p><p class="small">Wachten tot de tijd voorbij is...</p>`;return}b.innerHTML=`<h3>✍️ Vul je antwoord in</h3><p class="small">${esc(r.colorEmoji||"")} ${esc(r.colorName||"")} — ${esc(r.category||"")}</p><div class="compactInputRow"><input id="scoreAnswerInput" placeholder="Typ je antwoord"><button id="scoreSubmitAnswerBtn">Verstuur</button></div>`;$("scoreSubmitAnswerBtn")?.addEventListener("click",()=>submitAnswerValue($("scoreAnswerInput")?.value||""));return}if(r.status==="picking"){b.innerHTML=`<h3>🐵 Kleurkiezer</h3><p class="small">De BB-aap kiest een kleur...</p>`;return}if(r.status==="ready"){b.innerHTML=`<h3>🎵 Klaar voor muziek</h3><p class="small">${esc(r.colorEmoji||"")} ${esc(r.colorName||"")} — ${esc(r.category||"")}</p>`;return}b.innerHTML=`<h3>🎮 Wachten</h3><p class="small">Wachten op beoordeling...</p>`}
+function submitAnswerValue(v){if(!activeRound?.id)return;db.ref("rooms/"+currentRoomCode+"/answers/"+activeRound.id+"/"+currentPlayerId).set({answer:v||"",submittedAt:firebase.database.ServerValue.TIMESTAMP})}
+function renderCompactScore(room,r){let el=$("dashScoreboard");if(!el)return;let ps=room.players||{},ans=r?.id?room.answers?.[r.id]||{}:{},cor=r?.id?room.correct?.[r.id]||{}:{};el.innerHTML=Object.entries(ps).map(([pid,p])=>{let has=ans[pid]&&typeof ans[pid].answer!=="undefined",a=has?(String(ans[pid].answer).trim()||"Leeg antwoord"):"Nog niet ingevuld",st=r?.status==="judged"?cor[pid]:undefined,cls=st===true?"scoreGood":st===false?"scoreBad":"scorePending",ic=st===true?"🐵":st===false?"❌":has?"📝":"⏳";return`<div class="scoreCard ${cls}"><div class="scoreName">${esc(p.name||"Speler")}${pid===currentPlayerId?" (jij)":""}</div><div>${esc(a)}</div><div>${ic}</div></div>`}).join("")||"Nog geen spelers."}
+function renderCompactCard(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},box=$("dashOwnCard");if(!box)return;let goodValue=r?.id&&room.correct?.[r.id]?room.correct[r.id][currentPlayerId]:undefined,good=goodValue===true,bad=goodValue===false,picked=r?.id&&me.lastPickedRound===r.id,canPick=r?.status==="judged"&&good&&!picked;if(r?.status==="judged")maybeShowFeedback(room,r,goodValue,picked);if($("dashCardHint"))$("dashCardHint").textContent=canPick?`Kies een ${r.colorEmoji||""} ${r.colorName||""} vakje`:picked?"🐵 Vakje gekozen":bad?"Helaas, geen vakje deze ronde":"Jouw bingokaart";if($("dashCardStatus"))$("dashCardStatus").textContent=canPick?"Tik op een geldig kleurvakje":me.ready?"🐵 READY voor volgende ronde":"Wachten op ronde";box.innerHTML=card.map((c,i)=>{let isMarked=!!marked[i]||i===12,pickable=canPick&&c===r.colorKey&&c!=="free"&&!marked[i];return`<div class="compactCell ${c==="free"?"free":""} ${isMarked?"marked":""} ${pickable?"pickable":""}" data-i="${i}" style="background:${colorHex(c)}">${isMarked?"🐵":""}</div>`}).join("");box.querySelectorAll(".pickable").forEach(cell=>cell.addEventListener("click",()=>pickCell(Number(cell.dataset.i))))}
+function renderCompactPicker(room,r){let area=$("dashPickerArea");if(!area)return;if(!r?.id){area.innerHTML=`<div class="dashCatText">Wachten op host</div>`;return}if(r.status==="picking"){area.innerHTML=pickerHTML();return}area.innerHTML=`<div class="dashColorBig">${esc(r.colorEmoji||"🎮")}</div><div class="dashColorText">${esc(r.colorName||"KLEUR")}</div><div class="dashCatText">${esc(r.category||"Wachten...")}</div>`}
+function overlay(){let o=$("bbFeedbackOverlay");if(!o){o=document.createElement("div");o.id="bbFeedbackOverlay";o.className="bbFeedbackOverlay";document.body.appendChild(o)}return o}function closeOverlay(){$("bbFeedbackOverlay")?.classList.remove("show")}function maybeShowFeedback(room,r,good,picked){if(!r?.id||r.status!=="judged")return;if(good===true&&!picked){let k=`${r.id}_good_${currentPlayerId}`;if(feedbackSeen[k])return;feedbackSeen[k]=true;setTimeout(()=>showGoodOverlay(room,r),80)}if(good===false){let k=`${r.id}_bad_${currentPlayerId}`;if(feedbackSeen[k])return;feedbackSeen[k]=true;setTimeout(()=>showBadOverlay(room,r),80)}}
+function showGoodOverlay(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},cells=card.map((c,i)=>{let isMarked=!!marked[i]||i===12,pickable=c===r.colorKey&&c!=="free"&&!marked[i];return`<button type="button" class="bbOverlayCell ${isMarked?"marked":""} ${pickable?"pickable":"blocked"}" data-i="${i}" style="background:${colorHex(c)}" ${pickable?"":"disabled"}>${isMarked?"🐵":colorEmoji(c)}</button>`}).join(""),o=overlay();o.innerHTML=`<div class="bbOverlayCard good"><div class="bbMonkeyFace">🐵😎</div><img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap"><div class="bbOverlayTitle">😎 GOED ANTWOORD!</div><div class="bbOverlayText">Kies één ${r.colorEmoji||""} ${r.colorName||""} vakje</div><div class="bbOverlayBingo">${cells}</div><div class="bbOverlayHint">Tik op een opgelicht vakje</div></div>`;o.classList.add("show");o.querySelectorAll(".bbOverlayCell.pickable").forEach(btn=>btn.addEventListener("click",()=>{let i=Number(btn.dataset.i);btn.textContent="🐵";btn.classList.add("chosen");pickCell(i);setTimeout(closeOverlay,650)}))}
+function showBadOverlay(room,r){let ans=r.correctAnswer||{},answer=ans.track?`🎵 ${esc(ans.track||"-")}<br>🎤 ${esc(ans.artist||"-")}`:"Volgende ronde beter!",o=overlay();o.innerHTML=`<div class="bbOverlayCard bad"><div class="bbMonkeyFace">🐵🙈</div><img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap"><div class="bbOverlayTitle">🙈 HELAAS!</div><div class="bbOverlayText">Deze was lastig...</div><div class="bbOverlayAnswer">${answer}</div><button type="button" class="bbOverlayContinue">Verder</button></div>`;o.classList.add("show");o.querySelector(".bbOverlayContinue")?.addEventListener("click",closeOverlay);db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId+"/ready").set(true);setTimeout(closeOverlay,4500)}
+function checkBingo(marked){let lines=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];return lines.some(line=>line.every(i=>i===12||marked?.[i]))}
+function pickCell(i){db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId).once("value").then(s=>{let p=s.val()||{},marked=p.marked||{},card=p.card||[];if(!activeRound?.id)return;if(card[i]!==activeRound.colorKey||marked[i])return;marked[i]=true;let bingo=checkBingo(marked);return db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId).update({marked,bingo,lastPickedRound:activeRound.id,ready:true}).then(()=>{if(bingo)return db.ref("rooms/"+currentRoomCode+"/bingos").push({name:currentPlayerName,roundId:activeRound.id,at:firebase.database.ServerValue.TIMESTAMP})})})}
+function activateSound(){try{let C=window.AudioContext||window.webkitAudioContext;if(C&&!audioCtx)audioCtx=new C();if(audioCtx?.state==="suspended")audioCtx.resume();if($("soundStatus"))$("soundStatus").textContent="🐵 actief."}catch(e){}}function flash(){let f=document.createElement("div");f.className="flash";document.body.appendChild(f);setTimeout(()=>f.remove(),700)}function tune(){try{let C=window.AudioContext||window.webkitAudioContext;if(!audioCtx&&C)audioCtx=new C();if(!audioCtx)return;[523,659,784,1046].forEach((freq,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.connect(g);g.connect(audioCtx.destination);let t=audioCtx.currentTime+i*.18;g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.3,t+.03);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.start(t);o.stop(t+.18)})}catch(e){}}function confetti(){let cs=["#FFCC33","#00D4C7","#FF8A1F","#7ED957","#FF5A5F","#fff"];for(let i=0;i<90;i++){let p=document.createElement("div");p.className="confetti";p.style.left=Math.random()*100+"vw";p.style.background=pick(cs);document.body.appendChild(p);setTimeout(()=>p.remove(),3500)}}function showWinner(name){if($("winnerPanel")){$("winnerPanel").classList.remove("hidden");$("winnerMessage").innerHTML="🏆 BINGO!<br>Speler "+esc(name)+" heeft gewonnen!"}if($("hostBingoPanel")){$("hostBingoPanel").classList.remove("hidden");$("hostBingoMessage").innerHTML="🏆 BINGO!<br>Speler "+esc(name)+" heeft gewonnen!"}if($("bingoFullOverlay")){$("bingoFullOverlay").classList.remove("hidden");if($("bingoFullName"))$("bingoFullName").textContent=name||"Speler";setTimeout(()=>$("bingoFullOverlay")?.classList.add("hidden"),5500)}confetti();tune()}
+function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off();db.ref("rooms/"+room+"/bingos").on("child_added",s=>{let b=s.val()||{},key=s.key+"_"+(b.roundId||"");if(key===bingoSeenKey)return;bingoSeenKey=key;localStorage.hb_last_bingo_key=key;showWinner(b.name||"onbekend")})}
 
-const VERSION='173';
-const CLIENT_ID='4765b89201b44558a7d5141f9b93c178';
-const REDIRECT_URI=location.origin+location.pathname;
-const SCOPES='streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative';
-const firebaseConfig={apiKey:'AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY',authDomain:'hitster-bingo-cb792.firebaseapp.com',databaseURL:'https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app',projectId:'hitster-bingo-cb792',storageBucket:'hitster-bingo-cb792.firebasestorage.app',messagingSenderId:'98696776977',appId:'1:98696776977:web:e797e555e2d9b38bcc99b0'};
-const TEST_LICENSE_CODE='TEST-2026';
-const COLORS=[
-  {key:'yellow',name:'GOUD',emoji:'🟡',hex:'#ffcc33',kind:'beforeafter',label:'Voor of na 2001'},
-  {key:'pink',name:'AQUA',emoji:'🩵',hex:'#00d4c7',kind:'artist',label:'Naam van artiest'},
-  {key:'purple',name:'ORANJE',emoji:'🟠',hex:'#ff8a1f',kind:'decade',label:'Decennium'},
-  {key:'blue',name:'LIME',emoji:'🟢',hex:'#7ed957',kind:'year',label:'Jaartal +/- 2'},
-  {key:'green',name:'KORAAL',emoji:'🔴',hex:'#ff5a5f',kind:'title',label:'Titel van track'}
-];
-const ANIMALS=['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
-const $=id=>document.getElementById(id);
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
-const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-const pick=list=>list[Math.floor(Math.random()*list.length)];
-const roomPath=(suffix='')=>`rooms/${state.roomCode}${suffix?'/'+suffix:''}`;
-const serverNow=()=>Date.now()+state.serverOffset;
 
-const state={
-  db:null,roomCode:'',room:null,roomRef:null,serverOffset:0,mode:'host',hostPlaying:false,
-  playerId:localStorage.bb_player_id||'',playerName:localStorage.bb_player_name||'',
-  hostId:localStorage.bb_host_id||'',hostSecret:localStorage.bb_host_secret||'',
-  tracks:readJSON('bb_tracks',[]),musicSource:localStorage.bb_music_source||'',sourceName:localStorage.bb_source_name||'',
-  accessToken:localStorage.spotify_access_token||'',refreshToken:localStorage.spotify_refresh_token||'',expiresAt:Number(localStorage.spotify_expires_at||0),
-  spotifyPlayer:null,deviceId:'',spotifyReady:false,currentTrack:null,currentTrackRound:'',
-  renderSignature:'',hostSignature:'',heartbeat:null,roundTimer:null,autoStartBusy:false,toastTimer:null,
-  installPrompt:null,keyboardOpen:false,lastFocusedAnswer:'',joined:false,disconnectRef:null
-  ,regularPlayerId:'',regularPlayerName:'',cleanupAt:0,ownAnswers:{}
-};
 
-document.addEventListener('DOMContentLoaded',boot);
-window.onSpotifyWebPlaybackSDKReady=()=>{state.spotifyReady=true;updateSpotifyStatus();};
+/* =========================
+   V84 - SPELER MOET EERST NAAM INVULLEN
+   ========================= */
+(function(){
+  function q(id){ return document.getElementById(id); }
+  function getRoom(){ return (new URLSearchParams(location.search).get("room") || "").toUpperCase(); }
 
-async function boot(){
-  wireStaticEvents();
-  setupViewport();
-  setupInstall();
-  try{
-    await waitForLibraries();
-    if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
-    state.db=firebase.database();
-    state.db.ref('.info/serverTimeOffset').on('value',snap=>{state.serverOffset=Number(snap.val()||0);});
-    await handleSpotifyRedirect();
-    $('bootScreen').classList.add('hidden');
-    $('app').classList.remove('hidden');
-    if(!validLicense())showLicense();else await enterApplication();
-    if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }catch(error){
-    console.error(error);
-    $('bootScreen').querySelector('p').textContent='De app kon niet laden. Controleer je internetverbinding.';
-    $('bootRetry').classList.remove('hidden');
+  function forceNameFirstV84(){
+    const room = getRoom();
+    if(!room) return;
+
+    document.body.classList.add("playerMode");
+    q("hostApp")?.classList.add("hidden");
+    q("playerApp")?.classList.remove("hidden");
+
+    const mode = q("modeText");
+    if(mode) mode.textContent = "🎮 Speler";
+
+    const roomLabel = q("playerRoomCode");
+    if(roomLabel) roomLabel.textContent = room;
+
+    const savedRoom = localStorage.hb_player_room || "";
+    const savedName = localStorage.hb_player_name || "";
+    const savedId = localStorage.hb_player_id || "";
+    const mayResume = savedRoom === room && savedName && savedId;
+
+    if(!mayResume){
+      localStorage.removeItem("hb_player_room");
+      localStorage.removeItem("hb_player_name");
+      localStorage.removeItem("hb_player_id");
+
+      if(typeof currentPlayerId !== "undefined") currentPlayerId = "";
+      if(typeof currentPlayerName !== "undefined") currentPlayerName = "";
+      if(typeof currentRoomCode !== "undefined") currentRoomCode = room;
+
+      q("screenJoin")?.classList.remove("hidden");
+      q("screenDashboard")?.classList.add("hidden");
+
+      const input = q("playerNameInput");
+      if(input){
+        input.value = "";
+        setTimeout(() => input.focus(), 300);
+      }
+    }
   }
-}
 
-function waitForLibraries(){
-  return new Promise((resolve,reject)=>{
-    const started=Date.now();
-    const timer=setInterval(()=>{
-      if(window.firebase?.database){clearInterval(timer);resolve();}
-      else if(Date.now()-started>15000){clearInterval(timer);reject(new Error('Firebase niet geladen'));}
-    },80);
-  });
-}
+  if(typeof setupPlayerMode === "function" && !window.__setupPlayerModeV84Wrapped){
+    window.__setupPlayerModeV84Wrapped = true;
+    const oldSetupPlayerMode = setupPlayerMode;
+    setupPlayerMode = function(){
+      const room = getRoom();
+      if(typeof currentRoomCode !== "undefined") currentRoomCode = room;
 
-function wireStaticEvents(){
-  $('bootRetry').onclick=()=>location.reload();
-  $('licenseBtn').onclick=activateLicense;
-  $('licenseInput').onkeydown=event=>{if(event.key==='Enter')activateLicense();};
-  $('spotifyTab').onclick=()=>selectSourceTab('spotify');
-  $('csvTab').onclick=()=>selectSourceTab('csv');
-  $('loginBtn').onclick=spotifyLogin;
-  $('logoutBtn').onclick=spotifyLogout;
-  $('loadPlaylistsBtn').onclick=loadPlaylists;
-  $('importPlaylistBtn').onclick=importSelectedPlaylist;
-  $('csvFile').onchange=handleCsvFile;
-  $('resetUsedBtn').onclick=resetUsedTracks;
-  $('newRoomBtn').onclick=()=>confirmAction('Nieuwe kamer maken?','De huidige kamer blijft bestaan, maar je hostscherm gaat naar een nieuwe spelcode.',createRoom);
-  $('resumeRoomBtn').onclick=resumeSavedRoom;
-  $('hostPlayBtn').onclick=enterHostPlayerMode;
-  $('joinBtn').onclick=joinRoom;
-  $('playerName').onkeydown=event=>{if(event.key==='Enter')joinRoom();};
-  $('leaveBtn').onclick=requestLeave;
-  $('juryBtn').onclick=openHostJury;
-  ['duration','noRepeat','randomStart','cat-yellow','cat-pink','cat-purple','cat-blue','cat-green'].forEach(id=>$(id).addEventListener('change',syncRoomSettings));
-  $('modalRoot').addEventListener('click',event=>{if(event.target===$('modalRoot'))closeModal();});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('modalRoot').classList.contains('hidden'))closeModal();});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.joined)heartbeat();});
-}
+      const savedRoom = localStorage.hb_player_room || "";
+      const savedName = localStorage.hb_player_name || "";
+      const savedId = localStorage.hb_player_id || "";
 
-function setupViewport(){
-  const update=()=>{
+      if(savedRoom === room && savedName && savedId){
+        return oldSetupPlayerMode.apply(this, arguments);
+      }
+      forceNameFirstV84();
+    };
+  }
+
+  if(typeof joinPlayer === "function" && !window.__joinPlayerV84Wrapped){
+    window.__joinPlayerV84Wrapped = true;
+    const oldJoinPlayer = joinPlayer;
+    joinPlayer = function(){
+      const room = getRoom();
+      if(room) localStorage.hb_player_room = room;
+      return oldJoinPlayer.apply(this, arguments);
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => setTimeout(forceNameFirstV84, 500));
+})();
+
+/* =========================
+   V174 - FUNCTIONELE STABILISATIE OP HET V172-ONTWERP
+   Geen nieuwe schermarchitectuur: alleen betrouwbaarheid, synchronisatie en spelregels.
+   ========================= */
+(function(){ queueMicrotask(()=>{
+  const q=id=>document.getElementById(id);
+  const E=value=>(typeof esc==='function'?esc(String(value??'')):String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const now=()=>Date.now()+serverOffset;
+  let serverOffset=0,heartbeatTimer=null,cleanupTimer=null,hostAutoBusy=false,hostPlayPoll=null,juryBusy=false,hostListenedRoom='';
+  let savedPlayerIdentity=null,decisionRoomRef=null,decisionRoom='',lastDecisionSignature='';
+
+  function activeEntries(room){
+    return Object.entries(room?.players||{}).filter(([,p])=>p&&p.online!==false);
+  }
+  function activeRoom(room){
+    if(!room)return room;
+    return {...room,players:Object.fromEntries(activeEntries(room))};
+  }
+  function isHostClient(){
+    return !isPlayerPage()||document.body.classList.contains('bbHostPlayerMode');
+  }
+  function cleanName(value){return String(value||'').replace(/^🎤\s*/,'').trim().toLowerCase();}
+  function roundKey(room){const r=room?.currentRound||{};return String(r.id||'eerste_ronde').replace(/[.#$\[\]/]/g,'_');}
+  function preflightOk(){const t=Number(localStorage.bb_spotify_preflight_ok_at||0);return t&&Date.now()-t<60*60*1000;}
+  function rollbackUsed(snapshot){try{localStorage.hb_used=snapshot;}catch(e){}}
+
+  try{db?.ref?.('.info/serverTimeOffset').on('value',s=>{serverOffset=Number(s.val()||0);});}catch(e){}
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
+    try{db?.ref?.('.info/serverTimeOffset').on('value',s=>{serverOffset=Number(s.val()||0);});}catch(e){}
+  },500));
+
+  // Alleen online spelers bepalen of een ronde mag starten.
+  allReady=function(room){const ps=activeEntries(room);return ps.length>0&&ps.every(([,p])=>p.ready===true);};
+  window.bbV174ActivePlayers=activeEntries;
+
+  // Echte 5-vaks bingolijnen. In V172 ontbrak vak 18 in de vierde kolom.
+  checkBingo=function(marked){
+    const lines=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+    return lines.some(line=>line.every(i=>i===12||marked?.[i]));
+  };
+
+  // Iedere kaart heeft 24 kleurvakken; de kleur met vier vakken wisselt per kaart.
+  genCard=function(){
+    const colors=['yellow','pink','purple','blue','green'],missing=Math.floor(Math.random()*colors.length),pool=[];
+    colors.forEach((color,index)=>{for(let i=0;i<(index===missing?4:5);i++)pool.push(color);});
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const card=[];for(let i=0;i<25;i++)card.push(i===12?'free':pool.shift());return card;
+  };
+
+  // Een vak kan maar één keer gekozen worden en een bestaande winnaar wordt niet iedere ronde opnieuw gemeld.
+  pickCell=async function(index){
+    if(!currentRoomCode||!currentPlayerId||!activeRound?.id)return;
+    const ref=db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`);let announce=false;
+    const result=await ref.transaction(playerData=>{
+      const p=playerData||{},card=p.card||[],marked=p.marked||{};
+      if(card[index]!==activeRound.colorKey||marked[index]||p.lastPickedRound===activeRound.id)return;
+      marked[index]=true;const bingo=checkBingo(marked);announce=bingo&&!p.bingo;
+      return{...p,marked,bingo:!!(p.bingo||bingo),lastPickedRound:activeRound.id,lastPickedIndex:index,ready:false};
+    },false);
+    if(result.committed&&announce)await db.ref(`rooms/${currentRoomCode}/bingos`).push({name:currentPlayerName,playerId:currentPlayerId,roundId:activeRound.id,at:firebase.database.ServerValue.TIMESTAMP});
+  };
+
+  // Nieuwe kamer: dezelfde V172-weergave, maar met collisioncontrole.
+  createRoom=async function(){
+    try{
+      if(typeof window.bbCleanHostUi117==='function')window.bbCleanHostUi117();
+      let code='',committed=false;
+      for(let attempt=0;attempt<10&&!committed;attempt++){
+        code=roomCode();
+        const result=await db.ref('rooms/'+code).transaction(current=>current===null?{createdAt:firebase.database.ServerValue.TIMESTAMP,categories:getCats(),version:174}:undefined,false);
+        committed=!!result.committed;
+      }
+      if(!committed)throw Error('Er kon geen unieke kamer worden gemaakt. Probeer opnieuw.');
+      currentRoomCode=code;localStorage.hb_host_room=code;localStorage.hb_last_stable_room=code;
+      renderRoomBox(code);listenHost(code);listenBingo(code);
+      return code;
+    }catch(e){alert('Kamer maken mislukt: '+(e.message||e));return'';}
+  };
+
+  const previousListenHost=typeof listenHost==='function'?listenHost:null;
+  if(previousListenHost)listenHost=function(room){
+    if(hostListenedRoom&&hostListenedRoom!==room){try{db.ref('rooms/'+hostListenedRoom).off();db.ref('rooms/'+hostListenedRoom+'/bingos').off();}catch(e){}}
+    hostListenedRoom=room;const result=previousListenHost.apply(this,arguments);watchDecisionRoom(room);return result;
+  };
+
+  bbStartNewGameSameRoom=async function(){
+    if(!currentRoomCode){closeNewGameModal();return;}
+    try{
+      const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},updates={currentRound:null,answers:null,correct:null,bingos:null,bingoDecision:null,juryMeta:null,juryVotes:null,juryResults:null,juryClaims:null,lockClaims:null,startClaims:null};
+      Object.keys(room.players||{}).forEach(pid=>{updates[`players/${pid}/card`]=genCard();updates[`players/${pid}/marked`]={};updates[`players/${pid}/bingo`]=false;updates[`players/${pid}/ready`]=false;updates[`players/${pid}/lastPickedRound`]=null;updates[`players/${pid}/lastPickedIndex`]=null;});
+      await db.ref('rooms/'+currentRoomCode).update(updates);closeNewGameModal();q('hostBingoPanel')?.classList.add('hidden');q('bingoFullOverlay')?.classList.add('hidden');if(q('hostStatus'))q('hostStatus').textContent='Nieuw spel gestart in dezelfde kamer.';
+    }catch(e){alert('Nieuw spel starten mislukt: '+(e.message||e));}
+  };
+
+  function uniqueAnimal(room,pid,existing){
+    if(existing?.emoji)return existing.emoji;
+    const used=new Set(activeEntries(room).filter(([id])=>id!==pid).map(([,p])=>p.emoji).filter(Boolean));
+    let start=0;for(const c of String(pid)){start=(Math.imul(start,31)+c.charCodeAt(0))>>>0;}
+    for(let i=0;i<BB_PLAYER_ANIMALS.length;i++){const animal=BB_PLAYER_ANIMALS[(start+i)%BB_PLAYER_ANIMALS.length];if(!used.has(animal))return animal;}
+    return bbAnimalFor(pid,existing);
+  }
+
+  function startHeartbeat(){
+    clearInterval(heartbeatTimer);
+    const beat=()=>{
+      if(!db||!currentRoomCode||!currentPlayerId)return;
+      if(!isPlayerPage()&&!document.body.classList.contains('bbHostPlayerMode'))return;
+      db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`).update({online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
+    };
+    beat();heartbeatTimer=setInterval(beat,20000);
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)startHeartbeat();});
+
+  // Deelnemen controleert eerst de kamer en dubbele namen. Een foute QR maakt niets aan.
+  joinPlayer=async function(){
+    const name=(q('playerNameInput')?.value||'').trim();if(!name)return alert('Vul je naam in.');
+    const joinBtn=q('joinBtn');if(joinBtn)joinBtn.disabled=true;
+    try{
+      if(!currentRoomCode)throw Error('Geen spelcode gevonden. Scan de QR-code opnieuw.');
+      const roomSnap=await db.ref('rooms/'+currentRoomCode).once('value');
+      if(!roomSnap.exists())throw Error('Deze kamer bestaat niet. Vraag de host om de actuele QR-code.');
+      const room=roomSnap.val()||{},status=String(room.currentRound?.status||'');
+      if(status==='ended')throw Error('Dit spel is beëindigd. Vraag de host om een nieuwe kamer.');
+      if(!currentPlayerId)currentPlayerId='p_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+      const duplicate=activeEntries(room).some(([pid,p])=>pid!==currentPlayerId&&cleanName(p.name)===cleanName(name));
+      if(duplicate)throw Error('Deze naam is al in gebruik. Kies een andere naam.');
+      const ref=db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`),existing=(await ref.once('value')).val()||{};
+      currentPlayerName=name;
+      await ref.update({name,emoji:uniqueAnimal(room,currentPlayerId,existing),online:true,ready:true,joinedAt:existing.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:existing.card||genCard(),marked:existing.marked||{},bingo:!!existing.bingo});
+      localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=name;localStorage.hb_player_room=currentRoomCode;
+      try{await ref.onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP});}catch(e){try{ref.child('online').onDisconnect().set(false);}catch(_e){}}
+      startHeartbeat();listenPlayer();
+    }catch(e){if(q('joinStatus'))q('joinStatus').textContent=e.message||String(e);else alert(e.message||e);if(joinBtn)joinBtn.disabled=false;}
+  };
+
+  // Automatisch hervatten gebeurt alleen als de opgeslagen kamer nog echt bestaat.
+  const previousSetupPlayerMode=typeof setupPlayerMode==='function'?setupPlayerMode:null;
+  if(previousSetupPlayerMode)setupPlayerMode=function(){
+    const room=(new URLSearchParams(location.search).get('room')||'').toUpperCase();currentRoomCode=room;
+    const mayResume=localStorage.hb_player_room===room&&localStorage.hb_player_name&&localStorage.hb_player_id;
+    if(!mayResume)return previousSetupPlayerMode.apply(this,arguments);
+    db.ref('rooms/'+room).once('value').then(snapshot=>{
+      if(snapshot.exists())previousSetupPlayerMode.apply(this,arguments);
+      else{
+        localStorage.removeItem('hb_player_room');currentPlayerId='';currentPlayerName='';
+        document.body.classList.add('playerMode');q('hostApp')?.classList.add('hidden');q('playerApp')?.classList.remove('hidden');q('screenJoin')?.classList.remove('hidden');q('screenDashboard')?.classList.add('hidden');
+        if(q('playerRoomCode'))q('playerRoomCode').textContent=room;if(q('joinStatus'))q('joinStatus').textContent='Deze kamer bestaat niet meer. Vraag de host om de actuele QR-code.';
+      }
+    }).catch(()=>previousSetupPlayerMode.apply(this,arguments));
+  };
+
+  const previousListenPlayer=typeof listenPlayer==='function'?listenPlayer:null;
+  if(previousListenPlayer)listenPlayer=function(){startHeartbeat();const result=previousListenPlayer.apply(this,arguments);setTimeout(ensureLeaveButton,0);setTimeout(ensureLeaveButton,120);return result;};
+
+  // Hostlijsten en alle bestaande V172-lobby's tonen alleen actieve spelers.
+  const previousRenderHostPlayers=typeof renderHostPlayers==='function'?renderHostPlayers:null;
+  if(previousRenderHostPlayers)renderHostPlayers=function(room){return previousRenderHostPlayers(activeRoom(room));};
+  const previousHostReadyState=typeof hostReadyState==='function'?hostReadyState:null;
+  if(previousHostReadyState)hostReadyState=function(room){
+    maybeFinalizeReview(room);
+    if(room?.currentRound?.status==='ended'){const button=q('startRoundBtn');if(button){button.disabled=true;button.textContent='SPEL BEËINDIGD';}if(q('hostStatus'))q('hostStatus').textContent='Het spel is beëindigd. Start een nieuw spel of maak een nieuwe kamer.';return;}
+    return previousHostReadyState(activeRoom(room));
+  };
+  const previousRenderHostScore=typeof renderHostScore==='function'?renderHostScore:null;
+  if(previousRenderHostScore)renderHostScore=function(room){maybeFinalizeReview(room);return previousRenderHostScore(activeRoom(room));};
+
+  function ensureLeaveButton(){
+    if(!isPlayerPage()||document.body.classList.contains('bbHostPlayerMode')||q('screenDashboard')?.classList.contains('hidden')){q('bbV174LeaveBtn')?.remove();return;}
+    let button=q('bbV174LeaveBtn');if(button)return;
+    button=document.createElement('button');button.id='bbV174LeaveBtn';button.type='button';button.textContent='VERLATEN';button.setAttribute('aria-label','Spel verlaten');
+    button.onclick=()=>{
+      if(!confirm('Weet je zeker dat je het spel wilt verlaten?'))return;
+      clearInterval(heartbeatTimer);
+      const ref=db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`);
+      try{ref.onDisconnect().cancel();}catch(e){}
+      ref.remove().finally(()=>{localStorage.removeItem('hb_player_room');location.href=location.origin+location.pathname;});
+    };
+    document.body.appendChild(button);
+  }
+
+  // Bewaar invoer/focus tijdens Firebase-updates en laat V172 verder exact hetzelfde renderen.
+  const previousDashboard=typeof renderCompactDashboard==='function'?renderCompactDashboard:null;
+  if(previousDashboard)renderCompactDashboard=function(room,r){
+    if(document.body.classList.contains('bbHostPlayerMode')&&!heartbeatTimer)startHeartbeat();
+    activeRound=r||{};
+    if(r?.status==='ended'){
+      const root=q('screenDashboard');if(root){root.className='compactDashboard bbStageDashboard stageLobby';root.innerHTML=`<section class="bbStageShell"><img src="bb_logo.png" class="bbStageLogo" alt="Bingo Beats"><h2>SPEL BEËINDIGD</h2><p class="bbStageSub">Bedankt voor het meespelen!</p>${document.body.classList.contains('bbHostPlayerMode')?'':'<button type="button" class="bbReadyBig" onclick="document.getElementById(\'bbV174LeaveBtn\')?.click()">VERLATEN</button>'}</section>`;}ensureLeaveButton();watchDecision(room);return;
+    }
+    const focused=document.activeElement,typing=focused?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'),typed=typing?focused.value:'',selection=typing?focused.selectionStart:null;
+    const own=room?.answers?.[r?.id]?.[currentPlayerId];
+    if(typing&&r?.status==='answering'&&!own){ensureLeaveButton();ensureHostTestButton(room,r);watchDecision(room);return;}
+    const adjusted={...(r||{})};
+    if(adjusted.deadlineMs)adjusted.deadlineMs=Number(adjusted.deadlineMs)-serverOffset;
+    if(adjusted.precountEndsAt)adjusted.precountEndsAt=Number(adjusted.precountEndsAt)-serverOffset;
+    const view={...activeRoom(room),currentRound:adjusted};
+    const result=previousDashboard(view,adjusted);
+    if(typing&&r?.status==='answering'&&!own){const next=q('bbStageAnswerInput')||q('scoreAnswerInput');if(next){next.value=typed;next.focus({preventScroll:true});try{next.setSelectionRange(selection,selection);}catch(e){}}}
+    ensureLeaveButton();ensureHostTestButton(room,r);maybeHostAutoStart(room,r);maybeFinalizeReview(room);watchDecision(room);return result;
+  };
+
+  function ensureHostTestButton(room,r){
+    if(!document.body.classList.contains('bbHostPlayerMode')){q('bbV174HostTestBtn')?.remove();return;}
+    const lobby=!r?.id||['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
+    if(!lobby||preflightOk()){q('bbV174HostTestBtn')?.remove();return;}
+    let button=q('bbV174HostTestBtn');if(button)return;
+    button=document.createElement('button');button.id='bbV174HostTestBtn';button.type='button';button.textContent='TEST VOOR JE BEGINT';
+    button.onclick=()=>q('bbPreGameTestBtn')?.click();
+    const root=q('screenDashboard'),target=root?.querySelector('.bbV144Lobby,.stageLobbyV143,.stageLobbyV142,.stageLobbyV141,.stageLobbyV140,.stageLobbyV139,.stageLobby,.bbStageShell')||root;
+    target?.appendChild(button);
+  }
+
+  // Antwoord kan maar één keer en niet na de serverdeadline worden ingestuurd.
+  submitAnswerValue=async function(value){
+    const answer=String(value||'').trim();if(!answer)return alert('Vul eerst je antwoord in.');
+    if(!currentRoomCode||!currentPlayerId||!activeRound?.id)return;
+    try{
+      const snap=await db.ref('rooms/'+currentRoomCode+'/currentRound').once('value'),round=snap.val()||{};
+      if(round.id!==activeRound.id||round.status!=='answering')throw Error('Deze antwoordronde is afgelopen.');
+      if(round.deadlineMs&&now()>Number(round.deadlineMs)+250)throw Error('De antwoordtijd is voorbij.');
+      const result=await db.ref(`rooms/${currentRoomCode}/answers/${round.id}/${currentPlayerId}`).transaction(current=>current||{answer:answer.slice(0,100),submittedAt:firebase.database.ServerValue.TIMESTAMP},false);
+      if(!result.committed)throw Error('Je antwoord was al ingeleverd.');
+    }catch(e){alert(e.message||e);}
+  };
+
+  // Sla de verborgen track lokaal op zodat herladen tijdens een ronde het antwoord niet kwijtraakt.
+  const previousPublishAnswer=typeof publishAnswer==='function'?publishAnswer:null;
+  if(previousPublishAnswer)publishAnswer=function(){
+    if(!currentTrack&&currentRoomCode){try{const saved=JSON.parse(localStorage.getItem('bb_round_track_'+currentRoomCode)||'null');if(saved?.track)currentTrack=saved.track;}catch(e){}}
+    return previousPublishAnswer.apply(this,arguments);
+  };
+
+  // Eén atomaire startclaim voorkomt dubbele rondes vanuit host en Host-doet-mee.
+  const previousStartRound=typeof startRound==='function'?startRound:null;
+  if(previousStartRound)startRound=async function(){
+    if(!currentRoomCode)return false;
+    if(!preflightOk()){alert('Doe eerst de knop TEST VOOR JE BEGINT.');return false;}
+    const snapshot=await db.ref('rooms/'+currentRoomCode).once('value'),room=snapshot.val()||{};
+    if(!allReady(room)){if(q('hostStatus'))q('hostStatus').textContent='Wachten tot alle actieve spelers READY zijn.';return false;}
+    if(!Array.isArray(tracks)||!tracks.length){alert('Upload eerst je muzieklijst.');return false;}
+    const key=roundKey(room),claimRef=db.ref(`rooms/${currentRoomCode}/startClaims/${key}`);
+    const claim=await claimRef.transaction(current=>current?undefined:{at:firebase.database.ServerValue.TIMESTAMP,by:currentPlayerId||'host'},false);
+    if(!claim.committed)return false;
+    const oldRoundId=room.currentRound?.id||'',usedBefore=localStorage.hb_used||'[]';
+    try{
+      await previousStartRound.apply(this,arguments);
+      await new Promise(resolve=>setTimeout(resolve,120));
+      const after=(await db.ref('rooms/'+currentRoomCode+'/currentRound').once('value')).val()||{};
+      const started=!!after.id&&after.id!==oldRoundId&&['picking','precount','ready','answering'].includes(after.status);
+      if(!started){await claimRef.remove();rollbackUsed(usedBefore);return false;}
+      if(currentTrack)localStorage.setItem('bb_round_track_'+currentRoomCode,JSON.stringify({roundId:after.id,track:currentTrack}));
+      return true;
+    }catch(e){await claimRef.remove();rollbackUsed(usedBefore);if(q('hostStatus'))q('hostStatus').textContent='Ronde starten mislukt. Probeer opnieuw.';alert('Ronde starten mislukt: '+(e.message||e));return false;}
+  };
+
+  // Servergesynchroniseerde deadline, zonder de bestaande rondeweergave te wijzigen.
+  const previousPlayHidden=typeof playHidden==='function'?playHidden:null;
+  if(previousPlayHidden)playHidden=async function(){
+    const result=await previousPlayHidden.apply(this,arguments);
+    try{
+      const round=(await db.ref('rooms/'+currentRoomCode+'/currentRound').once('value')).val()||{};
+      if(round.status==='answering'){
+        const duration=(Number(q('duration')?.value)||20)*1000,deadline=now()+duration;
+        await db.ref('rooms/'+currentRoomCode+'/currentRound').update({deadlineMs:deadline});
+        clearTimeout(lockTimer);lockTimer=setTimeout(lockRound,duration+150);
+        clearTimeout(stopTimer);stopTimer=setTimeout(stopPlayback,duration);
+      }
+    }catch(e){}
+    return result;
+  };
+
+  // Lock/jury mag per ronde maar één keer lopen.
+  const previousLockRound=typeof lockRound==='function'?lockRound:null;
+  if(previousLockRound)lockRound=async function(){
+    if(!currentRoomCode)return;
+    const round=(await db.ref('rooms/'+currentRoomCode+'/currentRound').once('value')).val()||{};if(!round.id)return;
+    const claim=await db.ref(`rooms/${currentRoomCode}/lockClaims/${round.id}`).transaction(current=>current&&now()-Number(current.at||0)<30000?undefined:{at:firebase.database.ServerValue.TIMESTAMP},false);
+    if(!claim.committed)return;
+    return previousLockRound.apply(this,arguments);
+  };
+
+  // Host-doet-mee wacht lang genoeg op de 12-secondenanimatie en probeert na een fout opnieuw.
+  window.bbHostPlayerStart=async function(){
+    if(hostPlayPoll)return false;
+    const started=await startRound();if(!started)return false;
+    hostPlayPoll=setInterval(async()=>{
+      try{
+        const round=(await db.ref('rooms/'+currentRoomCode+'/currentRound').once('value')).val()||{};
+        if(round.status==='ready'){clearInterval(hostPlayPoll);hostPlayPoll=null;await playHidden();}
+        else if(['answering','locked','review','judged'].includes(round.status)){clearInterval(hostPlayPoll);hostPlayPoll=null;}
+      }catch(e){clearInterval(hostPlayPoll);hostPlayPoll=null;}
+    },300);
+    setTimeout(()=>{if(hostPlayPoll){clearInterval(hostPlayPoll);hostPlayPoll=null;}},30000);
+    return true;
+  };
+
+  async function maybeHostAutoStart(room,r){
+    if(!document.body.classList.contains('bbHostPlayerMode')||hostAutoBusy||!preflightOk())return;
+    const lobby=!r?.id||['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
+    const bingo=Object.values(room?.bingos||{}).some(b=>b?.roundId===r?.id);
+    if(!lobby||bingo||!allReady(room))return;
+    hostAutoBusy=true;try{await window.bbHostPlayerStart(false);}finally{setTimeout(()=>{hostAutoBusy=false;},1500);}
+  }
+
+  // Jury negeert verdwenen/offline spelers als stemmers en rondt één twijfelgeval atomair af.
+  async function maybeFinalizeReview(room){
+    const r=room?.currentRound||{};if(juryBusy||r.status!=='review'||!r.id)return;
+    const list=Array.isArray(r.reviewList)?r.reviewList:[],index=Number(r.reviewIndex)||0,pid=list[index];if(!pid)return;
+    const voters=activeEntries(room).map(([id])=>id).filter(id=>id!==pid),votes=room.juryVotes?.[r.id]?.[pid]||{};
+    if(voters.some(id=>typeof votes[id]==='undefined'))return;
+    juryBusy=true;
+    try{
+      const claim=await db.ref(`rooms/${currentRoomCode}/juryClaims/${r.id}/${pid}`).transaction(current=>current&&now()-Number(current.at||0)<30000?undefined:{at:firebase.database.ServerValue.TIMESTAMP},false);
+      if(!claim.committed)return;
+      let yes=0,no=0;voters.forEach(id=>votes[id]===true?yes++:no++);const approved=yes>=no,next=index+1,updates={};
+      updates[`correct/${r.id}/${pid}`]=approved;updates[`juryResults/${r.id}/${pid}`]={approved,yes,no};
+      if(next<list.length)updates['currentRound/reviewIndex']=next;else updates['currentRound/status']='judged';
+      await db.ref('rooms/'+currentRoomCode).update(updates);
+    }catch(e){}finally{juryBusy=false;}
+  }
+
+  // Bestaande bingo's worden bij herladen niet opnieuw als nieuwe winnaar afgespeeld.
+  listenBingo=function(room){
+    if(!room)return;
+    const ref=db.ref('rooms/'+room+'/bingos');ref.off();
+    ref.once('value').then(initial=>{
+      const existing=new Set(Object.keys(initial.val()||{}));
+      ref.on('child_added',snap=>{
+        if(existing.has(snap.key)){existing.delete(snap.key);return;}
+        const bingo=snap.val()||{};bingoSeenKey=snap.key+'_'+(bingo.roundId||'');localStorage.hb_last_bingo_key=bingoSeenKey;
+        ensureBingoDecision(room,bingo);showWinner(bingo.name||'onbekend');
+      });
+    });
+    watchDecisionRoom(room);
+  };
+
+  async function ensureBingoDecision(room,bingo){
+    await db.ref(`rooms/${room}/bingoDecision`).transaction(current=>current||{status:'open',phase:'mode',winnerName:bingo.name||'Speler',roundId:bingo.roundId||'',openedAt:firebase.database.ServerValue.TIMESTAMP},false).catch(()=>{});
+  }
+
+  function watchDecisionRoom(room){
+    if(decisionRoom===room&&decisionRoomRef)return;
+    if(decisionRoomRef)decisionRoomRef.off();decisionRoom=room;decisionRoomRef=db.ref(`rooms/${room}/bingoDecision`);
+    decisionRoomRef.on('value',snap=>renderBingoDecision(snap.val()||null));
+  }
+  function watchDecision(room){if(currentRoomCode)watchDecisionRoom(currentRoomCode);if(room?.bingoDecision)renderBingoDecision(room.bingoDecision);}
+
+  const previousShowWinner=typeof showWinner==='function'?showWinner:null;
+  if(previousShowWinner)showWinner=function(name){const result=previousShowWinner.apply(this,arguments);setTimeout(()=>{if(currentRoomCode)db.ref(`rooms/${currentRoomCode}/bingoDecision`).once('value').then(s=>renderBingoDecision(s.val()||null));},30);return result;};
+
+  function decisionVotes(decision,room){
+    const counts={continue:0,newround:0,end:0},votes=decision?.votes||{};
+    Object.entries(votes).forEach(([id,vote])=>{if(vote in counts)counts[vote]+=(id==='__host__'||room.players?.[id]?.isHost)?2:1;});return counts;
+  }
+  function renderBingoDecision(decision){
+    const overlay=q('bingoFullOverlay'),card=overlay?.querySelector('.bingoFullCard');if(!overlay||!card||!decision||decision.status!=='open')return;
+    if(q('bingoFullName'))q('bingoFullName').textContent=decision.winnerName||'Speler';
+    card.querySelector('.bingoFullActions')?.remove();card.querySelector('.bingoFullHint')?.remove();
+    const actions=document.createElement('div');actions.className='bingoFullActions bbV174Decision';
+    const host=isHostClient(),voterId=document.body.classList.contains('bbHostPlayerMode')?currentPlayerId:(host?'__host__':currentPlayerId);
+    if(decision.phase==='mode'){
+      actions.innerHTML=host?`<button type="button" class="bingoFullBtn" data-mode="host">HOST KIEST</button><button type="button" class="bingoFullBtn secondary" data-mode="vote">MEERDERHEID KIEST</button>`:`<p>De host kiest hoe jullie verdergaan.</p>`;
+    }else if(decision.mode==='host'){
+      actions.innerHTML=host?decisionButtons('data-host-choice'):`<p>De host maakt een keuze.</p>`;
+    }else{
+      const own=decision.votes?.[voterId];actions.innerHTML=own?`<p>Stem ontvangen: <strong>${decisionLabel(own)}</strong></p>`:decisionButtons('data-vote');
+      const room=window.bbV160LastRoom||{};const c=decisionVotes(decision,room);actions.innerHTML+=`<p class="bbV174VoteCount">Verder ${c.continue} · Nieuwe ronde ${c.newround} · Stop ${c.end}</p>`;
+    }
+    card.appendChild(actions);
+    actions.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>db.ref(`rooms/${currentRoomCode}/bingoDecision`).update({phase:'choice',mode:btn.dataset.mode,votes:{}}));
+    actions.querySelectorAll('[data-host-choice]').forEach(btn=>btn.onclick=()=>resolveBingoChoice(btn.dataset.hostChoice));
+    actions.querySelectorAll('[data-vote]').forEach(btn=>btn.onclick=()=>db.ref(`rooms/${currentRoomCode}/bingoDecision/votes/${voterId}`).set(btn.dataset.vote));
+    overlay.classList.remove('hidden');maybeResolveDecision(decision);
+  }
+  function decisionButtons(attribute){return`<button type="button" class="bingoFullBtn" ${attribute}="continue">VERDER SPELEN</button><button type="button" class="bingoFullBtn secondary" ${attribute}="newround">NIEUWE RONDE</button><button type="button" class="bingoFullBtn secondary" ${attribute}="end">SPEL BEËINDIGEN</button>`;}
+  function decisionLabel(value){return({continue:'VERDER SPELEN',newround:'NIEUWE RONDE',end:'SPEL BEËINDIGEN'})[value]||value;}
+
+  async function maybeResolveDecision(decision){
+    if(!isHostClient()||decision?.mode!=='vote'||decision.phase!=='choice'||!currentRoomCode)return;
+    const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},active=activeEntries(room),votes=decision.votes||{},hostPlayer=active.find(([,p])=>p.isHost)?.[0],required=active.map(([id])=>id);
+    if(!hostPlayer)required.push('__host__');if(required.some(id=>!votes[id]))return;
+    const counts=decisionVotes(decision,room),max=Math.max(...Object.values(counts)),winners=Object.keys(counts).filter(key=>counts[key]===max),hostVote=votes[hostPlayer||'__host__'];
+    const outcome=winners.length===1?winners[0]:(winners.includes(hostVote)?hostVote:null);if(outcome)resolveBingoChoice(outcome);
+  }
+  async function resolveBingoChoice(choice){
+    if(!isHostClient()||!['continue','newround','end'].includes(choice))return;
+    const statusRef=db.ref(`rooms/${currentRoomCode}/bingoDecision/status`),claim=await statusRef.transaction(status=>status==='open'?'resolving':undefined,false);if(!claim.committed)return;
+    const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},updates={'bingoDecision':null};
+    if(choice==='continue'){
+      updates.bingos=null;activeEntries(room).forEach(([id])=>updates[`players/${id}/ready`]=false);
+    }else if(choice==='newround'){
+      updates.currentRound=null;updates.answers=null;updates.correct=null;updates.juryMeta=null;updates.juryVotes=null;updates.juryResults=null;updates.bingos=null;
+      Object.entries(room.players||{}).forEach(([id])=>{updates[`players/${id}/card`]=genCard();updates[`players/${id}/marked`]={};updates[`players/${id}/bingo`]=false;updates[`players/${id}/ready`]=false;updates[`players/${id}/lastPickedRound`]=null;updates[`players/${id}/lastPickedIndex`]=null;});
+    }else{
+      updates['currentRound/status']='ended';activeEntries(room).forEach(([id])=>updates[`players/${id}/ready`]=false);
+    }
+    await db.ref('rooms/'+currentRoomCode).update(updates);q('bingoFullOverlay')?.classList.add('hidden');
+  }
+
+  // Host-identiteit herstellen wanneer Host-doet-mee wordt verlaten.
+  document.addEventListener('click',e=>{
+    if(e.target?.id==='bbHostPlayBtn'&&!document.body.classList.contains('bbHostPlayerMode'))savedPlayerIdentity={id:currentPlayerId,name:currentPlayerName,lsId:localStorage.hb_player_id||'',lsName:localStorage.hb_player_name||'',lsRoom:localStorage.hb_player_room||''};
+  },true);
+  const previousHostExit=window.bbHostPlayerExit;
+  if(previousHostExit)window.bbHostPlayerExit=async function(){
+    const hostPid=currentPlayerId,room=currentRoomCode;clearInterval(heartbeatTimer);
+    try{const ref=db.ref(`rooms/${room}/players/${hostPid}`);await ref.onDisconnect().cancel();await ref.remove();}catch(e){}
+    const result=previousHostExit.apply(this,arguments);
+    if(savedPlayerIdentity){currentPlayerId=savedPlayerIdentity.id;currentPlayerName=savedPlayerIdentity.name;if(savedPlayerIdentity.lsId)localStorage.hb_player_id=savedPlayerIdentity.lsId;else localStorage.removeItem('hb_player_id');if(savedPlayerIdentity.lsName)localStorage.hb_player_name=savedPlayerIdentity.lsName;else localStorage.removeItem('hb_player_name');if(savedPlayerIdentity.lsRoom)localStorage.hb_player_room=savedPlayerIdentity.lsRoom;else localStorage.removeItem('hb_player_room');}
+    return result;
+  };
+
+  // Ruim langdurig offline spelers op; zij blokkeren ondertussen nooit het spel.
+  function startCleanup(){
+    clearInterval(cleanupTimer);cleanupTimer=setInterval(async()=>{
+      if(isPlayerPage()||!db||!currentRoomCode)return;
+      try{const room=(await db.ref('rooms/'+currentRoomCode).once('value')).val()||{},cutoff=now()-5*60*1000,updates={};Object.entries(room.players||{}).forEach(([id,p])=>{if(p.online===false&&Number(p.lastSeen||0)<cutoff)updates[id]=null;});if(Object.keys(updates).length)await db.ref('rooms/'+currentRoomCode+'/players').update(updates);}catch(e){}
+    },60000);
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(startCleanup,1200));
+}); })();
+
+/* =========================
+   V171 - veilige afwerking op V167
+   Alleen decoratie en iPhone viewport; de werkende renderer blijft leidend.
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  function cleanName(s){return String(s||'').replace(/^🎤\s*/,'').replace(/\bjij\b/gi,'').trim()}
+  function decorate(room){
+    const root=q('screenDashboard');if(!root||!room?.players)return;
+    const entries=Object.entries(room.players);
+    root.querySelectorAll('.bbV144ScoreRow').forEach(row=>{
+      const nameEl=row.querySelector('.bbV144Who strong');if(!nameEl)return;
+      const shown=cleanName(nameEl.textContent);
+      const found=entries.find(([,p])=>cleanName(p?.name)===shown);if(!found)return;
+      const [pid,p]=found,avatar=row.querySelector('.bbV144Avatar');
+      if(avatar){avatar.textContent=bbAnimalFor(pid,p);avatar.classList.add('bbAnimalAvatarCell')}
+    });
+  }
+  if(typeof renderCompactDashboard==='function'){
+    const previous=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){const result=previous.apply(this,arguments);decorate(room);return result};
+  }
+  function setKeyboard(open){
+    document.body.classList.toggle('bbKeyboardOpen',open);
+    document.documentElement.classList.toggle('bbKeyboardOpen',open);
     const viewport=window.visualViewport;
     const height=viewport?.height||window.innerHeight;
-    document.documentElement.style.setProperty('--visible-height',`${Math.round(height)}px`);
-    const keyboard=!!viewport&&window.innerHeight-height>130;
-    state.keyboardOpen=keyboard;
-    document.body.classList.toggle('keyboard-open',keyboard);
-  };
-  update();
-  window.visualViewport?.addEventListener('resize',update);
-  window.visualViewport?.addEventListener('scroll',update);
-  window.addEventListener('resize',update);
-}
-
-function setupInstall(){
-  window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.installPrompt=event;$('installBtn').classList.remove('hidden');});
-  $('installBtn').onclick=async()=>{if(!state.installPrompt)return;state.installPrompt.prompt();await state.installPrompt.userChoice;state.installPrompt=null;$('installBtn').classList.add('hidden');};
-}
-
-function validLicense(){const data=readJSON('bb_license',null);return data?.code===TEST_LICENSE_CODE&&data?.active===true;}
-function showLicense(){hideViews();$('licenseView').classList.remove('hidden');$('modeLabel').textContent='Licentie';setTimeout(()=>$('licenseInput').focus(),80);}
-function activateLicense(){
-  const code=$('licenseInput').value.trim().toUpperCase();
-  if(code!==TEST_LICENSE_CODE)return setMessage('licenseMessage','Ongeldige licentiecode.','error');
-  localStorage.bb_license=JSON.stringify({code,active:true,activatedAt:new Date().toISOString()});
-  setMessage('licenseMessage','Licentie geactiveerd.','success');
-  setTimeout(enterApplication,250);
-}
-
-async function enterApplication(){
-  hideViews();
-  const params=new URLSearchParams(location.search);
-  const code=(params.get('room')||'').trim().toUpperCase();
-  if(code){state.mode='player';state.roomCode=code;$('playerView').classList.remove('hidden');$('modeLabel').textContent='Speler';$('joinRoomCode').textContent=code;$('playerName').value=state.playerName||'';return;}
-  state.mode='host';$('hostView').classList.remove('hidden');$('modeLabel').textContent=`Host · V${VERSION}`;
-  restoreSettings();updateMusicSummary();updateSpotifyStatus();
-  const saved=localStorage.bb_host_room||'';
-  if(saved){$('resumeRoomBtn').textContent=`HERVAT ${saved}`;$('resumeRoomBtn').classList.remove('hidden');await resumeRoom(saved,true);}
-}
-
-function hideViews(){['licenseView','hostView','playerView'].forEach(id=>$(id).classList.add('hidden'));}
-
-function selectSourceTab(source){
-  $('spotifyTab').classList.toggle('active',source==='spotify');$('csvTab').classList.toggle('active',source==='csv');
-  $('spotifySource').classList.toggle('hidden',source!=='spotify');$('csvSource').classList.toggle('hidden',source!=='csv');
-}
-
-function restoreSettings(){
-  const settings=readJSON('bb_settings',{});
-  if(settings.duration)$('duration').value=String(settings.duration);
-  if(typeof settings.noRepeat==='boolean')$('noRepeat').checked=settings.noRepeat;
-  if(typeof settings.randomStart==='boolean')$('randomStart').checked=settings.randomStart;
-  selectSourceTab(state.musicSource==='csv'?'csv':'spotify');
-}
-
-function saveSettings(){
-  localStorage.bb_settings=JSON.stringify({duration:Number($('duration').value)||20,noRepeat:$('noRepeat').checked,randomStart:$('randomStart').checked});
-}
-
-async function spotifyLogin(){
-  const verifier=randomString(96);localStorage.spotify_code_verifier=verifier;
-  const challenge=base64Url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
-  location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({response_type:'code',client_id:CLIENT_ID,scope:SCOPES,code_challenge_method:'S256',code_challenge:challenge,redirect_uri:REDIRECT_URI});
-}
-function randomString(length){const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';const bytes=new Uint8Array(length);crypto.getRandomValues(bytes);return [...bytes].map(byte=>chars[byte%chars.length]).join('');}
-function base64Url(buffer){return btoa(String.fromCharCode(...new Uint8Array(buffer))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
-async function handleSpotifyRedirect(){
-  const params=new URLSearchParams(location.search),code=params.get('code');if(!code)return;
-  const response=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CLIENT_ID,grant_type:'authorization_code',code,redirect_uri:REDIRECT_URI,code_verifier:localStorage.spotify_code_verifier||''})});
-  const data=await response.json();if(!response.ok||!data.access_token)throw new Error(data.error_description||'Spotify login mislukt');
-  saveTokens(data);params.delete('code');history.replaceState({},document.title,location.pathname+(params.toString()?'?'+params:''));
-}
-function saveTokens(data){state.accessToken=data.access_token;if(data.refresh_token)state.refreshToken=data.refresh_token;state.expiresAt=Date.now()+Number(data.expires_in||3600)*1000-60000;localStorage.spotify_access_token=state.accessToken;if(state.refreshToken)localStorage.spotify_refresh_token=state.refreshToken;localStorage.spotify_expires_at=String(state.expiresAt);}
-async function getToken(){
-  if(state.accessToken&&Date.now()<state.expiresAt)return state.accessToken;
-  if(!state.refreshToken)return'';
-  const response=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:state.refreshToken,client_id:CLIENT_ID})});
-  const data=await response.json();if(!response.ok||!data.access_token){spotifyLogout();return'';}saveTokens(data);return state.accessToken;
-}
-async function spotifyApi(url,options={}){
-  const token=await getToken();if(!token)throw new Error('Log eerst in met Spotify.');
-  const headers={...(options.headers||{}),Authorization:`Bearer ${token}`};if(options.body)headers['Content-Type']='application/json';
-  const response=await fetch(url,{...options,headers});if(response.status===204)return{};
-  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error?.message||data.error_description||`Spotify-fout ${response.status}`);return data;
-}
-async function updateSpotifyStatus(){
-  if(!$('spotifyStatus'))return;
-  const token=await getToken().catch(()=>null);
-  if(!token){$('spotifyStatus').textContent='Nog niet ingelogd.';return;}
-  try{const me=await spotifyApi('https://api.spotify.com/v1/me');$('spotifyStatus').textContent=`Ingelogd als ${me.display_name||me.email||'Spotify-gebruiker'}.`;}
-  catch{$('spotifyStatus').textContent='Spotify-sessie moet opnieuw worden verbonden.';}
-}
-function spotifyLogout(){
-  ['spotify_access_token','spotify_refresh_token','spotify_expires_at','bb_spotify_test_at'].forEach(key=>localStorage.removeItem(key));
-  state.accessToken=state.refreshToken='';state.expiresAt=0;state.deviceId='';state.spotifyPlayer?.disconnect?.();state.spotifyPlayer=null;updateSpotifyStatus();
-}
-
-async function ensureSpotifyPlayer(){
-  const token=await getToken();if(!token)throw new Error('Log eerst in met Spotify.');
-  if(!window.Spotify)await waitForSpotifySdk();
-  if(state.spotifyPlayer&&state.deviceId)return state.deviceId;
-  if(!state.spotifyPlayer){
-    state.spotifyPlayer=new Spotify.Player({name:'Bingo Beats',getOAuthToken:async callback=>callback(await getToken()),volume:.8});
-    state.spotifyPlayer.addListener('ready',({device_id})=>{state.deviceId=device_id;});
-    state.spotifyPlayer.addListener('not_ready',()=>{state.deviceId='';});
-    state.spotifyPlayer.addListener('authentication_error',({message})=>toast(message,true));
-    state.spotifyPlayer.addListener('account_error',()=>toast('Voor afspelen via Bingo Beats is Spotify Premium nodig.',true));
+    const top=viewport?.offsetTop||0;
+    document.documentElement.style.setProperty('--bb-visible-height',Math.round(height)+'px');
+    document.documentElement.style.setProperty('--bb-visible-top',Math.round(top)+'px');
+    if(open){const input=q('bbStageAnswerInput')||q('scoreAnswerInput');setTimeout(()=>input?.scrollIntoView({block:'nearest'}),30)}
   }
-  await state.spotifyPlayer.connect();
-  const started=Date.now();while(!state.deviceId&&Date.now()-started<7000)await wait(100);
-  if(!state.deviceId)throw new Error('De Bingo Beats Spotify-speler werd niet actief. Controleer Spotify Premium en probeer opnieuw.');
-  return state.deviceId;
-}
-function waitForSpotifySdk(){return new Promise((resolve,reject)=>{const started=Date.now();const timer=setInterval(()=>{if(window.Spotify){clearInterval(timer);resolve();}else if(Date.now()-started>10000){clearInterval(timer);reject(new Error('Spotify-speler kon niet laden.'));}},100);});}
+  document.addEventListener('focusin',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setKeyboard(true)});
+  document.addEventListener('focusout',e=>{if(e.target?.matches?.('#bbStageAnswerInput,#scoreAnswerInput'))setTimeout(()=>setKeyboard(false),120)});
+  window.visualViewport?.addEventListener('resize',()=>{if(document.body.classList.contains('bbKeyboardOpen'))setKeyboard(true)});
+})();
 
-async function testSpotify(showSuccess=true){
-  try{
-    const device=await ensureSpotifyPlayer();
-    await spotifyApi('https://api.spotify.com/v1/me/player',{method:'PUT',body:JSON.stringify({device_ids:[device],play:false})});
-    const sample=state.tracks[0];
-    if(sample){const position=smartFragmentStart(sample.duration_ms||180000,1000);await spotifyApi(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(device)}`,{method:'PUT',body:JSON.stringify({uris:[sample.uri],position_ms:position})});await wait(900);await spotifyApi('https://api.spotify.com/v1/me/player/pause',{method:'PUT',body:'{}'});}
-    localStorage.bb_spotify_test_at=String(Date.now());
-    if(state.roomCode)await state.db.ref(roomPath('meta')).update({autoStartBlocked:false,lastError:null,updatedAt:firebase.database.ServerValue.TIMESTAMP});
-    if(showSuccess)toast('Spotify-speler is klaar voor het spel.');return true;
-  }catch(error){if(showSuccess)toast(error.message,true);return false;}
-}
 
-async function loadPlaylists(){
-  try{
-    $('loadPlaylistsBtn').disabled=true;$('loadPlaylistsBtn').textContent='LADEN…';
-    let url='https://api.spotify.com/v1/me/playlists?limit=50',items=[];
-    while(url){const page=await spotifyApi(url);items.push(...(page.items||[]));url=page.next;}
-    $('playlistSelect').innerHTML=items.map(item=>`<option value="${esc(item.id)}">${esc(item.name)} (${Number(item.tracks?.total||0)})</option>`).join('');
-    $('playlistField').classList.remove('hidden');$('importPlaylistBtn').classList.remove('hidden');
-    if(!items.length)throw new Error('Geen playlists gevonden in dit account.');
-  }catch(error){toast(error.message,true);}finally{$('loadPlaylistsBtn').disabled=false;$('loadPlaylistsBtn').textContent='MIJN PLAYLISTS LADEN';}
-}
 
-async function importSelectedPlaylist(){
-  const id=$('playlistSelect').value;if(!id)return;
-  try{
-    $('importPlaylistBtn').disabled=true;$('importPlaylistBtn').textContent='IMPORTEREN…';
-    let url=`https://api.spotify.com/v1/playlists/${encodeURIComponent(id)}/tracks?limit=100&market=NL`,tracks=[],skipped=0;
-    while(url){const page=await spotifyApi(url);for(const item of page.items||[]){const track=item.track;if(!track?.id||track.is_local||!track.uri){skipped++;continue;}tracks.push(normalizeSpotifyTrack(track));}url=page.next;}
-    const unique=[...new Map(tracks.map(track=>[track.id,track])).values()];if(!unique.length)throw new Error('Deze playlist bevat geen afspeelbare Spotify-tracks.');
-    state.tracks=unique;state.musicSource='spotify';state.sourceName=$('playlistSelect').selectedOptions[0]?.textContent||'Spotify-playlist';persistTracks();updateMusicSummary();
-    toast(`${unique.length} nummers geladen${skipped?`; ${skipped} niet-beschikbare nummers overgeslagen`:''}.`);
-  }catch(error){toast(error.message,true);}finally{$('importPlaylistBtn').disabled=false;$('importPlaylistBtn').textContent='PLAYLIST GEBRUIKEN';}
-}
-function normalizeSpotifyTrack(track){return{id:track.id,uri:track.uri,name:track.name||'Onbekend',artists:(track.artists||[]).map(a=>a.name).join(', ')||'Onbekend',album:track.album?.name||'',release_date:track.album?.release_date||'',duration_ms:Number(track.duration_ms)||180000};}
-
-function handleCsvFile(event){
-  const file=event.target.files?.[0];if(!file)return;
-  const reader=new FileReader();reader.onload=()=>{try{const result=parseTrackCsv(reader.result);state.tracks=result.tracks;state.musicSource='csv';state.sourceName=file.name;persistTracks();updateMusicSummary();toast(`${result.tracks.length} nummers geladen${result.errors.length?`; ${result.errors.length} regels overgeslagen`:''}.`);if(result.errors.length)showCsvErrors(result.errors);}catch(error){toast(error.message,true);}};reader.readAsText(file);
-}
-function parseTrackCsv(text){
-  const rows=parseCsvRows(text);if(rows.length<2)throw new Error('Het CSV-bestand bevat geen nummers.');
-  const headers=rows[0].map(normalizeHeader),find=names=>headers.findIndex(header=>names.map(normalizeHeader).includes(header));
-  const uriIndex=find(['Track URI','Spotify URI','URI']),titleIndex=find(['Track Name','Name','Title']),artistIndex=find(['Artist Name(s)','Artist Names','Artists','Artist']);
-  const albumIndex=find(['Album Name','Album']),releaseIndex=find(['Release Date','Release']),durationIndex=find(['Duration (ms)','Duration']);
-  if(uriIndex<0||titleIndex<0||artistIndex<0)throw new Error('CSV mist Track URI, Track Name of Artist Name(s).');
-  const tracks=[],errors=[],seen=new Set();
-  rows.slice(1).forEach((row,index)=>{const id=trackId(row[uriIndex]);if(!id){errors.push(`Regel ${index+2}: ongeldige Track URI`);return;}if(seen.has(id)){errors.push(`Regel ${index+2}: dubbel nummer`);return;}seen.add(id);tracks.push({id,uri:`spotify:track:${id}`,name:String(row[titleIndex]||'').trim()||'Onbekend',artists:String(row[artistIndex]||'').trim()||'Onbekend',album:albumIndex>=0?String(row[albumIndex]||'').trim():'',release_date:releaseIndex>=0?String(row[releaseIndex]||'').trim():'',duration_ms:Math.max(30000,Number(row[durationIndex])||180000)});});
-  if(!tracks.length)throw new Error('Geen geldige Spotify-tracks gevonden in de CSV.');return{tracks,errors};
-}
-function parseCsvRows(text){let rows=[],row=[],cell='',quoted=false;for(let index=0;index<text.length;index++){const char=text[index],next=text[index+1];if(char==='"'&&quoted&&next==='"'){cell+='"';index++;}else if(char==='"')quoted=!quoted;else if(char===','&&!quoted){row.push(cell);cell='';}else if((char==='\n'||char==='\r')&&!quoted){if(char==='\r'&&next==='\n')index++;row.push(cell);cell='';if(row.some(value=>value.trim()))rows.push(row);row=[];}else cell+=char;}row.push(cell);if(row.some(value=>value.trim()))rows.push(row);return rows;}
-function normalizeHeader(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
-function trackId(value){const text=String(value||'').trim(),match=text.match(/spotify:track:([a-zA-Z0-9]+)/)||text.match(/track\/([a-zA-Z0-9]+)/);return match?.[1]||(/^[a-zA-Z0-9]{15,}$/.test(text)?text:'');}
-function showCsvErrors(errors){openModal(`<div class="modal-card"><h2>CSV-controle</h2><p>${errors.length} regels zijn niet gebruikt:</p><div class="jury-list">${errors.slice(0,30).map(error=>`<div class="jury-item">${esc(error)}</div>`).join('')}</div>${errors.length>30?`<p class="muted">En nog ${errors.length-30} regels.</p>`:''}<div class="modal-actions"><button class="button" data-close>SLUITEN</button></div></div>`);}
-function persistTracks(){localStorage.bb_tracks=JSON.stringify(state.tracks);localStorage.bb_music_source=state.musicSource;localStorage.bb_source_name=state.sourceName;}
-function updateMusicSummary(){const box=$('musicSummary');if(!box)return;if(state.tracks.length){box.classList.add('ready');box.innerHTML=`<strong>✓ ${state.tracks.length} nummers klaar</strong><br><span>${esc(state.sourceName||state.musicSource)}</span>`;}else{box.classList.remove('ready');box.textContent='Nog geen muziek gekozen.';}}
-function resetUsedTracks(){localStorage.removeItem('bb_used_tracks');toast('Alle nummers kunnen weer gekozen worden.');}
-
-function ensureHostIdentity(){
-  if(!state.hostId){state.hostId=`h_${cryptoId()}`;localStorage.bb_host_id=state.hostId;}
-  if(!state.hostSecret){state.hostSecret=randomString(32);localStorage.bb_host_secret=state.hostSecret;}
-}
-function cryptoId(){const bytes=new Uint8Array(9);crypto.getRandomValues(bytes);return [...bytes].map(byte=>byte.toString(36)).join('').slice(0,14);}
-function newRoomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(6);crypto.getRandomValues(bytes);return [...bytes].map(byte=>chars[byte%chars.length]).join('');}
-function getCategories(){return Object.fromEntries(COLORS.map(color=>[color.key,{label:$(`cat-${color.key}`).value||color.label,kind:color.kind,name:color.name,emoji:color.emoji,hex:color.hex}]));}
-
-async function createRoom(){
-  if(!state.tracks.length)return toast('Kies eerst een Spotify-playlist of CSV-bestand.',true);
-  ensureHostIdentity();saveSettings();
-  try{
-    let code='',created=false;
-    for(let attempt=0;attempt<8&&!created;attempt++){
-      code=newRoomCode();
-      const result=await state.db.ref(`rooms/${code}`).transaction(current=>current===null?{
-        meta:{createdAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,hostId:state.hostId,hostKey:hashText(state.hostSecret),version:VERSION,gameNumber:1,roundNumber:0,autoStartBlocked:true,lastError:'Test eerst de muziek. Daarna starten rondes automatisch zodra iedereen Ready is.'},
-        categories:getCategories(),settings:{duration:Number($('duration').value)||20,noRepeat:$('noRepeat').checked,randomStart:$('randomStart').checked},currentRound:{status:'lobby',number:0}
-      }:undefined,false);
-      created=result.committed;
-    }
-    if(!created)throw new Error('Er kon geen unieke spelcode worden gemaakt. Probeer opnieuw.');
-    state.roomCode=code;localStorage.bb_host_room=code;await subscribeRoom(code);renderRoomShare();$('hostPlayBtn').classList.remove('hidden');toast(`Kamer ${code} is klaar.`);
-  }catch(error){toast(error.message,true);}
-}
-
-function hashText(value){let hash=2166136261;for(const char of String(value)){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0).toString(36);}
-async function resumeSavedRoom(){const saved=localStorage.bb_host_room;if(saved)await resumeRoom(saved,false);}
-async function resumeRoom(code,silent=false){
-  ensureHostIdentity();
-  try{
-    const snap=await state.db.ref(`rooms/${code}`).once('value');
-    if(!snap.exists()){localStorage.removeItem('bb_host_room');$('resumeRoomBtn').classList.add('hidden');if(!silent)toast('Deze kamer bestaat niet meer.',true);return;}
-    const room=snap.val()||{};
-    if(room.meta?.hostId&&room.meta.hostId!==state.hostId){if(!silent)toast('Deze kamer hoort bij een andere hostbrowser.',true);return;}
-    state.roomCode=code;await subscribeRoom(code);renderRoomShare();$('hostPlayBtn').classList.remove('hidden');$('resumeRoomBtn').classList.add('hidden');if(!silent)toast(`Kamer ${code} hervat.`);
-  }catch(error){if(!silent)toast(error.message,true);}
-}
-
-async function subscribeRoom(code){
-  state.roomRef?.off();state.roomRef=state.db.ref(`rooms/${code}`);state.roomCode=code;state.hostSignature='';state.renderSignature='';
-  state.roomRef.on('value',snapshot=>{state.room=snapshot.val()||null;if(!state.room){handleRoomRemoved();return;}onRoomUpdate();},error=>toast(`Verbinding met kamer verbroken: ${error.message}`,true));
-}
-
-function handleRoomRemoved(){
-  toast('De kamer bestaat niet meer.',true);state.room=null;state.roomCode='';state.roomRef?.off();state.roomRef=null;
-  if(state.mode==='player')location.href=location.pathname;else renderHost();
-}
-
-function onRoomUpdate(){
-  if(state.mode==='host')renderHost();
-  else renderPlayer();
-  ensureRoundTimer();
-  if(isHostController())maybeAutoStart();
-  if(isHostController())maybeFinalizeVotes();
-  if(isHostController())maybeFinalizeAllJury();
-}
-
-async function syncRoomSettings(){
-  saveSettings();if(!state.roomCode||!isHostController())return;
-  await state.db.ref(roomPath()).update({categories:getCategories(),settings:{duration:Number($('duration').value)||20,noRepeat:$('noRepeat').checked,randomStart:$('randomStart').checked},'meta/updatedAt':firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
-}
-
-function cleanupStalePlayers(){
-  if(!isHostController()||Date.now()-state.cleanupAt<60000)return;state.cleanupAt=Date.now();
-  const cutoff=serverNow()-5*60*1000,updates={};
-  Object.entries(state.room?.players||{}).forEach(([id,player])=>{if(player.online===false&&Number(player.lastSeen||0)<cutoff)updates[id]=null;});
-  if(Object.keys(updates).length)state.db.ref(roomPath('players')).update(updates).catch(()=>{});
-}
-
-function renderRoomShare(){
-  if(!state.roomCode)return;
-  const link=`${location.origin}${location.pathname}?room=${state.roomCode}`;
-  $('roomShare').classList.remove('hidden');
-  $('roomShare').innerHTML=`<div><div class="eyebrow">SPELCODE</div><div class="room-code">${esc(state.roomCode)}</div><div class="room-link-row"><input value="${esc(link)}" readonly aria-label="Kamerlink"><button class="button secondary" data-copy-link type="button">KOPIEER</button></div></div><img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(link)}" alt="QR-code naar kamer ${esc(state.roomCode)}">`;
-  $('roomShare').querySelector('[data-copy-link]').onclick=async event=>{try{await navigator.clipboard.writeText(link);}catch{const input=$('roomShare').querySelector('input');input.select();document.execCommand('copy');}event.currentTarget.textContent='GEKOPIEERD';setTimeout(()=>event.currentTarget.textContent='KOPIEER',1200);};
-}
-
-async function joinRoom(){
-  const name=$('playerName').value.trim();if(!name)return setMessage('joinMessage','Vul eerst je naam in.','error');
-  $('joinBtn').disabled=true;setMessage('joinMessage','Kamer controleren…');
-  try{
-    const roomSnap=await state.db.ref(`rooms/${state.roomCode}`).once('value');
-    if(!roomSnap.exists()||!roomSnap.val()?.meta)throw new Error('Deze kamer bestaat niet. Vraag de host om een nieuwe QR-code.');
-    const room=roomSnap.val();if(room.currentRound?.status==='ended')throw new Error('Dit spel is beëindigd. Vraag de host om een nieuwe kamer.');
-    if(!state.playerId)state.playerId=`p_${cryptoId()}`;
-    const ref=state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`),existing=(await ref.once('value')).val()||{};
-    const duplicate=Object.entries(room.players||{}).some(([id,player])=>id!==state.playerId&&player.online!==false&&normalizeText(player.name)===normalizeText(name));
-    if(duplicate)throw new Error('Deze naam is al in gebruik. Kies een andere naam.');
-    const animal=existing.avatar||chooseAnimal(room.players||{},state.playerId);
-    await ref.update({name,avatar,online:true,ready:true,isHost:false,joinedAt:existing.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,score:Number(existing.score)||0,card:existing.card||generateCard(state.playerId),marked:existing.marked||{},gameNumber:Number(room.meta?.gameNumber)||1});
-    await attachPlayer(ref,name,false);
-  }catch(error){setMessage('joinMessage',error.message,'error');$('joinBtn').disabled=false;}
-}
-
-async function attachPlayer(ref,name,isHost){
-  state.playerName=name;localStorage.bb_player_id=state.playerId;localStorage.bb_player_name=name;localStorage.bb_player_room=state.roomCode;
-  state.disconnectRef=ref;await ref.child('online').onDisconnect().set(false);state.joined=true;startHeartbeat();
-  state.ownAnswers=readJSON(`bb_own_answers_${state.roomCode}_${state.playerId}`,{});
-  $('joinView').classList.add('hidden');$('gameView').classList.remove('hidden');$('leaveBtn').textContent=isHost?'TERUG':'VERLATEN';$('playerIdentity').textContent=name;
-  await subscribeRoom(state.roomCode);renderPlayer();
-}
-
-function chooseAnimal(players,id){
-  const used=new Set(Object.values(players).filter(player=>player.online!==false).map(player=>player.avatar));
-  let start=parseInt(hashText(id),36)%ANIMALS.length;
-  for(let offset=0;offset<ANIMALS.length;offset++){const animal=ANIMALS[(start+offset)%ANIMALS.length];if(!used.has(animal))return animal;}
-  return ANIMALS[start];
-}
-
-async function enterHostPlayerMode(){
-  if(!state.roomCode||!state.room)return toast('Maak eerst een kamer.',true);
-  ensureHostIdentity();
-  let name=localStorage.bb_host_player_name||'Host';
-  const result=prompt('Naam van de host/speler:',name);if(result===null)return;name=result.trim()||'Host';localStorage.bb_host_player_name=name;
-  state.regularPlayerId=state.playerId;state.regularPlayerName=state.playerName;
-  state.hostPlaying=true;state.mode='player';state.playerId=`host_${state.hostId}`;state.playerName=`🎤 ${name}`;
-  const ref=state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`),existing=(await ref.once('value')).val()||{};
-  await ref.update({name:state.playerName,avatar:existing.avatar||chooseAnimal(state.room.players||{},state.playerId),online:true,ready:true,isHost:true,joinedAt:existing.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,score:Number(existing.score)||0,card:existing.card||generateCard(state.playerId),marked:existing.marked||{},gameNumber:Number(state.room.meta?.gameNumber)||1});
-  $('hostView').classList.add('hidden');$('playerView').classList.remove('hidden');$('joinView').classList.add('hidden');$('gameView').classList.remove('hidden');$('modeLabel').textContent='Host speelt mee';$('juryBtn').classList.remove('hidden');
-  await attachPlayer(ref,state.playerName,true);
-}
-
-function startHeartbeat(){clearInterval(state.heartbeat);heartbeat();state.heartbeat=setInterval(heartbeat,20000);}
-function heartbeat(){if(!state.joined||!state.roomCode||!state.playerId)return;state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`).update({online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});}
-function activePlayers(room=state.room){return Object.entries(room?.players||{}).filter(([,player])=>player.online!==false);}
-function allActiveReady(room=state.room){const players=activePlayers(room);return players.length>0&&players.every(([,player])=>player.ready===true);}
-function isHostController(){return !!state.roomCode&&state.room?.meta?.hostId===state.hostId&&(state.mode==='host'||state.hostPlaying);}
-
-function renderHost(){
-  const room=state.room,round=room?.currentRound||{status:'lobby'};cleanupStalePlayers();
-  $('connectionBadge').textContent=room?'ONLINE':'GEEN KAMER';$('connectionBadge').classList.toggle('online',!!room);
-  if(!room){$('hostStageTitle').textContent='Maak eerst een kamer';$('hostPlayers').className='players-grid empty-state';$('hostPlayers').textContent='Nog geen spelers.';$('hostRound').classList.add('hidden');$('hostActions').innerHTML='';return;}
-  const players=activePlayers(room),signature=JSON.stringify({status:round.status,id:round.id,deadline:round.deadlineMs,players:players.map(([id,p])=>[id,p.name,p.avatar,p.ready,p.score]),answers:Object.keys(room.answerReceipts?.[round.id]||{}).length,results:room.results?.[round.id],decision:room.decision,blocked:room.meta?.autoStartBlocked});
-  if(signature===state.hostSignature)return;state.hostSignature=signature;
-  $('hostStageTitle').textContent=hostStageTitle(round,players);
-  $('hostPlayers').className=players.length?'players-grid':'players-grid empty-state';
-  $('hostPlayers').innerHTML=players.length?players.map(([id,player])=>playerChip(id,player)).join(''):'Scan de QR-code om mee te doen.';
-  renderHostRound(room,round);renderHostActions(room,round);renderHostScore(room,round);
-}
-
-function hostStageTitle(round,players){
-  if(round.status==='ended')return'Spel beëindigd';
-  if(['picking','ready','answering','judging','review'].includes(round.status))return`Ronde ${round.number||1}`;
-  const ready=players.filter(([,p])=>p.ready).length;return`${ready} van ${players.length} spelers Ready`;
-}
-function playerChip(id,player){return`<div class="player-chip ${player.ready?'ready':''} ${player.online===false?'offline':''}"><span class="avatar">${esc(player.avatar||'🎵')}</span><span class="name">${esc(cleanName(player.name))}</span><span class="ready-state">${player.ready?'READY':'WACHT'}</span></div>`;}
-
-function renderHostRound(room,round){
-  const block=$('hostRound');
-  if(!round.id&&round.status!=='ended'){block.classList.add('hidden');block.innerHTML='';return;}
-  block.classList.remove('hidden');
-  const color=COLORS.find(item=>item.key===round.colorKey),answer=round.correctAnswer;
-  let html='';
-  if(round.status==='ended')html='<div class="answer-reveal"><h3>Het spel is beëindigd</h3><p>Start een nieuw spel of maak een nieuwe kamer.</p></div>';
-  else html=`<div class="round-main"><div class="round-color" style="--round-color:${esc(color?.hex||'#7ed957')}">${esc(round.colorEmoji||'🎵')}</div><div><h3>${esc(round.colorName||'Kleur wordt gekozen…')}</h3><p>${esc(round.category||'Nog even geduld')}</p></div></div>${round.status==='answering'?`<div class="timer" data-timer>${formatTimer(round.deadlineMs)}</div>`:''}`;
-  if(answer)html+=answerReveal(answer,round.fact);
-  block.innerHTML=html;
-}
-
-function renderHostActions(room,round){
-  const decision=room.decision;
-  if(decision?.status==='open'){
-    let html='';
-    if(decision.phase==='choose_mode')html=`<button class="button" data-decision-mode="host">HOST KIEST</button><button class="button secondary" data-decision-mode="vote">MEERDERHEID KIEST</button>`;
-    else if(decision.mode==='host')html=`<button class="button" data-host-outcome="continue">VERDER SPELEN</button><button class="button secondary" data-host-outcome="newgame">NIEUW SPEL</button><button class="button danger" data-host-outcome="end">SPEL BEËINDIGEN</button>`;
-    else if(decision.mode==='vote'){
-      const voteId=hostVoteId(),own=decision.votes?.[voteId],counts=countDecisionVotes(room);
-      html=own?`<div class="ready-banner">Hoststem: ${decisionLabel(own)} · Verder ${counts.continue} · Nieuw ${counts.newgame} · Stop ${counts.end}</div>`:`<button class="button" data-host-vote="continue">VERDER SPELEN</button><button class="button secondary" data-host-vote="newgame">NIEUW SPEL</button><button class="button danger" data-host-vote="end">SPEL BEËINDIGEN</button>`;
-    }
-    $('hostActions').innerHTML=html;
-    $('hostActions').querySelectorAll('[data-decision-mode]').forEach(button=>button.onclick=()=>chooseDecisionMode(button.dataset.decisionMode));
-    $('hostActions').querySelectorAll('[data-host-outcome]').forEach(button=>button.onclick=()=>resolveDecision(button.dataset.hostOutcome));
-    $('hostActions').querySelectorAll('[data-host-vote]').forEach(button=>button.onclick=()=>castDecisionVote(button.dataset.hostVote,hostVoteId()));
-    $('hostMessage').textContent='Bingo! Kies hoe het spel verdergaat.';return;
-  }
-  const actions=[];
-  if(room.meta?.autoStartBlocked)actions.push(`<button class="button" data-action="test">TEST MUZIEK OPNIEUW</button>`);
-  else if(!['picking','ready','answering','judging','review'].includes(round.status)&&activePlayers(room).length)actions.push(`<button class="button secondary" data-action="test">TEST MUZIEK</button>`);
-  if(round.status==='answering')actions.push(`<button class="button secondary" data-action="stop">STOP FRAGMENT</button>`);
-  if(['review','results'].includes(round.status))actions.push(`<button class="button secondary" data-action="jury">JURY / OVERRULE</button>`);
-  if(round.status==='ended')actions.push(`<button class="button" data-action="newgame">NIEUW SPEL</button>`);
-  $('hostActions').innerHTML=actions.join('');
-  $('hostActions').querySelector('[data-action="test"]')?.addEventListener('click',()=>testSpotify(true));
-  $('hostActions').querySelector('[data-action="stop"]')?.addEventListener('click',()=>stopPlayback(true));
-  $('hostActions').querySelector('[data-action="jury"]')?.addEventListener('click',openHostJury);
-  $('hostActions').querySelector('[data-action="newgame"]')?.addEventListener('click',()=>confirmAction('Nieuw spel starten?','Spelers blijven in dezelfde kamer en krijgen een nieuwe kaart. Scores en rondes worden gewist.',resetGame));
-  $('hostMessage').textContent=hostStatusMessage(room,round);
-}
-function hostStatusMessage(room,round){
-  if(room.meta?.autoStartBlocked)return room.meta.lastError||'Automatisch starten is gepauzeerd. Test de muziek opnieuw.';
-  if(round.status==='answering')return`${Object.keys(room.answerReceipts?.[round.id]||{}).length} van ${activePlayers(room).length} antwoorden ontvangen.`;
-  if(round.status==='review')return'De jury beoordeelt één of meer twijfelgevallen.';
-  if(round.status==='results')return'Wachten tot iedereen Ready is voor de volgende ronde.';
-  if(allActiveReady(room))return'Iedereen is Ready. De ronde start automatisch.';
-  return'Wachten tot alle actieve spelers Ready zijn.';
-}
-
-function renderHostScore(room,round){
-  const card=$('hostScoreCard');if(!round.id||!['review','results','decision','ended'].includes(round.status)){card.classList.add('hidden');return;}
-  card.classList.remove('hidden');const results=room.results?.[round.id]||{},answers=room.answers?.[round.id]||{};
-  const players=Object.entries(room.players||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
-  $('hostScoreboard').innerHTML=`<div class="score-table">${players.map(([id,player])=>{const result=results[id],stateClass=result?.status==='good'?'good':result?.status==='review'?'review':'bad';return`<div class="score-row"><strong>${esc(player.avatar||'🎵')} ${esc(cleanName(player.name))}</strong><span class="score-answer">${esc(answers[id]?.answer||'Geen antwoord')}</span><span class="score-state ${stateClass}">${result?.status==='good'?'GOED':result?.status==='review'?'JURY':'FOUT'}</span><span class="score-points">${Number(player.score)||0}</span></div>`;}).join('')}</div>`;
-}
-
-async function maybeAutoStart(){
-  const room=state.room,round=room?.currentRound||{};
-  if(state.autoStartBusy||!state.tracks.length||room?.meta?.autoStartBlocked||room?.decision?.status==='open')return;
-  if(!['lobby','results','complete',''].includes(round.status||'lobby')||!allActiveReady(room))return;
-  state.autoStartBusy=true;
-  try{await startRoundAtomic();}finally{state.autoStartBusy=false;}
-}
-
-async function startRoundAtomic(){
-  const ref=state.db.ref(roomPath('currentRound'));
-  const roundNumber=Number(state.room?.meta?.roundNumber||0)+1,roundId=`r_${serverNow()}_${cryptoId().slice(0,5)}`;
-  const claim=await ref.transaction(current=>{
-    const status=current?.status||'lobby';
-    if(!['lobby','results','complete',''].includes(status))return;
-    return{id:roundId,number:roundNumber,status:'starting',claimedBy:state.hostId,claimedAt:firebase.database.ServerValue.TIMESTAMP};
-  },false);
-  if(!claim.committed)return;
-  let track=null;
-  try{
-    const latest=(await state.db.ref(roomPath()).once('value')).val()||{};
-    if(!allActiveReady(latest))throw new Error('Niet alle actieve spelers zijn meer Ready.');
-    track=chooseTrack();if(!track)throw new Error('Er zijn geen nummers beschikbaar. Kies opnieuw een playlist of reset gespeelde nummers.');
-    state.currentTrack=track;state.currentTrackRound=roundId;localStorage[`bb_round_track_${state.roomCode}`]=JSON.stringify({roundId,track});
-    const device=await ensureSpotifyPlayer();
-    const color=pick(COLORS),category=latest.categories?.[color.key]||color,duration=Math.min(25,Math.max(20,Number(latest.settings?.duration||$('duration').value||20)));
-    const update={};
-    activePlayers(latest).forEach(([id])=>{update[`players/${id}/ready`]=false;});
-    update.currentRound={id:roundId,number:roundNumber,status:'picking',claimedBy:state.hostId,claimedAt:firebase.database.ServerValue.TIMESTAMP,colorKey:color.key,colorName:category.name||color.name,colorEmoji:category.emoji||color.emoji,colorHex:category.hex||color.hex,category:category.label||color.label,categoryKind:category.kind||color.kind,seconds:duration};
-    update['meta/roundNumber']=roundNumber;update['meta/updatedAt']=firebase.database.ServerValue.TIMESTAMP;
-    await state.db.ref(roomPath()).update(update);
-    pruneOldRounds(roundNumber);
-    await wait(1500);
-    await state.db.ref(roomPath('currentRound')).update({status:'ready'});
-    await wait(700);
-    await playRoundTrack(track,device,duration,roundId);
-  }catch(error){
-    if(track)unmarkUsedTrack(track.id);
-    const updates={currentRound:{status:'lobby',number:Number(state.room?.meta?.roundNumber||0)},'meta/autoStartBlocked':true,'meta/lastError':error.message};
-    activePlayers(state.room).forEach(([id])=>{updates[`players/${id}/ready`]=true;});
-    await state.db.ref(roomPath()).update(updates).catch(()=>{});toast(error.message,true);
-  }
-}
-
-function pruneOldRounds(currentNumber){
-  if(currentNumber<=30)return;const room=state.room||{},keepIds=new Set();
-  Object.keys(room.results||{}).slice(-25).forEach(id=>keepIds.add(id));const updates={};
-  Object.keys(room.answers||{}).forEach(id=>{if(!keepIds.has(id))updates[`answers/${id}`]=null;});
-  Object.keys(room.answerReceipts||{}).forEach(id=>{if(!keepIds.has(id))updates[`answerReceipts/${id}`]=null;});
-  Object.keys(room.results||{}).forEach(id=>{if(!keepIds.has(id))updates[`results/${id}`]=null;});
-  Object.keys(room.juryVotes||{}).forEach(id=>{if(!keepIds.has(id))updates[`juryVotes/${id}`]=null;});
-  if(Object.keys(updates).length)state.db.ref(roomPath()).update(updates).catch(()=>{});
-}
-
-function chooseTrack(){
-  if(!state.tracks.length)return null;
-  let used=new Set(readJSON('bb_used_tracks',[])),available=$('noRepeat').checked?state.tracks.filter(track=>!used.has(track.id)):state.tracks;
-  if(!available.length){used=new Set();available=state.tracks;}
-  const track=pick(available);return track;
-}
-function markUsedTrack(id){const used=new Set(readJSON('bb_used_tracks',[]));used.add(id);localStorage.bb_used_tracks=JSON.stringify([...used]);}
-function unmarkUsedTrack(id){const used=new Set(readJSON('bb_used_tracks',[]));used.delete(id);localStorage.bb_used_tracks=JSON.stringify([...used]);}
-async function playRoundTrack(track,device,duration,roundId){
-  let position=0;
-  if($('randomStart').checked&&track.duration_ms>duration*1000+30000)position=smartFragmentStart(track.duration_ms,duration*1000);
-  await spotifyApi(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(device)}`,{method:'PUT',body:JSON.stringify({uris:[track.uri],position_ms:position})});
-  markUsedTrack(track.id);const startedAt=serverNow(),deadline=startedAt+duration*1000;
-  await state.db.ref(roomPath('currentRound')).update({status:'answering',musicStartedAt:firebase.database.ServerValue.TIMESTAMP,deadlineMs:deadline,positionMs:position});
-  localStorage.bb_spotify_test_at=String(Date.now());
-  clearTimeout(state.roundTimer);state.roundTimer=setTimeout(()=>lockRound(roundId),duration*1000+250);
-}
-function smartFragmentStart(trackDuration,fragmentDuration){
-  const latest=Math.max(0,trackDuration-fragmentDuration-5000),base=Math.min(75000,Math.max(30000,Math.round(trackDuration*.34))),jitter=Math.round((Math.random()-.5)*12000);
-  return Math.max(15000,Math.min(latest,base+jitter));
-}
-
-async function stopPlayback(lock=false){
-  try{await spotifyApi('https://api.spotify.com/v1/me/player/pause',{method:'PUT',body:'{}'});}catch{}
-  if(lock&&state.room?.currentRound?.status==='answering')await lockRound(state.room.currentRound.id);
-}
-
-function ensureRoundTimer(){
-  const round=state.room?.currentRound;if(!isHostController()||round?.status!=='answering'||!round.deadlineMs)return;
-  const left=Number(round.deadlineMs)-serverNow();clearTimeout(state.roundTimer);
-  if(left<=0)lockRound(round.id);else state.roundTimer=setTimeout(()=>lockRound(round.id),left+150);
-}
-
-async function lockRound(roundId){
-  if(!isHostController())return;
-  const roundRef=state.db.ref(roomPath('currentRound'));
-  const claim=await roundRef.transaction(current=>current?.id===roundId&&current.status==='answering'?{...current,status:'judging',lockedAt:firebase.database.ServerValue.TIMESTAMP}:undefined,false);
-  if(!claim.committed)return;
-  await stopPlayback(false);
-  let track=state.currentTrackRound===roundId?state.currentTrack:null;
-  if(!track){const stored=readJSON(`bb_round_track_${state.roomCode}`,null);if(stored?.roundId===roundId)track=stored.track;}
-  if(!track){await state.db.ref(roomPath()).update({'meta/autoStartBlocked':true,'meta/lastError':'Het antwoord van deze ronde kon na herladen niet worden teruggevonden.','currentRound/status':'review'});return;}
-  const snapshot=(await state.db.ref(roomPath()).once('value')).val()||{},round=snapshot.currentRound||{};
-  const answers=(await state.db.ref(`privateAnswers/${state.roomCode}/${roundId}`).once('value')).val()||{},updates={};let hasReview=false;
-  const correct={track:track.name,artist:track.artists,album:track.album||'',year:String(track.release_date||'').slice(0,4)};
-  Object.entries(snapshot.players||{}).forEach(([id,player])=>{
-    const verdict=judgeAnswer(round,answers[id]?.answer||'',correct);hasReview ||= verdict.status==='review';
-    updates[`answers/${roundId}/${id}`]=answers[id]||{answer:'',submittedAt:null};
-    updates[`results/${roundId}/${id}`]={...verdict,answer:answers[id]?.answer||'',awarded:false};
+/* =========================
+   V85 - BB AAP ALTIJD ZICHTBAAR IN OVERLAY
+   ========================= */
+(function(){
+  const obs = new MutationObserver(() => {
+    document.querySelectorAll(".bbOverlayCard").forEach(card => {
+      if(!card.querySelector(".bbMonkeyFace")){
+        const face = document.createElement("div");
+        face.className = "bbMonkeyFace";
+        face.textContent = card.classList.contains("bad") ? "🐵🙈" : "🐵😎";
+        card.insertBefore(face, card.firstChild);
+      }
+      const img = card.querySelector(".bbOverlayLogo");
+      if(img){
+        img.src = "bb_mascot_dj.png";
+        img.classList.add("bbMascotVisible");
+      }
+    });
   });
-  updates['currentRound/correctAnswer']=correct;updates['currentRound/fact']=createFact(track);updates['currentRound/status']=hasReview?'review':'results';updates['currentRound/judgedAt']=firebase.database.ServerValue.TIMESTAMP;
-  await state.db.ref(roomPath()).update(updates);await applyScores(roundId);
-  state.db.ref(`privateAnswers/${state.roomCode}/${roundId}`).remove().catch(()=>{});
-}
+  document.addEventListener("DOMContentLoaded", () => {
+    obs.observe(document.body, {childList:true, subtree:true});
+  });
+})();
 
-function judgeAnswer(round,answer,correct){
-  const input=normalizeText(answer);if(!input)return{status:'bad',reason:'Geen antwoord'};
-  const kind=round.categoryKind||'title',year=Number(correct.year)||0;
-  if(kind==='year'){const value=Number(input.match(/\d{4}/)?.[0]);return value&&Math.abs(value-year)<=2?{status:'good',reason:'Jaartal binnen twee jaar'}:{status:'bad',reason:'Jaartal wijkt te veel af'};}
-  if(kind==='decade'){const value=Number(input.match(/(?:19|20)?\d0/)?.[0]);const decade=value<100?1900+value:value;return decade===Math.floor(year/10)*10?{status:'good',reason:'Juiste decennium'}:{status:'bad',reason:'Verkeerde decennium'};}
-  if(kind==='beforeafter'){
-    const before=/voor|before|ouder|eerder/.test(input),after=/na|after|nieuwer|later/.test(input),correctBefore=year<2001;
-    return(before&&correctBefore)||(after&&!correctBefore)?{status:'good',reason:'Juiste periode'}:{status:'bad',reason:'Verkeerde periode'};
+
+/* =========================
+   V89 - App polish fixes Georgio
+   - startpopup alleen bij normaal openen, niet na Spotify login/redirect
+   - host room compacter met grotere QR + glow
+   - antwoord nooit tonen voor timer voorbij is
+   - foutscherm zonder losse aap-emojis
+   - goedscherm: vakjes volledig gekleurd, geen kleine kleur-emoji
+   ========================= */
+(function(){
+  const q = (id) => document.getElementById(id);
+  const hasSpotifyCallback = () => new URLSearchParams(location.search).has("code");
+  const roomLink = (code) => location.origin + location.pathname + "?room=" + code;
+
+  // Popup alleen bij openen van de host-app. Niet na terugkomst van Spotify OAuth.
+  if (typeof setupHostMode === "function" && !window.__setupHostModeV89Wrapped) {
+    window.__setupHostModeV89Wrapped = true;
+    setupHostMode = function(){
+      setModeLabel("🎤 Host");
+      document.body.classList.remove("playerMode");
+      q("hostApp")?.classList.remove("hidden");
+      q("playerApp")?.classList.add("hidden");
+      restoreHost();
+
+      if (hasSpotifyCallback()) {
+        sessionStorage.setItem("bb_start_popup_seen", "1");
+        return;
+      }
+      if (sessionStorage.getItem("bb_start_popup_seen") !== "1") {
+        sessionStorage.setItem("bb_start_popup_seen", "1");
+        showStartPopup();
+      }
+    };
   }
-  const target=normalizeText(kind==='artist'?correct.artist:correct.track),cleanTarget=stripEdition(target),cleanInput=stripEdition(input);
-  if(cleanInput===cleanTarget)return{status:'good',reason:'Exact goed'};
-  const similarity=stringSimilarity(cleanInput,cleanTarget),coverage=tokenCoverage(cleanInput,cleanTarget);
-  if(similarity>=.84||(similarity>=.72&&coverage>=.75))return{status:'good',reason:'Duidelijke spellingvariant'};
-  if(similarity>=.58||coverage>=.5)return{status:'review',reason:'Lijkt erop, jury beslist'};
-  return{status:'bad',reason:'Komt onvoldoende overeen'};
-}
-function normalizeText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' en ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');}
-function stripEdition(value){return normalizeText(value).replace(/\b(remaster(?:ed)?|radio|edit|version|live|mix|feat|featuring|ft)\b.*$/,'').trim();}
-function tokenCoverage(input,target){const a=new Set(input.split(' ').filter(word=>word.length>1)),b=target.split(' ').filter(word=>word.length>1);return b.length?b.filter(word=>a.has(word)).length/b.length:0;}
-function stringSimilarity(a,b){if(!a&&!b)return 1;const distance=levenshtein(a,b);return 1-distance/Math.max(a.length,b.length,1);}
-function levenshtein(a,b){let previous=Array.from({length:b.length+1},(_,index)=>index);for(let i=1;i<=a.length;i++){let current=[i];for(let j=1;j<=b.length;j++)current[j]=Math.min(current[j-1]+1,previous[j]+1,previous[j-1]+(a[i-1]===b[j-1]?0:1));previous=current;}return previous[b.length];}
 
-async function applyScores(roundId){
-  const ref=state.db.ref(roomPath());
-  await ref.transaction(room=>{
-    if(!room)return room;const results=room.results?.[roundId]||{},players=room.players||{};
-    Object.entries(results).forEach(([id,result])=>{if(result.status==='good'&&!result.awarded&&players[id]){players[id].score=Number(players[id].score||0)+100;result.awarded=true;}if(result.status!=='good'&&result.awarded&&players[id]){players[id].score=Math.max(0,Number(players[id].score||0)-100);result.awarded=false;}});
-    return room;
-  },false);
-}
-
-function createFact(track){
-  const year=String(track.release_date||'').slice(0,4),artists=String(track.artists||'').split(',').map(value=>value.trim()).filter(Boolean),title=String(track.name||''),album=String(track.album||'');
-  const facts=[];
-  if(year)facts.push(`Dit nummer verscheen in ${year}, in de ${Math.floor(Number(year)/10)*10}'s.`);
-  if(album&&normalizeText(album)!==normalizeText(title))facts.push(`Het nummer staat op het album “${album}”.`);
-  if(artists.length>1)facts.push(`Aan dit nummer werken ${artists.length} genoemde artiesten samen.`);
-  const words=title.split(/\s+/).filter(Boolean);if(words.length>=4)facts.push(`De titel bestaat uit ${words.length} woorden.`);
-  if(/[!?]/.test(title))facts.push('De officiële titel bevat opvallende interpunctie.');
-  return pick(facts.length?facts:['Een goede muziektitel blijft vaak al na een paar seconden hangen.']);
-}
-
-function renderPlayer(){
-  const room=state.room;if(!room||!state.playerId)return;
-  const player=room.players?.[state.playerId];if(!player){toast('Je bent niet meer aangemeld in deze kamer.',true);return exitToJoin();}
-  const round=room.currentRound||{status:'lobby'},ownAnswer=room.answers?.[round.id]?.[state.playerId]||state.ownAnswers[round.id],ownResult=room.results?.[round.id]?.[state.playerId];
-  $('playerIdentity').innerHTML=`${esc(player.avatar||'🎵')} ${esc(cleanName(player.name))}`;
-  $('juryBtn').classList.toggle('hidden',!state.hostPlaying||!['review','results'].includes(round.status));
-  const signature=JSON.stringify({status:round.status,id:round.id,deadline:round.deadlineMs,color:round.colorKey,answer:ownAnswer?.answer,result:ownResult,ready:player.ready,marked:player.marked,players:activePlayers(room).map(([id,p])=>[id,p.name,p.avatar,p.ready,p.score]),decision:room.decision,bingo:room.bingos,game:room.meta?.gameNumber});
-  if(signature===state.renderSignature)return;
-  const focused=document.activeElement?.id==='answerInput';if(focused&&round.status==='answering'&&!ownAnswer)return;
-  state.renderSignature=signature;
-  $('playerGame').innerHTML=playerStage(room,round,player,ownAnswer,ownResult);
-  wirePlayerStage(room,round,player,ownAnswer,ownResult);
-}
-
-function playerStage(room,round,player,ownAnswer,ownResult){
-  const players=activePlayers(room),ready=players.filter(([,p])=>p.ready).length;
-  let content='';
-  if(round.status==='ended')content=endedPanel();
-  else if(room.decision?.status==='open')content=decisionPanel(room,player);
-  else if(!round.id||['lobby','complete'].includes(round.status))content=lobbyPanel(room,player,ready,players.length);
-  else if(round.status==='picking'||round.status==='starting')content=waitingPanel('De BB-aap kiest…','De kleur en categorie worden zo bekend.','🎨');
-  else if(round.status==='ready')content=waitingPanel(round.category||'Klaar voor muziek',`${round.colorName||''} · Het fragment start zo.`,'🎵',round);
-  else if(round.status==='answering')content=answerPanel(round,ownAnswer);
-  else if(round.status==='judging')content=waitingPanel('Jury beoordeelt','De antwoorden worden gecontroleerd.','🧐',round);
-  else if(round.status==='review')content=reviewPanel(room,round,player,ownResult);
-  else content=resultPanel(room,round,player,ownResult);
-  return`<div class="player-stage">${summaryBar(room,round,player)}<div class="primary-panel ${!round.id||['lobby','complete'].includes(round.status)?'lobby-panel':''}" style="--round-color:${esc(round.colorHex||colorHex(round.colorKey))}">${content}</div><div class="bingo-status">${cardProgress(player)} · ${ready}/${players.length} Ready</div></div>`;
-}
-
-function summaryBar(room,round,player){return`<div class="player-summary"><div class="summary-pill"><strong>${esc(round.id?`RONDE ${round.number||1}`:'LOBBY')}</strong> · ${esc(round.category||'Wachten')}</div><div class="summary-pill">⭐ <strong>${Number(player.score)||0}</strong></div><div class="summary-pill">👥 <strong>${activePlayers(room).length}</strong></div></div>`;}
-function lobbyPanel(room,player,ready,total){
-  const players=activePlayers(room).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
-  const hostTest=isHostController()?`<button class="button secondary" data-test-music>${room.meta?.autoStartBlocked?'TEST MUZIEK OPNIEUW':'TEST MUZIEK'}</button>`:'';
-  return`<div class="ready-banner">${player.ready?'✓ JIJ BENT READY':'KLAAR VOOR DE VOLGENDE RONDE?'}</div><h1>${ready} van ${total} Ready</h1><p class="muted">${esc(room.meta?.autoStartBlocked?room.meta.lastError||'Test de muziek opnieuw.':'De ronde begint automatisch als iedereen klaar is.')}</p>${!player.ready?'<button class="button" data-ready>IK BEN READY</button>':''}${hostTest}<div class="compact-player-list">${players.map(([id,p])=>playerChip(id,p)).join('')}</div>`;
-}
-function waitingPanel(title,text,emoji,round={}){return`${round.colorKey?`<span class="category-badge">${esc(round.colorEmoji||'')} ${esc(round.colorName||'')}</span>`:''}<div class="player-timer">${emoji}</div><h1>${esc(title)}</h1><p class="muted">${esc(text)}</p>`;}
-function answerPanel(round,ownAnswer){
-  if(ownAnswer)return`<span class="category-badge">${esc(round.colorEmoji||'')} ${esc(round.category||'')}</span><div class="player-timer" data-timer>${formatTimer(round.deadlineMs)}</div><h1>Antwoord ingeleverd</h1><div class="submitted-box">${esc(ownAnswer.answer)}</div><p class="muted">Je antwoord staat vast. Wacht tot de tijd voorbij is.</p>`;
-  return`<span class="category-badge">${esc(round.colorEmoji||'')} ${esc(round.category||'')}</span><div class="player-timer" data-timer>${formatTimer(round.deadlineMs)}</div><h1>Wat is jouw antwoord?</h1><p class="muted">${answerHint(round.categoryKind)}</p><form class="answer-form" data-answer-form><input id="answerInput" maxlength="80" autocomplete="off" enterkeyhint="send" placeholder="Typ je antwoord"><button class="button" type="submit">VERSTUUR</button></form>`;
-}
-function answerHint(kind){return({artist:'Vul de naam van de artiest in.',title:'Vul de titel van het nummer in.',year:'Vul een jaartal in.',decade:'Bijvoorbeeld: 1990 of jaren 90.',beforeafter:'Vul “voor” of “na” in.'})[kind]||'Vul je antwoord in.';}
-function reviewPanel(room,round,player,ownResult){
-  const reviews=Object.entries(room.results?.[round.id]||{}).filter(([,result])=>result.status==='review');
-  if(!reviews.length)return waitingPanel('Jury rondt af','De uitslag verschijnt zo.','🧐',round);
-  const [reviewId,result]=reviews[0],reviewPlayer=room.players?.[reviewId]||{},votes=room.juryVotes?.[round.id]?.[reviewId]||{},ownVote=votes[state.playerId];
-  return`<span class="category-badge">JURY</span><h1>Rekenen we dit goed?</h1><p><strong>${esc(reviewPlayer.avatar||'🎵')} ${esc(cleanName(reviewPlayer.name))}</strong> antwoordde:</p><div class="submitted-box">${esc(result.answer||'Geen antwoord')}</div><p class="muted">${esc(result.reason||'De jury twijfelt.')}</p>${typeof ownVote==='boolean'?`<div class="ready-banner">Stem ontvangen: ${ownVote?'GOED':'FOUT'}</div>`:`<div class="button-row"><button class="button" data-jury-vote="true">GOED</button><button class="button danger" data-jury-vote="false">FOUT</button></div>`}`;
-}
-function resultPanel(room,round,player,ownResult){
-  const answer=round.correctAnswer||{},good=ownResult?.status==='good';
-  if(good&&!player.pickedRounds?.[round.id]){
-    const indices=pickableCells(player,round.colorKey);
-    if(indices.length)return`<span class="category-badge">✓ GOED ANTWOORD</span>${answerReveal(answer,round.fact)}<p><strong>Kies één ${esc(round.colorName||'')} vakje:</strong></p>${bingoCard(player,indices)}${compactScoreboard(room,round)}`;
+  // Compacter hostscherm: grote QR, geen "Deel de link" blok, wel Kopieer link.
+  if (typeof renderRoomBox === "function" && !window.__renderRoomBoxV89Wrapped) {
+    window.__renderRoomBoxV89Wrapped = true;
+    renderRoomBox = function(code){
+      const box = q("roomBox");
+      if(!code || !box) return;
+      const link = roomLink(code);
+      box.classList.remove("hidden");
+      box.innerHTML = `
+        <div class="hostRoomGridV89">
+          <div class="hostRoomCodeV89">
+            <div class="roomLabelV89">SPELCODE</div>
+            <div class="roomCodeV89">${esc(code)}</div>
+          </div>
+          <div class="hostRoomQrWrapV89">
+            <img class="hostQrV89" alt="QR code" src="${qrUrl(link)}">
+          </div>
+          <div class="hostRoomCopyV89">
+            <input id="joinLink" class="joinLinkHiddenV89" readonly value="${esc(link)}" aria-label="Kamerlink">
+            <button id="copyRoomLinkBtn" type="button" class="copyRoomLinkBtnV89">📋 Kopieer link</button>
+          </div>
+        </div>`;
+    };
   }
-  return`<span class="category-badge">${good?'✓ GOED':'✕ HELAAS'}</span>${answerReveal(answer,round.fact)}${bingoCard(player,[])}${compactScoreboard(room,round)}${!player.ready?'<button class="button" data-ready>IK BEN READY</button>':'<div class="ready-banner">✓ READY VOOR DE VOLGENDE RONDE</div>'}`;
-}
-function compactScoreboard(room,round){
-  const results=room.results?.[round.id]||{},players=Object.entries(room.players||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));
-  return`<div class="score-compact">${players.map(([id,p])=>`<div class="score-row"><span class="avatar">${esc(p.avatar||'🎵')}</span><strong>${esc(cleanName(p.name))} ${results[id]?.status==='good'?'✓':results[id]?.status==='review'?'?':'×'}</strong><span class="score-points">${Number(p.score)||0}</span></div>`).join('')}</div>`;
-}
-function answerReveal(answer,fact){return`<div class="answer-reveal"><h3>${esc(answer.track||'Onbekende titel')}</h3><p>${esc(answer.artist||'Onbekende artiest')}</p>${answer.year?`<p>${esc(answer.year)}${answer.album?` · ${esc(answer.album)}`:''}</p>`:''}${fact?`<div class="fact-box"><strong>Wist je dat?</strong><br>${esc(fact)}</div>`:''}</div>`;}
-function endedPanel(){return`<div class="player-timer">🏁</div><h1>Spel beëindigd</h1><p class="muted">Bedankt voor het meespelen!</p><button class="button secondary" data-leave-now>TERUG NAAR BEGIN</button>`;}
 
-function wirePlayerStage(room,round,player,ownAnswer,ownResult){
-  $('playerGame').querySelector('[data-ready]')?.addEventListener('click',setReady);
-  $('playerGame').querySelector('[data-test-music]')?.addEventListener('click',()=>testSpotify(true));
-  $('playerGame').querySelector('[data-leave-now]')?.addEventListener('click',()=>leaveRoom(true));
-  const form=$('playerGame').querySelector('[data-answer-form]');if(form)form.addEventListener('submit',submitAnswer);
-  $('playerGame').querySelectorAll('[data-cell]').forEach(button=>button.addEventListener('click',()=>pickBingoCell(Number(button.dataset.cell),round)));
-  $('playerGame').querySelectorAll('[data-jury-vote]').forEach(button=>button.addEventListener('click',()=>castJuryVote(button.dataset.juryVote==='true')));
-  $('playerGame').querySelectorAll('[data-decision-vote]').forEach(button=>button.addEventListener('click',()=>castDecisionVote(button.dataset.decisionVote)));
-  $('playerGame').querySelectorAll('[data-host-outcome]').forEach(button=>button.addEventListener('click',()=>resolveDecision(button.dataset.hostOutcome)));
-  $('playerGame').querySelectorAll('[data-decision-mode]').forEach(button=>button.addEventListener('click',()=>chooseDecisionMode(button.dataset.decisionMode)));
-}
-
-async function submitAnswer(event){
-  event.preventDefault();const input=$('answerInput'),answer=input?.value.trim();if(!answer)return toast('Vul eerst je antwoord in.',true);
-  const round=state.room?.currentRound;if(!round?.id||round.status!=='answering'||serverNow()>=Number(round.deadlineMs||0))return toast('De antwoordtijd is voorbij.',true);
-  const ref=state.db.ref(`privateAnswers/${state.roomCode}/${round.id}/${state.playerId}`);
-  const result=await ref.transaction(current=>current||{answer:answer.slice(0,80),submittedAt:firebase.database.ServerValue.TIMESTAMP},false);
-  if(!result.committed)return toast('Je had al een antwoord ingeleverd.',true);
-  state.ownAnswers[round.id]={answer:answer.slice(0,80),submittedAt:serverNow()};localStorage[`bb_own_answers_${state.roomCode}_${state.playerId}`]=JSON.stringify(state.ownAnswers);
-  await state.db.ref(roomPath(`answerReceipts/${round.id}/${state.playerId}`)).set(true);state.renderSignature='';renderPlayer();
-}
-async function setReady(){if(!state.playerId)return;await state.db.ref(roomPath(`players/${state.playerId}`)).update({ready:true,lastSeen:firebase.database.ServerValue.TIMESTAMP});}
-
-function colorHex(key){return COLORS.find(color=>color.key===key)?.hex||'#7ed957';}
-function generateCard(seed){
-  const missing=parseInt(hashText(seed+Date.now()),36)%COLORS.length,pool=[];
-  COLORS.forEach((color,index)=>{const count=index===missing?4:5;for(let i=0;i<count;i++)pool.push(color.key);});shuffle(pool);
-  const card=[];for(let i=0;i<25;i++)card.push(i===12?'free':pool.shift());return card;
-}
-function shuffle(list){for(let index=list.length-1;index>0;index--){const target=Math.floor(Math.random()*(index+1));[list[index],list[target]]=[list[target],list[index]];}return list;}
-function bingoCard(player,pickable=[]){const set=new Set(pickable),marked=player.marked||{};return`<div class="bingo-mini">${(player.card||[]).map((color,index)=>{const done=index===12||marked[index],canPick=set.has(index);return`<button class="bingo-cell ${done?'marked':''} ${canPick?'pickable':''}" style="--cell:${colorHex(color)}" ${canPick?`data-cell="${index}"`:'disabled'}>${done?'✓':index===12?'★':''}</button>`;}).join('')}</div>`;}
-function pickableCells(player,color){return(player.card||[]).map((cell,index)=>cell===color&&!player.marked?.[index]?index:-1).filter(index=>index>=0);}
-function checkBingo(marked){
-  const lines=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
-  return lines.some(line=>line.every(index=>index===12||marked?.[index]));
-}
-function cardProgress(player){const count=Object.keys(player.marked||{}).filter(key=>player.marked[key]).length;return`Bingokaart ${Math.min(24,count+1)}/25`;} 
-async function pickBingoCell(index,round){
-  const ref=state.db.ref(roomPath(`players/${state.playerId}`));let bingo=false;
-  const result=await ref.transaction(player=>{
-    if(!player||player.card?.[index]!==round.colorKey||player.marked?.[index]||player.pickedRounds?.[round.id])return;
-    player.marked=player.marked||{};player.marked[index]=true;player.pickedRounds=player.pickedRounds||{};player.pickedRounds[round.id]=index;player.ready=true;bingo=checkBingo(player.marked);return player;
-  },false);
-  if(!result.committed)return;
-  if(bingo)await declareBingo(round.id);
-}
-
-async function declareBingo(roundId){
-  const bingoRef=state.db.ref(roomPath('bingos/current'));
-  const claim=await bingoRef.transaction(current=>current||{playerId:state.playerId,name:state.playerName,roundId,at:firebase.database.ServerValue.TIMESTAMP},false);
-  if(claim.committed)await state.db.ref(roomPath('decision')).set({status:'open',phase:'choose_mode',winnerId:state.playerId,winnerName:state.playerName,openedAt:firebase.database.ServerValue.TIMESTAMP});
-}
-
-function decisionPanel(room,player){
-  const decision=room.decision||{},winner=cleanName(decision.winnerName||room.players?.[decision.winnerId]?.name||'Een speler');
-  if(decision.phase==='choose_mode'){
-    if(!isHostController())return`<div class="winner-title">BINGO!</div><div class="winner-name">${esc(winner)} heeft gewonnen</div><p class="muted">De host kiest hoe jullie verdergaan.</p>`;
-    return`<div class="winner-title">BINGO!</div><div class="winner-name">${esc(winner)} heeft gewonnen</div><p>Kiest de host of stemt de hele groep?</p><div class="button-row"><button class="button" data-decision-mode="host">HOST KIEST</button><button class="button secondary" data-decision-mode="vote">MEERDERHEID KIEST</button></div>`;
+  function updateShowAnswerButtonV89(room){
+    const btn = q("showAnswerBtn");
+    if(!btn) return;
+    const r = room?.currentRound || activeRound || {};
+    const timerPast = r.deadlineMs && Date.now() >= Number(r.deadlineMs);
+    const mayShow = r.status === "locked" || r.status === "judged" || timerPast;
+    btn.disabled = !mayShow;
+    btn.title = mayShow ? "Antwoord tonen" : "Antwoord pas beschikbaar na de timer";
   }
-  if(decision.mode==='host'){
-    if(!isHostController())return`<div class="winner-title">BINGO!</div><div class="winner-name">${esc(winner)} heeft gewonnen</div><p class="muted">De host maakt een keuze.</p>`;
-    return`<div class="winner-title">BINGO!</div><div class="winner-name">${esc(winner)} heeft gewonnen</div><div class="decision-grid"><button class="button" data-host-outcome="continue">VERDER SPELEN</button><button class="button secondary" data-host-outcome="newgame">NIEUW SPEL</button><button class="button danger" data-host-outcome="end">SPEL BEËINDIGEN</button></div>`;
+
+  // Buttonstatus steeds goedzetten.
+  if (typeof renderHostScore === "function" && !window.__renderHostScoreV89Wrapped) {
+    window.__renderHostScoreV89Wrapped = true;
+    const oldRenderHostScore = renderHostScore;
+    renderHostScore = function(room){
+      const res = oldRenderHostScore.apply(this, arguments);
+      updateShowAnswerButtonV89(room || {});
+      return res;
+    };
   }
-  const ownVote=decision.votes?.[state.playerId],counts=countDecisionVotes(room);
-  return`<div class="winner-title">BINGO!</div><div class="winner-name">${esc(winner)} heeft gewonnen</div><p>De meerderheid kiest wat er gebeurt.</p>${ownVote?`<div class="ready-banner">Jouw stem: ${decisionLabel(ownVote)}</div>`:`<div class="decision-grid"><button class="button" data-decision-vote="continue">VERDER SPELEN</button><button class="button secondary" data-decision-vote="newgame">NIEUW SPEL</button><button class="button danger" data-decision-vote="end">SPEL BEËINDIGEN</button></div>`}<div class="vote-result">Verder ${counts.continue} · Nieuw spel ${counts.newgame} · Beëindigen ${counts.end}<br>Bij gelijkspel telt de stem van de host dubbel.</div>`;
-}
-function decisionLabel(value){return({continue:'VERDER SPELEN',newgame:'NIEUW SPEL',end:'SPEL BEËINDIGEN'})[value]||value;}
-async function chooseDecisionMode(mode){if(!isHostController()||!['host','vote'].includes(mode))return;await state.db.ref(roomPath('decision')).update({phase:'decide',mode,votes:{}});}
-function hostVoteId(){return state.hostPlaying?state.playerId:`controller_${state.hostId}`;}
-async function castDecisionVote(vote,voterId=state.playerId){if(!['continue','newgame','end'].includes(vote)||!voterId)return;await state.db.ref(roomPath(`decision/votes/${voterId}`)).set(vote);}
-function countDecisionVotes(room){
-  const counts={continue:0,newgame:0,end:0},votes=room.decision?.votes||{};
-  Object.entries(votes).forEach(([id,vote])=>{if(counts[vote]!==undefined)counts[vote]+=(room.players?.[id]?.isHost||id.startsWith('controller_'))?2:1;});return counts;
-}
-async function maybeFinalizeVotes(){
-  const room=state.room,decision=room?.decision;if(!decision||decision.status!=='open'||decision.mode!=='vote'||decision.phase!=='decide')return;
-  const players=activePlayers(room),votes=decision.votes||{},required=players.map(([id])=>id);
-  if(!state.hostPlaying)required.push(hostVoteId());
-  if(required.some(id=>!votes[id]))return;
-  const counts=countDecisionVotes(room),highest=Math.max(...Object.values(counts)),winners=Object.keys(counts).filter(key=>counts[key]===highest);
-  let outcome=winners.length===1?winners[0]:null;
-  if(!outcome){const hostChoice=votes[hostVoteId()];if(hostChoice&&winners.includes(hostChoice))outcome=hostChoice;}
-  if(!outcome)return;await resolveDecision(outcome);
-}
-async function resolveDecision(outcome){
-  if(!isHostController()||!['continue','newgame','end'].includes(outcome))return;
-  const claim=await state.db.ref(roomPath('decision/status')).transaction(status=>status==='open'?'resolving':undefined,false);if(!claim.committed)return;
-  if(outcome==='continue')await continueGame();else if(outcome==='newgame')await resetGame();else await endGame();
-}
-async function continueGame(){
-  const room=(await state.db.ref(roomPath()).once('value')).val()||{},updates={'decision':null,'bingos/current':null,'currentRound/status':'results'};
-  activePlayers(room).forEach(([id])=>{updates[`players/${id}/ready`]=false;});await state.db.ref(roomPath()).update(updates);
-}
-async function resetGame(){
-  const room=(await state.db.ref(roomPath()).once('value')).val()||{},gameNumber=Number(room.meta?.gameNumber||1)+1,updates={answers:null,answerReceipts:null,results:null,juryVotes:null,bingos:null,decision:null,currentRound:{status:'lobby',number:0},'meta/gameNumber':gameNumber,'meta/roundNumber':0,'meta/autoStartBlocked':false,'meta/lastError':null};
-  Object.entries(room.players||{}).forEach(([id,player])=>{updates[`players/${id}/card`]=generateCard(id+gameNumber);updates[`players/${id}/marked`]={};updates[`players/${id}/pickedRounds`]={};updates[`players/${id}/ready`]=false;updates[`players/${id}/score`]=0;updates[`players/${id}/gameNumber`]=gameNumber;});
-  await state.db.ref(roomPath()).update(updates);state.db.ref(`privateAnswers/${state.roomCode}`).remove().catch(()=>{});toast('Nieuw spel gestart. Iedereen krijgt een nieuwe kaart.');
-}
-async function endGame(){
-  const room=(await state.db.ref(roomPath()).once('value')).val()||{},updates={decision:null,'currentRound/status':'ended','meta/endedAt':firebase.database.ServerValue.TIMESTAMP};
-  Object.keys(room.players||{}).forEach(id=>{updates[`players/${id}/ready`]=false;});await state.db.ref(roomPath()).update(updates);
-}
 
-async function castJuryVote(vote){
-  const round=state.room?.currentRound,review=Object.entries(state.room?.results?.[round?.id]||{}).find(([,result])=>result.status==='review');if(!round?.id||!review)return;
-  await state.db.ref(roomPath(`juryVotes/${round.id}/${review[0]}/${state.playerId}`)).set(vote);await maybeFinalizeJury(round.id,review[0]);
-}
-async function maybeFinalizeJury(roundId,reviewId){
-  if(!isHostController())return;
-  const room=(await state.db.ref(roomPath()).once('value')).val()||{},players=activePlayers(room),votes=room.juryVotes?.[roundId]?.[reviewId]||{};
-  if(players.some(([id])=>typeof votes[id]!=='boolean'))return;
-  let yes=0,no=0;Object.entries(votes).forEach(([id,vote])=>{const weight=room.players?.[id]?.isHost?2:1;if(vote)yes+=weight;else no+=weight;});
-  if(yes===no)return;await setJuryResult(roundId,reviewId,yes>no?'good':'bad');
-}
-async function maybeFinalizeAllJury(){
-  const round=state.room?.currentRound;if(round?.status!=='review'||!round.id)return;
-  const review=Object.entries(state.room?.results?.[round.id]||{}).find(([,result])=>result.status==='review');
-  if(review)await maybeFinalizeJury(round.id,review[0]);
-}
-async function setJuryResult(roundId,playerId,status){
-  if(!isHostController()||!['good','bad'].includes(status))return;
-  await state.db.ref(roomPath(`results/${roundId}/${playerId}`)).update({status,reason:'Jurybesluit',overruledAt:firebase.database.ServerValue.TIMESTAMP});
-  const room=(await state.db.ref(roomPath()).once('value')).val()||{},pending=Object.values(room.results?.[roundId]||{}).some(result=>result.status==='review');
-  if(!pending)await state.db.ref(roomPath('currentRound/status')).set('results');await applyScores(roundId);
-}
+  // Antwoord mag nooit zichtbaar worden vóór timer voorbij is.
+  if (typeof showAnswer === "function" && !window.__showAnswerV89Wrapped) {
+    window.__showAnswerV89Wrapped = true;
+    showAnswer = function(){
+      if(!currentRoomCode) return;
+      db.ref("rooms/"+currentRoomCode+"/currentRound").once("value").then(s=>{
+        const r = s.val() || {};
+        const timerPast = r.deadlineMs && Date.now() >= Number(r.deadlineMs);
+        if(!(r.status === "locked" || r.status === "judged" || timerPast)) {
+          alert("Het antwoord is pas zichtbaar nadat de timer voorbij is.");
+          return;
+        }
+        return publishAnswer();
+      }).catch(e=>alert("Antwoord tonen mislukt: "+e.message));
+    };
+  }
 
-function openHostJury(){
-  if(!isHostController())return;
-  const round=state.room?.currentRound||{},results=state.room?.results?.[round.id]||{},answers=state.room?.answers?.[round.id]||{};
-  const rows=Object.entries(state.room?.players||{}).map(([id,player])=>{const result=results[id]||{};return`<div class="jury-item"><strong>${esc(player.avatar||'🎵')} ${esc(cleanName(player.name))}</strong><span>Antwoord: ${esc(answers[id]?.answer||'Geen antwoord')}</span><span>Beoordeling: ${result.status==='good'?'Goed':result.status==='review'?'Jury':'Fout'} · ${esc(result.reason||'')}</span><div class="jury-buttons"><button class="button" data-overrule="good" data-player="${esc(id)}">GOED</button><button class="button danger" data-overrule="bad" data-player="${esc(id)}">FOUT</button></div></div>`;}).join('');
-  openModal(`<div class="modal-card"><h2>Jury / overrule</h2><p class="muted">Corrigeer alleen als een antwoord verkeerd beoordeeld is.</p><div class="jury-list">${rows||'Nog geen antwoorden.'}</div><div class="modal-actions"><button class="button secondary" data-close>SLUITEN</button></div></div>`);
-  $('modalRoot').querySelectorAll('[data-overrule]').forEach(button=>button.addEventListener('click',async()=>{await setJuryResult(round.id,button.dataset.player,button.dataset.overrule);closeModal();}));
-}
+  // Maak lockRound expliciet: pas na timer publishen, daarna status locked.
+  if (typeof lockRound === "function" && !window.__lockRoundV89Wrapped) {
+    window.__lockRoundV89Wrapped = true;
+    lockRound = function(){
+      if(!currentRoomCode) return;
+      db.ref("rooms/"+currentRoomCode+"/currentRound").once("value").then(s=>{
+        const r = s.val() || {};
+        const timerPast = !r.deadlineMs || Date.now() >= Number(r.deadlineMs) - 250;
+        if(!timerPast) return; // beveiliging: nooit te vroeg tonen
+        return publishAnswer()
+          .then(()=>db.ref("rooms/"+currentRoomCode+"/currentRound").update({status:"locked"}))
+          .then(()=>{ if(q("hostStatus")) q("hostStatus").textContent="Tijd voorbij. Antwoord automatisch zichtbaar bij spelers."; });
+      }).catch(e=>alert("Timer/antwoord fout: "+e.message));
+    };
+  }
 
-function requestLeave(){
-  if(state.hostPlaying)return confirmAction('Terug naar het hostscherm?','Je verlaat de spelerslijst en gaat terug naar de hostbediening.',()=>leaveHostPlayerMode());
-  confirmAction('Spel verlaten?','Je verdwijnt uit de lobby en kunt later opnieuw meedoen.',()=>leaveRoom(true));
-}
-async function leaveRoom(navigate=false){
-  clearInterval(state.heartbeat);state.heartbeat=null;
-  if(state.roomCode&&state.playerId)await state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`).remove().catch(()=>{});
-  state.disconnectRef?.onDisconnect().cancel().catch(()=>{});state.joined=false;state.roomRef?.off();state.roomRef=null;
-  localStorage.removeItem('bb_player_room');state.renderSignature='';if(navigate)location.href=location.pathname;
-}
-async function leaveHostPlayerMode(){
-  const code=state.roomCode;await leaveRoom(false);state.hostPlaying=false;state.mode='host';state.playerId=localStorage.bb_player_id||'';state.playerName=localStorage.bb_player_name||'';
-  state.playerId=state.regularPlayerId;state.playerName=state.regularPlayerName;
-  if(state.playerId)localStorage.bb_player_id=state.playerId;else localStorage.removeItem('bb_player_id');
-  if(state.playerName)localStorage.bb_player_name=state.playerName;else localStorage.removeItem('bb_player_name');
-  $('playerView').classList.add('hidden');$('hostView').classList.remove('hidden');$('juryBtn').classList.add('hidden');$('modeLabel').textContent=`Host · V${VERSION}`;await resumeRoom(code,true);
-}
-function exitToJoin(){$('gameView').classList.add('hidden');$('joinView').classList.remove('hidden');$('joinBtn').disabled=false;state.joined=false;}
+  // Goed antwoord overlay: grote vakjes volledig in kleur, geen kleine kleur-emoji's.
+  if (typeof showGoodOverlay === "function" && !window.__showGoodOverlayV89Wrapped) {
+    window.__showGoodOverlayV89Wrapped = true;
+    showGoodOverlay = function(room,r){
+      const me = room.players?.[currentPlayerId] || {}, card = me.card || [], marked = me.marked || {};
+      const cells = card.map((c,i)=>{
+        const isMarked = !!marked[i] || i === 12;
+        const pickable = c === r.colorKey && c !== "free" && !marked[i];
+        const label = isMarked ? "✓" : "";
+        return `<button type="button" class="bbOverlayCell ${isMarked?"marked":""} ${pickable?"pickable":"blocked"}" data-i="${i}" style="background:${colorHex(c)}" ${pickable?"":"disabled"}>${label}</button>`;
+      }).join("");
+      const o = overlay();
+      o.innerHTML = `<div class="bbOverlayCard good">
+        <div class="bbMonkeyFace">🐵😎</div>
+        <img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap">
+        <div class="bbOverlayTitle">😎 GOED ANTWOORD!</div>
+        <div class="bbOverlayText">Kies één ${r.colorEmoji||""} ${r.colorName||""} vakje</div>
+        <div class="bbOverlayBingo">${cells}</div>
+        <div class="bbOverlayHint">Tik op een opgelicht vakje</div>
+      </div>`;
+      o.classList.add("show");
+      o.querySelectorAll(".bbOverlayCell.pickable").forEach(btn=>btn.addEventListener("click",()=>{
+        const i = Number(btn.dataset.i);
+        btn.textContent = "✓";
+        btn.classList.add("chosen");
+        pickCell(i);
+        setTimeout(closeOverlay,650);
+      }));
+    };
+  }
 
-function confirmAction(title,text,onConfirm){
-  openModal(`<div class="modal-card"><h2>${esc(title)}</h2><p>${esc(text)}</p><div class="modal-actions"><button class="button secondary" data-close>ANNULEREN</button><button class="button danger" data-confirm>DOORGAAN</button></div></div>`);
-  $('modalRoot').querySelector('[data-confirm]').onclick=async()=>{closeModal();await onConfirm();};
-}
-function openModal(html){const root=$('modalRoot');root.innerHTML=html;root.classList.remove('hidden');root.querySelectorAll('[data-close]').forEach(button=>button.onclick=closeModal);setTimeout(()=>root.querySelector('button,input,select')?.focus(),30);}
-function closeModal(){$('modalRoot').classList.add('hidden');$('modalRoot').innerHTML='';}
-function toast(message,error=false){const box=$('toast');clearTimeout(state.toastTimer);box.textContent=message;box.classList.toggle('error',error);box.classList.remove('hidden');state.toastTimer=setTimeout(()=>box.classList.add('hidden'),error?6500:3200);}
-function setMessage(id,message,type=''){const node=$(id);if(!node)return;node.textContent=message;node.className=`form-message ${type}`;}
-function cleanName(name){return String(name||'Speler').replace(/^🎤\s*/,'').trim()||'Speler';}
-function formatTimer(deadline){const seconds=Math.max(0,Math.ceil((Number(deadline||0)-serverNow())/1000));return`00:${String(seconds).padStart(2,'0')}`;}
-function readJSON(key,fallback){try{const value=localStorage.getItem(key);return value===null?fallback:JSON.parse(value);}catch{return fallback;}}
+  // Fout antwoord overlay: geen losse aap-emojis, alleen het echte BB-logo/mascottebeeld.
+  if (typeof showBadOverlay === "function" && !window.__showBadOverlayV89Wrapped) {
+    window.__showBadOverlayV89Wrapped = true;
+    showBadOverlay = function(room,r){
+      const ans = r.correctAnswer || {};
+      const answer = ans.track ? `🎵 ${esc(ans.track||"-")}<br>🎤 ${esc(ans.artist||"-")}` : "Volgende ronde beter!";
+      const o = overlay();
+      o.innerHTML = `<div class="bbOverlayCard bad">
+        <img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="Bingo Beats">
+        <div class="bbOverlayTitle">HELAAS!</div>
+        <div class="bbOverlayText">Deze was lastig...</div>
+        <div class="bbOverlayAnswer">${answer}</div>
+        <button type="button" class="bbOverlayContinue">Verder</button>
+      </div>`;
+      o.classList.add("show");
+      o.querySelector(".bbOverlayContinue")?.addEventListener("click",closeOverlay);
+      db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId+"/ready").set(true);
+      setTimeout(closeOverlay,4500);
+    };
+  }
+})();
 
-setInterval(()=>{
-  document.querySelectorAll('[data-timer]').forEach(element=>{const round=state.room?.currentRound;if(round?.deadlineMs)element.textContent=formatTimer(round.deadlineMs);});
-},250);
+/* =========================
+   V90 - Fixes Georgio
+   - Goed/fout overlays zonder losse emoji's
+   - Goed antwoord kaart: echte grote kleuren per vakje
+   - Antwoord nooit publiceren vóór timer voorbij is
+   ========================= */
+(function(){
+  const q = (id)=>document.getElementById(id);
+  const COLOR_HEX_V90 = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#FFCC33'};
+  const colorClassV90 = (c)=>['yellow','pink','purple','blue','green','free'].includes(c) ? 'cell-' + c : '';
 
-window.addEventListener('beforeunload',()=>{if(state.joined&&state.disconnectRef)state.disconnectRef.update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});});
+  // Extra beveiliging: publishAnswer zelf mag nooit te vroeg tonen, ook niet via oude code.
+  if (typeof publishAnswer === 'function' && !window.__publishAnswerV90Wrapped) {
+    window.__publishAnswerV90Wrapped = true;
+    const oldPublishAnswerV90 = publishAnswer;
+    publishAnswer = function(){
+      if(!currentRoomCode) return Promise.resolve();
+      return db.ref('rooms/'+currentRoomCode+'/currentRound').once('value').then(s=>{
+        const r = s.val() || {};
+        const timerPast = r.deadlineMs && Date.now() >= Number(r.deadlineMs) - 250;
+        const allowed = r.status === 'locked' || r.status === 'judged' || timerPast;
+        if(!allowed){
+          if(q('hostAnswerArea')) q('hostAnswerArea').innerHTML = '';
+          if(q('hostStatus')) q('hostStatus').textContent = 'Muziek speelt. Antwoord blijft verborgen tot de timer voorbij is.';
+          return Promise.resolve();
+        }
+        return oldPublishAnswerV90.apply(this, arguments);
+      });
+    };
+  }
+
+  // Show-answer knop pas na timer bruikbaar.
+  if (typeof startRoundVisual === 'function' && !window.__startRoundVisualV90Wrapped) {
+    window.__startRoundVisualV90Wrapped = true;
+    const oldStartRoundVisualV90 = startRoundVisual;
+    startRoundVisual = function(){
+      const res = oldStartRoundVisualV90.apply(this, arguments);
+      setTimeout(()=>{
+        if(q('showAnswerBtn')) q('showAnswerBtn').disabled = true;
+        if(q('hostAnswerArea')) q('hostAnswerArea').innerHTML = '';
+      }, 0);
+      setTimeout(()=>{
+        if(q('showAnswerBtn')) q('showAnswerBtn').disabled = true;
+        if(q('hostAnswerArea')) q('hostAnswerArea').innerHTML = '';
+      }, 3100);
+      return res;
+    };
+  }
+
+  if (typeof playHidden === 'function' && !window.__playHiddenV90Wrapped) {
+    window.__playHiddenV90Wrapped = true;
+    const oldPlayHiddenV90 = playHidden;
+    playHidden = async function(){
+      if(q('showAnswerBtn')) q('showAnswerBtn').disabled = true;
+      if(q('hostAnswerArea')) q('hostAnswerArea').innerHTML = '';
+      const res = await oldPlayHiddenV90.apply(this, arguments);
+      const dur = (Number(q('duration')?.value)||20)*1000;
+      setTimeout(()=>{ if(q('showAnswerBtn')) q('showAnswerBtn').disabled = false; }, dur + 350);
+      return res;
+    };
+  }
+
+  // Goed antwoord overlay: geen losse emoji's, alle vakjes zijn grote kleuren.
+  if (typeof showGoodOverlay === 'function') {
+    showGoodOverlay = function(room,r){
+      const me = room.players?.[currentPlayerId] || {}, card = me.card || [], marked = me.marked || {};
+      const cells = card.map((c,i)=>{
+        const isMarked = !!marked[i] || i === 12;
+        const pickable = c === r.colorKey && c !== 'free' && !marked[i];
+        const cls = colorClassV90(c);
+        return `<button type="button" class="bbOverlayCell ${cls} ${isMarked?'marked':''} ${pickable?'pickable':'blocked'}" data-i="${i}" style="--cellColor:${COLOR_HEX_V90[c]||'rgba(255,255,255,.18)'}" ${pickable?'':'disabled'}></button>`;
+      }).join('');
+      const o = overlay();
+      o.innerHTML = `<div class="bbOverlayCard good">
+        <img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="Bingo Beats">
+        <div class="bbOverlayTitle">GOED ANTWOORD!</div>
+        <div class="bbOverlayText">Kies één ${esc(r.colorName||'kleur')} vakje</div>
+        <div class="bbOverlayBingo">${cells}</div>
+        <div class="bbOverlayHint">Tik op een opgelicht vakje</div>
+      </div>`;
+      o.classList.add('show');
+      o.querySelectorAll('.bbOverlayCell.pickable').forEach(btn=>btn.addEventListener('click',()=>{
+        const i = Number(btn.dataset.i);
+        btn.classList.add('chosen');
+        pickCell(i);
+        setTimeout(closeOverlay,650);
+      }));
+    };
+  }
+
+  // Fout antwoord overlay: ook geen muziek/microfoon emoji's in antwoordblok.
+  if (typeof showBadOverlay === 'function') {
+    showBadOverlay = function(room,r){
+      const ans = r.correctAnswer || {};
+      const answer = ans.track ? `${esc(ans.track||'-')}<br>${esc(ans.artist||'-')}` : 'Volgende ronde beter!';
+      const o = overlay();
+      o.innerHTML = `<div class="bbOverlayCard bad">
+        <img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="Bingo Beats">
+        <div class="bbOverlayTitle">HELAAS!</div>
+        <div class="bbOverlayText">Deze was lastig...</div>
+        <div class="bbOverlayAnswer">${answer}</div>
+        <button type="button" class="bbOverlayContinue">Verder</button>
+      </div>`;
+      o.classList.add('show');
+      o.querySelector('.bbOverlayContinue')?.addEventListener('click',closeOverlay);
+      db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true);
+      setTimeout(closeOverlay,4500);
+    };
+  }
+})();
+
+
+/* =========================
+   V94 - SPELERSCHERM STORY FLOW + ADAPTIVE LAYOUT
+   - Geen 4-vakken-dashboard meer
+   - Eén duidelijke spelerfocus per fase
+   - Werkt passend op telefoon, iPad en desktop
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(s) : String(s ?? '').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#101716'};
+  const NAME = {yellow:'GOUD', pink:'AQUA', purple:'ORANJE', blue:'LIME', green:'KORAAL', free:'FREE'};
+  let draft = '';
+  const seenAnswers = new Set();
+
+  function secondsLeft(r){
+    if(!r?.deadlineMs) return null;
+    return Math.max(0, Math.ceil((Number(r.deadlineMs)-Date.now())/1000));
+  }
+  function timerPct(r){
+    const left = secondsLeft(r);
+    const sec = Math.max(1, Number(r?.seconds)||20);
+    return left === null ? 100 : Math.max(0, Math.min(100, left / sec * 100));
+  }
+  function getPlayers(room){ return Object.entries(room.players || {}); }
+  function ownAnswer(room,r){ return r?.id ? room.answers?.[r.id]?.[currentPlayerId] : null; }
+  function isTimerOver(r){ return !!(r?.deadlineMs && Date.now() >= Number(r.deadlineMs)); }
+  function initial(name){ return String(name||'?').trim().slice(0,1).toUpperCase() || '?'; }
+  function categoryQuestion(cat){
+    const c = String(cat||'').toLowerCase();
+    if(c.includes('artiest')) return 'Welke artiest hoor je?';
+    if(c.includes('titel') || c.includes('track') || c.includes('lied')) return 'Hoe heet deze track?';
+    if(c.includes('decennium')) return 'Uit welk decennium komt deze track?';
+    if(c.includes('jaar') || c.includes('voor') || c.includes('na')) return 'Uit welk jaar komt deze track?';
+    return 'Hoe heet deze track?';
+  }
+  function cardHTML(room,r,{large=false,pick=false}={}){
+    const me = room.players?.[currentPlayerId] || {};
+    const card = me.card || [];
+    const marked = me.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const rawKey = card[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || rawKey==='free') ? 'free' : rawKey;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const canPick = pick && key===r?.colorKey && !isMarked && !isFree;
+      const cls = ['bbStageCell', 'cell-'+key, isFree?'free':'', isMarked?'marked':'', canPick?'pickable':''].filter(Boolean).join(' ');
+      const content = isFree ? '🐵' : (marked[i] ? '✓' : '');
+      return `<button class="${cls}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'tabindex="-1"'}>${content}</button>`;
+    }).join('');
+    return `<div class="bbStageBingo ${large?'large':''}">${cells}</div>`;
+  }
+  function attachPickHandlers(root){
+    root.querySelectorAll('.bbStageCell.pickable').forEach(btn=>{
+      btn.addEventListener('click',()=> pickCell(Number(btn.dataset.i)) );
+    });
+  }
+  function readyListHTML(room){
+    const ps = getPlayers(room);
+    return `<div class="bbStageReadyList">${ps.map(([pid,p])=>`
+      <div class="bbReadyRow ${p.ready?'ready':'wait'}">
+        <div class="bbAvatar">${E(initial(p.name))}</div>
+        <div class="bbReadyName">${E(p.name||'Speler')}${pid===currentPlayerId?' <span>jij</span>':''}</div>
+        <div class="bbReadyState">${p.ready?'Klaar':'Wacht'}</div>
+      </div>`).join('') || '<div class="small">Nog geen spelers.</div>'}</div>`;
+  }
+  function scoreboardHTML(room,r,{reveal=false,results=false}={}){
+    const ps = getPlayers(room);
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const animate = ps.length <= 5;
+    return `<div class="bbStageScoreList">${ps.map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      const key = `${r?.id||''}:${pid}:${has?text:''}`;
+      const isNew = has && !seenAnswers.has(key);
+      if(has) seenAnswers.add(key);
+      const st = results ? cor[pid] : undefined;
+      const cls = st===true?'good':st===false?'bad':has?'sent':'wait';
+      const icon = results ? (st===true?'✓':'×') : (has?'✓':'…');
+      const anim = animate && isNew ? 'newAnswer' : '';
+      return `<div class="bbStageScoreRow ${cls} ${anim}">
+        <div class="bbAvatar">${E(initial(p.name))}</div>
+        <div class="bbScoreWho"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <span>jij</span>':''}</strong><small>${has?'Ingezonden':'Wacht op antwoord'}</small></div>
+        <div class="bbScoreAnswer">${has && (reveal || pid===currentPlayerId || ownAnswer(room,r)) ? E(text) : (has?'Ingezonden':'—')}</div>
+        <div class="bbScoreIcon">${icon}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  function correctBlock(r){
+    const a = r?.correctAnswer || {};
+    if(!a.track && !a.artist) return '';
+    return `<div class="bbCorrectTop">
+      <div class="bbCorrectLabel">Juiste antwoord</div>
+      <div class="bbCorrectTrack">${E(a.track||'-')}</div>
+      <div class="bbCorrectMeta">${E(a.artist||'-')}${a.year?' — '+E(a.year):''}</div>
+    </div>`;
+  }
+  function stage(root, cls, html){
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell">${html}</section>`;
+    attachPickHandlers(root);
+  }
+  function renderLobby(root,room){
+    stage(root,'stageLobby',`
+      <img src="bb_logo.png" class="bbStageLogo" alt="Bingo Beats">
+      <h2>Wachten op de host</h2>
+      <p class="bbStageSub">Iedereen klaar? Dan kan de ronde starten.</p>
+      ${readyListHTML(room)}
+      <div class="bbCardWrap"><h3>Jouw bingokaart</h3>${cardHTML(room,null,{large:false})}</div>
+    `);
+  }
+  function renderPicking(root,room,r){
+    stage(root,'stagePicking',`
+      <img src="bb_logo.png" class="bbStageLogo small" alt="Bingo Beats">
+      <h2>Het kleurenrad draait</h2>
+      <p class="bbStageSub">De categorie wordt gekozen...</p>
+      <div class="bbStageSpinnerMini">🎡</div>
+    `);
+  }
+  function renderReady(root,room,r){
+    stage(root,'stageReady',`
+      <img src="bb_logo.png" class="bbStageLogo small" alt="Bingo Beats">
+      <div class="bbChosenCard" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}">
+        <div class="bbChosenDot"></div>
+        <h2>${E(r.colorName||'KLEUR')}</h2>
+        <p>${E(r.category||'')}</p>
+      </div>
+      <p class="bbStageSub">Het nummer start direct...</p>
+    `);
+  }
+  function renderAnswering(root,room,r){
+    const own = ownAnswer(room,r);
+    const left = secondsLeft(r);
+    if(own){
+      stage(root,'stageScore',`
+        <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+        <div class="bbOwnSubmitted"><span>Jouw antwoord</span><strong>${E(String(own.answer||'').trim()||'Leeg antwoord')}</strong></div>
+        <h2>Live antwoorden</h2>
+        <p class="bbStageSub">Je ziet antwoorden zodra spelers insturen. Nog niemand ziet wat goed is.</p>
+        ${scoreboardHTML(room,r,{reveal:false,results:false})}
+        <div class="bbBottomTimer">⏱ ${left ?? '--'} sec</div>
+      `);
+      return;
+    }
+    stage(root,'stageAnswer',`
+      <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+      <div class="bbRoundBadge" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'')} · ${E(r.category||'')}</div>
+      <div class="bbCountdownBig" style="--pct:${timerPct(r)}"><span>${left ?? ''}</span></div>
+      <h2>${E(categoryQuestion(r.category))}</h2>
+      <input id="bbStageAnswerInput" class="bbStageInput" value="${E(draft)}" placeholder="Typ je antwoord..." autocomplete="off">
+      <button id="bbStageSubmitBtn" class="bbStageSubmit">VERSTUREN</button>
+    `);
+    const inp = q('bbStageAnswerInput');
+    inp?.addEventListener('input', e=>{ draft = e.target.value; });
+    inp?.addEventListener('keydown', e=>{ if(e.key==='Enter') q('bbStageSubmitBtn')?.click(); });
+    q('bbStageSubmitBtn')?.addEventListener('click',()=>{
+      const v = (q('bbStageAnswerInput')?.value || '').trim();
+      if(!v) return alert('Vul eerst je antwoord in.');
+      draft = '';
+      submitAnswerValue(v);
+    });
+    setTimeout(()=>inp?.focus(),50);
+  }
+  function renderLocked(root,room,r){
+    stage(root,'stageReveal',`
+      <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+      ${correctBlock(r) || '<h2>Tijd voorbij</h2><p class="bbStageSub">Wachten op de host...</p>'}
+      <h2>Alle antwoorden</h2>
+      ${scoreboardHTML(room,r,{reveal:true,results:false})}
+      <p class="bbStageSub">De host controleert nu wie goed zat.</p>
+    `);
+  }
+  function renderJudged(root,room,r){
+    const good = room.correct?.[r.id]?.[currentPlayerId] === true;
+    const me = room.players?.[currentPlayerId] || {};
+    const picked = me.lastPickedRound === r.id;
+    if(good && !picked){
+      stage(root,'stagePickCard',`
+        <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+        <h2>GOED ANTWOORD!</h2>
+        <p class="bbStageSub">Kies één <strong>${E(r.colorName||'')}</strong> vakje</p>
+        ${cardHTML(room,r,{large:true,pick:true})}
+        <p class="bbStageSub bottom">Tik op een opgelicht vakje</p>
+      `);
+      return;
+    }
+    if(good && picked){
+      stage(root,'stageLobby',`
+        <img src="bb_logo.png" class="bbStageLogo" alt="Bingo Beats">
+        <h2>Vakje gekozen</h2>
+        <p class="bbStageSub">Wachten op de volgende ronde...</p>
+        <div class="bbCardWrap">${cardHTML(room,r,{large:false})}</div>
+      `);
+      return;
+    }
+    stage(root,'stageBad',`
+      <img src="bb_logo.png" class="bbStageLogo" alt="Bingo Beats">
+      <h2>HELAAS!</h2>
+      <p class="bbStageSub">Deze was lastig...</p>
+      ${correctBlock(r)}
+      <p class="bbStageSub">Wachten op de volgende ronde...</p>
+    `);
+  }
+
+  // Definitieve renderer: vervangt 4-vakken-layout volledig.
+  renderCompactDashboard = function(room,r){
+    const root = q('screenDashboard');
+    if(!root) return;
+    document.body.classList.add('bbStageMode');
+    if(!r?.id) return renderLobby(root,room);
+    if(r.status === 'picking') return renderPicking(root,room,r);
+    if(r.status === 'ready') return renderReady(root,room,r);
+    if(r.status === 'answering') return renderAnswering(root,room,r);
+    if(r.status === 'locked') return renderLocked(root,room,r);
+    if(r.status === 'judged') return renderJudged(root,room,r);
+    return renderLobby(root,room);
+  };
+
+  // Zorg dat de topheader op spelersscherm niet teveel ruimte pakt.
+  function applyV94Mode(){ document.body.classList.add('bbStageMode'); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyV94Mode); else applyV94Mode();
+})();
+
+/* =========================
+   V98 - SPOTIFY AFSPÉELTEST VOOR START RONDE
+   - Start ronde doet eerst een echte stille playback-test
+   - Geen kleurenrad / ronde als Spotify niet echt kan afspelen
+   - Voorkomt 'device not found' pas tijdens het spel
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  async function waitForSpotifyDeviceV98(timeoutMs = 6500){
+    const token = await getToken();
+    if(!token) throw new Error('Login eerst met Spotify.');
+    if(!window.Spotify) throw new Error('Spotify Web Player is nog niet geladen. Wacht kort en probeer opnieuw.');
+
+    if(!deviceId){
+      await activatePlayer();
+    } else if(player){
+      try{ await player.connect(); }catch(e){}
+    }
+
+    const start = Date.now();
+    while(!deviceId && Date.now() - start < timeoutMs){
+      await sleep(250);
+    }
+    if(!deviceId) throw new Error('Geen actieve Bingo Beats Spotify-speler gevonden. Open Spotify niet op een ander apparaat en klik opnieuw op START RONDE.');
+
+    // Maak de Bingo Beats speler expliciet het actieve apparaat.
+    try{
+      await api('https://api.spotify.com/v1/me/player', {
+        method:'PUT',
+        body: JSON.stringify({ device_ids:[deviceId], play:false })
+      });
+      await sleep(450);
+    }catch(e){
+      // Sommige accounts/devices geven hier soms 204/lege responses of tijdelijke errors.
+      // De echte test hieronder bepaalt of afspelen werkt.
+    }
+
+    return deviceId;
+  }
+
+  async function spotifyPlaybackPreflightV98(track){
+    if(!track?.uri) throw new Error('Geen testnummer beschikbaar. Upload eerst je muzieklijst.');
+    if(q('hostStatus')) q('hostStatus').textContent = 'Spotify wordt getest vóór het spel begint...';
+    if(q('startRoundBtn')){ q('startRoundBtn').disabled = true; q('startRoundBtn').textContent = '🔎 Spotify testen...'; }
+
+    await waitForSpotifyDeviceV98();
+
+    // Stille echte test: mute de Web Player, speel heel kort af, pauzeer direct.
+    // Dit vangt device_not_found vóórdat spelers het kleurenrad zien.
+    let oldVolume = null;
+    try{
+      if(player && typeof player.getVolume === 'function') oldVolume = await player.getVolume();
+    }catch(e){}
+    try{
+      if(player && typeof player.setVolume === 'function') await player.setVolume(0);
+    }catch(e){}
+
+    try{
+      await api(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method:'PUT',
+        body: JSON.stringify({ uris:[track.uri], position_ms:0 })
+      });
+      await sleep(550);
+      await api('https://api.spotify.com/v1/me/player/pause', { method:'PUT', body:'{}' }).catch(()=>{});
+    }catch(e){
+      throw new Error('Spotify kan nu niet afspelen: ' + (e.message || 'device not found'));
+    }finally{
+      try{ if(player && typeof player.setVolume === 'function') await player.setVolume(oldVolume ?? .8); }catch(e){}
+    }
+
+    localStorage.bb_spotify_preflight_ok_at = String(Date.now());
+    if(q('hostStatus')) q('hostStatus').textContent = 'Spotify getest: afspelen werkt. Ronde wordt gestart...';
+    return true;
+  }
+
+  function rollbackUsedTrackV98(track){
+    try{
+      if(!track?.id) return;
+      const used = JSON.parse(localStorage.hb_used || '[]').filter(id => id !== track.id);
+      localStorage.hb_used = JSON.stringify(used);
+      if(typeof updateStatus === 'function') updateStatus();
+    }catch(e){}
+  }
+
+  // Start ronde: eerst Spotify écht testen, daarna pas rad/ronde starten.
+  startRound = async function(){
+    if(!currentRoomCode) return alert('Maak eerst een kamer.');
+    try{
+      const snap = await db.ref('rooms/'+currentRoomCode).once('value');
+      const room = snap.val() || {};
+      if(!allReady(room)) return alert('Nog niet iedereen is READY.');
+
+      currentTrack = chooseTrack();
+      if(!currentTrack) return alert('Upload eerst je muzieklijst.');
+
+      try{
+        await spotifyPlaybackPreflightV98(currentTrack);
+      }catch(e){
+        rollbackUsedTrackV98(currentTrack);
+        currentTrack = null;
+        if(q('startRoundBtn')){ q('startRoundBtn').disabled = false; q('startRoundBtn').textContent = '🎲 START RONDE'; }
+        if(q('hostStatus')) q('hostStatus').textContent = 'Spotify-test mislukt. Los dit eerst op en start daarna de ronde.';
+        alert(
+          e.message + '\n\n' +
+          'Oplossing:\n' +
+          '1. Zorg dat Spotify niet actief is op een ander apparaat.\n' +
+          '2. Klik op Activeer Spotify-speler.\n' +
+          '3. Wacht tot je ziet dat de speler actief is.\n' +
+          '4. Klik daarna opnieuw op START RONDE.'
+        );
+        return;
+      }
+
+      const up = {};
+      Object.keys(room.players || {}).forEach(pid => up[`rooms/${currentRoomCode}/players/${pid}/ready`] = false);
+      await db.ref().update(up);
+      return startRoundVisual(currentRoomCode);
+    }catch(e){
+      if(q('startRoundBtn')){ q('startRoundBtn').disabled = false; q('startRoundBtn').textContent = '🎲 START RONDE'; }
+      alert('Start ronde mislukt: ' + e.message);
+    }
+  };
+
+  // Afspelen tijdens de ronde: geen answer-screen meer als Spotify faalt.
+  playHidden = async function(){
+    try{
+      if(!currentTrack) return alert('Geen nummer gekozen. Druk eerst op START RONDE.');
+      if(q('playBtn')){ q('playBtn').disabled = true; q('playBtn').textContent = '🎵 Nummer speelt...'; }
+
+      await waitForSpotifyDeviceV98();
+
+      const dur = (Number(q('duration')?.value) || 20) * 1000;
+      let pos = 0;
+      if(q('randomStart')?.checked && currentTrack.duration_ms > dur + 40000){
+        const max = Math.max(0, currentTrack.duration_ms - dur - 5000);
+        pos = Math.floor(20000 + Math.random() * Math.max(1, max - 20000));
+      }
+
+      // Eerst Spotify echt starten. Pas daarna krijgen spelers het antwoordscherm.
+      await api(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method:'PUT',
+        body: JSON.stringify({ uris:[currentTrack.uri], position_ms:pos })
+      });
+
+      const deadline = Date.now() + dur;
+      await db.ref('rooms/'+currentRoomCode+'/currentRound').update({
+        status:'answering',
+        deadlineMs: deadline,
+        musicStartedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      clearTimeout(lockTimer);
+      lockTimer = setTimeout(lockRound, dur);
+      clearTimeout(stopTimer);
+      stopTimer = setTimeout(stopPlayback, dur);
+      if(q('stopBtn')) q('stopBtn').disabled = false;
+      if(q('showAnswerBtn')) q('showAnswerBtn').disabled = true;
+      if(q('hostStatus')) q('hostStatus').textContent = 'Muziek speelt. Spelers kunnen nu antwoorden.';
+    }catch(e){
+      alert('Afspelen mislukt vóór de ronde startte: ' + e.message);
+      try{ await db.ref('rooms/'+currentRoomCode+'/currentRound').update({status:'ready'}); }catch(_e){}
+      if(q('playBtn')){ q('playBtn').disabled = false; q('playBtn').textContent = '🎵 Speel verborgen nummer'; }
+      if(q('hostStatus')) q('hostStatus').textContent = 'Spotify speelt niet af. Controleer de speler en probeer opnieuw.';
+    }
+  };
+})();
+
+
+/* =========================
+   V99 - TEST VOOR JE BEGINT KNOP
+   - Host kan vóór spelstart Spotify + CSV + device + echt afspelen testen
+   - Speelt 5 seconden een testliedje uit de CSV af
+   - Spelers zien tijdens de test een popup: "Testlied speelt..."
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function ensureTestButton(){
+    let btn = q('bbPreGameTestBtn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.id = 'bbPreGameTestBtn';
+      btn.type = 'button';
+      btn.className = 'secondary bbPreGameTestBtn';
+      btn.textContent = '🔊 TEST VOOR JE BEGINT';
+      btn.addEventListener('click', runSpotifyPreGameTestV99);
+    }
+
+    // Vanaf V150 hoort deze knop in hetzelfde kader als Host speelt mee,
+    // precies boven de knop Host speelt mee.
+    const hostPlayBlock = q('bbHostPlayBlock');
+    const hostPlayBtn = q('bbHostPlayBtn');
+    if(hostPlayBlock && hostPlayBtn){
+      if(btn.parentNode !== hostPlayBlock || btn.nextElementSibling !== hostPlayBtn){
+        hostPlayBlock.insertBefore(btn, hostPlayBtn);
+      }
+      return;
+    }
+
+    // Fallback voor als de host-instellingen nog niet zijn opgebouwd.
+    const startBtn = q('startRoundBtn');
+    if(startBtn && btn.parentNode !== startBtn.parentNode){
+      startBtn.parentNode.insertBefore(btn, startBtn);
+    }
+  }
+
+  function setTestStatus(msg, ok){
+    const el = q('hostStatus');
+    if(el){
+      el.textContent = msg || '';
+      el.classList.toggle('statusOk', ok === true);
+      el.classList.toggle('statusBad', ok === false);
+    }
+  }
+
+  async function waitForDeviceV99(timeoutMs = 7000){
+    const token = await getToken();
+    if(!token) throw new Error('Je bent niet ingelogd bij Spotify. Klik eerst op Login met Spotify.');
+    if(!window.Spotify) throw new Error('Spotify Web Player is nog niet geladen. Wacht kort en probeer opnieuw.');
+
+    if(!deviceId){
+      await activatePlayer();
+    } else if(player){
+      try{ await player.connect(); }catch(e){}
+    }
+
+    const start = Date.now();
+    while(!deviceId && Date.now() - start < timeoutMs){
+      await sleep(250);
+    }
+    if(!deviceId){
+      throw new Error('Geen actief Spotify-apparaat gevonden. Open Spotify op dit apparaat en probeer opnieuw.');
+    }
+
+    // Zet de Bingo Beats speler actief, maar start nog niet.
+    try{
+      await api('https://api.spotify.com/v1/me/player', {
+        method: 'PUT',
+        body: JSON.stringify({ device_ids: [deviceId], play: false })
+      });
+      await sleep(500);
+    }catch(e){
+      // Niet meteen blokkeren; de echte play-test bepaalt of het werkt.
+    }
+    return deviceId;
+  }
+
+  function getCsvTestTrackV99(){
+    if(!Array.isArray(tracks) || !tracks.length) return null;
+    // Neem de eerste track met een geldige Spotify URI. Verbruikt geen ronde/used-lijst.
+    return tracks.find(t => t && t.uri && /^spotify:track:/.test(t.uri)) || tracks[0];
+  }
+
+  async function publishTestStateV99(status, extra={}){
+    if(!currentRoomCode) return;
+    try{
+      await db.ref('rooms/'+currentRoomCode+'/spotifyTest').set({
+        status,
+        at: firebase.database.ServerValue.TIMESTAMP,
+        ...extra
+      });
+    }catch(e){}
+  }
+
+  async function runSpotifyPreGameTestV99(){
+    const btn = q('bbPreGameTestBtn');
+    try{
+      if(!currentRoomCode) throw new Error('Maak eerst een kamer.');
+      const testTrack = getCsvTestTrackV99();
+      if(!testTrack?.uri) throw new Error('Upload eerst een CSV/muzieklijst met Spotify-tracks.');
+
+      if(btn){ btn.disabled = true; btn.textContent = '🔎 Test loopt...'; }
+      setTestStatus('Stap 1/4: Spotify-login controleren...', null);
+      const token = await getToken();
+      if(!token) throw new Error('Je bent niet ingelogd bij Spotify.');
+
+      setTestStatus('Stap 2/4: Spotify-apparaat zoeken...', null);
+      await waitForDeviceV99();
+
+      setTestStatus('Stap 3/4: CSV-track controleren...', null);
+      if(!testTrack.name || !testTrack.artists) throw new Error('CSV-track mist titel of artiest.');
+
+      setTestStatus('Stap 4/4: Testliedje wordt 5 seconden afgespeeld...', null);
+      await publishTestStateV99('playing', { track: testTrack.name || '', artist: testTrack.artists || '' });
+
+      // Speel testnummer hoorbaar af. Niet muten, want host moet echt horen dat het werkt.
+      await api(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ uris: [testTrack.uri], position_ms: 0 })
+      });
+
+      await sleep(5000);
+      try{ await api('https://api.spotify.com/v1/me/player/pause', {method:'PUT', body:'{}'}); }catch(e){}
+
+      localStorage.bb_spotify_preflight_ok_at = String(Date.now());
+      await publishTestStateV99('done', { track: testTrack.name || '', artist: testTrack.artists || '' });
+      setTestStatus('✅ Test geslaagd. Spotify speelt af en het spel kan beginnen.', true);
+      if(btn){ btn.disabled = false; btn.textContent = '✅ TEST GESLAAGD'; setTimeout(()=>{ if(btn) btn.textContent='🔊 TEST VOOR JE BEGINT'; }, 2500); }
+    }catch(e){
+      try{ await publishTestStateV99('error', { message: e.message || 'Test mislukt' }); }catch(_e){}
+      setTestStatus('❌ Test mislukt: ' + (e.message || 'Onbekende fout'), false);
+      alert('Test mislukt:\n\n' + (e.message || 'Onbekende fout') + '\n\nControleer Spotify en probeer opnieuw.');
+      if(btn){ btn.disabled = false; btn.textContent = '🔊 TEST VOOR JE BEGINT'; }
+    }
+  }
+
+  function ensurePlayerTestOverlayV99(){
+    let o = q('bbPlayerTestOverlay');
+    if(o) return o;
+    o = document.createElement('div');
+    o.id = 'bbPlayerTestOverlay';
+    o.className = 'bbPlayerTestOverlay hidden';
+    o.innerHTML = `<div class="bbPlayerTestCard">
+      <img src="bb_logo_gold.png" alt="Bingo Beats" class="bbPlayerTestLogo">
+      <div class="bbPlayerTestTitle">Testlied speelt...</div>
+      <div class="bbPlayerTestText">De host controleert of Spotify goed afspeelt.</div>
+    </div>`;
+    document.body.appendChild(o);
+    return o;
+  }
+
+  function showPlayerTestOverlayV99(test){
+    const o = ensurePlayerTestOverlayV99();
+    const title = o.querySelector('.bbPlayerTestTitle');
+    const text = o.querySelector('.bbPlayerTestText');
+    if(test?.status === 'playing'){
+      if(title) title.textContent = 'Testlied speelt...';
+      if(text) text.textContent = 'Even wachten. De host controleert Spotify.';
+      o.classList.remove('hidden');
+      o.classList.add('show');
+    }else if(test?.status === 'done'){
+      if(title) title.textContent = 'Spotify werkt!';
+      if(text) text.textContent = 'De host kan het spel starten.';
+      o.classList.remove('hidden');
+      o.classList.add('show');
+      setTimeout(()=>{ o.classList.add('hidden'); o.classList.remove('show'); }, 1600);
+    }else if(test?.status === 'error'){
+      if(title) title.textContent = 'Spotify-test mislukt';
+      if(text) text.textContent = 'Wacht tot de host dit heeft opgelost.';
+      o.classList.remove('hidden');
+      o.classList.add('show');
+      setTimeout(()=>{ o.classList.add('hidden'); o.classList.remove('show'); }, 3000);
+    }else{
+      o.classList.add('hidden');
+      o.classList.remove('show');
+    }
+  }
+
+  // Voeg button toe zodra de host-app is opgebouwd.
+  const oldWireApp = wireApp;
+  wireApp = function(){
+    oldWireApp.apply(this, arguments);
+    setTimeout(ensureTestButton, 50);
+  };
+  setTimeout(ensureTestButton, 300);
+
+  // Laat spelers de test-pop-up zien wanneer host test draait.
+  if(typeof listenPlayer === 'function' && !window.__listenPlayerV99Wrapped){
+    window.__listenPlayerV99Wrapped = true;
+    const oldListenPlayer = listenPlayer;
+    listenPlayer = function(room){
+      oldListenPlayer.apply(this, arguments);
+      if(room){
+        db.ref('rooms/'+room+'/spotifyTest').off('value.bbV99');
+        db.ref('rooms/'+room+'/spotifyTest').on('value', s => showPlayerTestOverlayV99(s.val() || null));
+      }
+    };
+  }
+})();
+
+/* =========================
+   V101 - Real viewport height helper
+   Houdt iPhone/Samsung/Safari layout binnen het zichtbare scherm.
+   ========================= */
+(function(){
+  function setVH(){
+    try{
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--bb-real-vh', (h * 0.01) + 'px');
+    }catch(e){}
+  }
+  setVH();
+  window.addEventListener('resize', setVH, {passive:true});
+  window.addEventListener('orientationchange', ()=>setTimeout(setVH, 250), {passive:true});
+  if(window.visualViewport){
+    visualViewport.addEventListener('resize', setVH, {passive:true});
+    visualViewport.addEventListener('scroll', setVH, {passive:true});
+  }
+  document.addEventListener('DOMContentLoaded', setVH);
+})();
+
+/* =========================
+   V102 - Testpopup spelers robuust + Start ronde gebruikt geslaagde test
+   - Spelers krijgen altijd test-popup als host TEST VOOR JE BEGINT draait
+   - Start ronde test Spotify niet opnieuw; vereist wel een geslaagde pre-game test
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function E(s){
+    return String(s ?? '').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+  }
+
+  function ensurePlayerTestOverlayV102(){
+    let o = q('bbPlayerTestOverlay');
+    if(!o){
+      o = document.createElement('div');
+      o.id = 'bbPlayerTestOverlay';
+      o.className = 'bbPlayerTestOverlay hidden';
+      document.body.appendChild(o);
+    }
+    o.innerHTML = `<div class="bbPlayerTestCard v102">
+      <img src="bb_logo_gold.png" alt="Bingo Beats" class="bbPlayerTestLogo">
+      <div class="bbPlayerTestTitle">HOREN WE IETS?!</div>
+      <div class="bbPlayerTestText">Testlied speelt nu. Check even of Spotify geluid geeft 🎵</div>
+    </div>`;
+    return o;
+  }
+
+  function showPlayerTestOverlayV102(test){
+    const o = ensurePlayerTestOverlayV102();
+    const title = o.querySelector('.bbPlayerTestTitle');
+    const text = o.querySelector('.bbPlayerTestText');
+    if(test && test.status === 'playing'){
+      if(title) title.textContent = 'HOREN WE IETS?!';
+      if(text) text.innerHTML = `Testlied speelt nu.<br><strong>Check even of Spotify geluid geeft 🎵</strong>`;
+      o.classList.remove('hidden');
+      requestAnimationFrame(()=>o.classList.add('show'));
+    }else if(test && test.status === 'done'){
+      if(title) title.textContent = 'TOP, SPOTIFY WERKT!';
+      if(text) text.textContent = 'De host kan het spel starten.';
+      o.classList.remove('hidden');
+      requestAnimationFrame(()=>o.classList.add('show'));
+      setTimeout(()=>{ o.classList.remove('show'); setTimeout(()=>o.classList.add('hidden'),260); }, 1800);
+    }else if(test && test.status === 'error'){
+      if(title) title.textContent = 'OEPS, GEEN MUZIEK';
+      if(text) text.textContent = 'De host lost Spotify even op.';
+      o.classList.remove('hidden');
+      requestAnimationFrame(()=>o.classList.add('show'));
+      setTimeout(()=>{ o.classList.remove('show'); setTimeout(()=>o.classList.add('hidden'),260); }, 3200);
+    }else{
+      o.classList.remove('show');
+      setTimeout(()=>o.classList.add('hidden'),260);
+    }
+  }
+
+  let bbTestListenRoomV102 = '';
+  function getPlayerRoomV102(){
+    return (currentRoomCode || new URLSearchParams(location.search).get('room') || localStorage.hb_player_room || '').toUpperCase();
+  }
+
+  function attachPlayerTestListenerV102(){
+    try{
+      if(!db) return;
+      const room = getPlayerRoomV102();
+      if(!room || room === bbTestListenRoomV102) return;
+      if(bbTestListenRoomV102) db.ref('rooms/'+bbTestListenRoomV102+'/spotifyTest').off('value.bbV102');
+      bbTestListenRoomV102 = room;
+      db.ref('rooms/'+room+'/spotifyTest').on('value.bbV102', s => showPlayerTestOverlayV102(s.val() || null));
+    }catch(e){}
+  }
+
+  const oldSetupPlayerModeV102 = typeof setupPlayerMode === 'function' ? setupPlayerMode : null;
+  if(oldSetupPlayerModeV102 && !window.__setupPlayerModeV102Wrapped){
+    window.__setupPlayerModeV102Wrapped = true;
+    setupPlayerMode = function(){
+      const ret = oldSetupPlayerModeV102.apply(this, arguments);
+      setTimeout(attachPlayerTestListenerV102, 80);
+      setTimeout(attachPlayerTestListenerV102, 700);
+      return ret;
+    };
+  }
+
+  const oldListenPlayerV102 = typeof listenPlayer === 'function' ? listenPlayer : null;
+  if(oldListenPlayerV102 && !window.__listenPlayerV102Wrapped){
+    window.__listenPlayerV102Wrapped = true;
+    listenPlayer = function(){
+      const ret = oldListenPlayerV102.apply(this, arguments);
+      setTimeout(attachPlayerTestListenerV102, 80);
+      return ret;
+    };
+  }
+
+  setInterval(()=>{
+    if(document.body.classList.contains('playerMode')) attachPlayerTestListenerV102();
+  }, 1000);
+
+  function lastTestOkV102(){
+    const t = Number(localStorage.bb_spotify_preflight_ok_at || 0);
+    // Test blijft 60 minuten geldig, of totdat de host opnieuw laadt/test wil doen.
+    return t && (Date.now() - t < 60 * 60 * 1000);
+  }
+
+  // Start ronde: NIET opnieuw Spotify testen. Wel blokkeren als de host nog nooit succesvol getest heeft.
+  startRound = async function(){
+    if(!currentRoomCode) return alert('Maak eerst een kamer.');
+    try{
+      if(!lastTestOkV102()){
+        alert('Doe eerst de knop TEST VOOR JE BEGINT.\n\nDaarmee controleren we één keer of Spotify en je CSV echt kunnen afspelen. Daarna start de ronde zonder extra Spotify-test.');
+        if(q('hostStatus')) q('hostStatus').textContent = 'Doe eerst TEST VOOR JE BEGINT.';
+        return;
+      }
+      const snap = await db.ref('rooms/'+currentRoomCode).once('value');
+      const room = snap.val() || {};
+      if(!allReady(room)) return alert('Nog niet iedereen is READY.');
+      currentTrack = chooseTrack();
+      if(!currentTrack) return alert('Upload eerst je muzieklijst.');
+      const up = {};
+      Object.keys(room.players || {}).forEach(pid => up[`rooms/${currentRoomCode}/players/${pid}/ready`] = false);
+      await db.ref().update(up);
+      if(q('hostStatus')) q('hostStatus').textContent = 'Ronde start. Spotify is al getest.';
+      return startRoundVisual(currentRoomCode);
+    }catch(e){
+      if(q('startRoundBtn')){ q('startRoundBtn').disabled = false; q('startRoundBtn').textContent = '🎲 START RONDE'; }
+      alert('Start ronde mislukt: ' + (e.message || e));
+    }
+  };
+})();
+
+/* =========================
+   V108 - Vanuit V102: READY-lobby na iedere ronde + geen dubbel BB-logo
+   - Goed antwoord: vakje kiezen zonder extra groot BB-logo boven de kaart
+   - Na fout antwoord direct terug naar lobby met READY-knop
+   - Na goed antwoord en vakje kiezen direct terug naar lobby met READY-knop
+   - Zodra iedereen READY is na een beoordeelde ronde start de host automatisch de volgende ronde
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => String(s ?? '').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+  const HEX2 = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#FFCC33'};
+  const COLOR_LABEL = {yellow:'GOUD', pink:'AQUA', purple:'ORANJE', blue:'LIME', green:'KORAAL', free:'FREE'};
+  let lastAutoStartRoundV108 = '';
+
+  function players(room){ return Object.entries(room?.players || {}); }
+  function initial(n){ return String(n || 'S').trim().slice(0,1).toUpperCase() || 'S'; }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function isBingoRound(room, r){
+    const bs = Object.values(room?.bingos || {});
+    return !!(r?.id && bs.some(b => b?.roundId === r.id));
+  }
+  function questionText(r){
+    try{ if(typeof questionFor === 'function') return questionFor(r?.category); }catch(e){}
+    try{ if(typeof categoryQuestion === 'function') return categoryQuestion(r?.category); }catch(e){}
+    return 'Hoe heet deze track?';
+  }
+  function secondsLeft(r){
+    if(!r?.deadlineMs) return null;
+    return Math.max(0, Math.ceil((Number(r.deadlineMs) - Date.now()) / 1000));
+  }
+  function timerPct(r){
+    const left = secondsLeft(r);
+    if(left === null) return 100;
+    const total = Number(r.seconds || q('duration')?.value || 20) || 20;
+    return Math.max(0, Math.min(100, (left / total) * 100));
+  }
+  function setReadyV108(){
+    if(!currentRoomCode || !currentPlayerId) return;
+    db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true);
+  }
+  window.bbSetReadyV108 = setReadyV108;
+
+  function readyList(room){
+    const ps = players(room);
+    return `<div class="bbStageReadyList v108">${ps.map(([pid,p])=>`
+      <button type="button" class="bbReadyRow ${p.ready?'ready':'wait'}" data-view-card="${E(pid)}">
+        <div class="bbAvatar">${E(initial(p.name))}</div>
+        <div class="bbReadyName">${E(p.name || 'Speler')}${pid===currentPlayerId?' <span>jij</span>':''}</div>
+        <div class="bbReadyState">${p.ready?'READY':'Wacht'}</div>
+      </button>`).join('') || '<div class="small">Nog geen spelers.</div>'}</div>`;
+  }
+  function readyButton(room){
+    const p = me(room);
+    return p.ready
+      ? `<button class="bbReadyBig isReady" type="button" disabled>READY ✓</button>`
+      : `<button class="bbReadyBig" type="button" onclick="bbSetReadyV108()">READY</button>`;
+  }
+  function card(room, r, opts={}){
+    const p = me(room), c = p.card || [], marked = p.marked || {};
+    const large = !!opts.large, pick = !!opts.pick;
+    let cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || raw === 'free') ? 'free' : raw;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const canPick = pick && r?.id && key === r.colorKey && !isMarked && !isFree;
+      const content = isFree ? 'BB' : (isMarked ? 'BB' : '');
+      return `<button type="button" class="bbStageCell v108cell cell-${E(key)} ${isFree?'free':''} ${isMarked?'marked':''} ${canPick?'pickable':''}" data-i="${i}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}" ${canPick?'':'tabindex="-1"'}>${content ? `<span class="bbMiniMark">${content}</span>` : ''}</button>`;
+    }).join('');
+    return `<div class="bbStageBingo v108 ${large?'large':''}">${cells}</div>`;
+  }
+  function attachPick(root){
+    root.querySelectorAll('.bbStageCell.pickable').forEach(btn=>{
+      btn.addEventListener('click',()=> pickCell(Number(btn.dataset.i)) );
+    });
+    root.querySelectorAll('[data-view-card]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const pid = btn.getAttribute('data-view-card');
+        if(pid) showOtherCard(roomCacheV108, pid);
+      });
+    });
+  }
+  let roomCacheV108 = null;
+  function otherCardHTML(room, pid){
+    const p = room?.players?.[pid] || {}, c = p.card || [], marked = p.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || raw === 'free') ? 'free' : raw;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const content = isFree ? 'BB' : (isMarked ? 'BB' : '');
+      return `<div class="bbStageCell v108cell cell-${E(key)} ${isFree?'free':''} ${isMarked?'marked':''}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}">${content ? `<span class="bbMiniMark">${content}</span>` : ''}</div>`;
+    }).join('');
+    return `<div class="bbStageBingo v108 other">${cells}</div>`;
+  }
+  function showOtherCard(room, pid){
+    const p = room?.players?.[pid];
+    if(!p) return;
+    let o = q('bbOtherCardOverlay');
+    if(!o){
+      o = document.createElement('div');
+      o.id = 'bbOtherCardOverlay';
+      o.className = 'bbOtherCardOverlay hidden';
+      document.body.appendChild(o);
+    }
+    o.innerHTML = `<div class="bbOtherCardBox">
+      <button type="button" class="bbOtherClose" onclick="document.getElementById('bbOtherCardOverlay').classList.add('hidden')">×</button>
+      <h2>${E(p.name || 'Speler')}</h2>
+      ${otherCardHTML(room, pid)}
+      <p class="bbStageSub bottom">Bingokaart bekijken</p>
+    </div>`;
+    o.classList.remove('hidden');
+  }
+  function scoreHTML(room,r,{reveal=false,results=false}={}){
+    const ps = players(room), ans = r?.id ? (room.answers?.[r.id] || {}) : {}, cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ownSubmitted = !!ans[currentPlayerId];
+    return `<div class="bbStageScoreList">${ps.map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      const st = results ? cor[pid] : undefined;
+      const cls = st===true?'good':st===false?'bad':has?'sent':'wait';
+      const icon = results ? (st===true?'✓':'×') : (has?'✓':'…');
+      const showText = has && (reveal || pid === currentPlayerId || ownSubmitted);
+      return `<div class="bbStageScoreRow ${cls}">
+        <div class="bbAvatar">${E(initial(p.name))}</div>
+        <div class="bbScoreWho"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <span>jij</span>':''}</strong><small>${has?'Ingezonden':'Wacht op antwoord'}</small></div>
+        <div class="bbScoreAnswer">${showText ? E(text) : (has?'Ingezonden':'—')}</div>
+        <div class="bbScoreIcon">${icon}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  function correctBlock(r){
+    const a = r?.correctAnswer || {};
+    if(!a.track && !a.artist) return '';
+    return `<div class="bbCorrectTop"><div class="bbCorrectLabel">Juiste antwoord</div><div class="bbCorrectTrack">${E(a.track||'-')}</div><div class="bbCorrectMeta">${E(a.artist||'-')}${a.year?' — '+E(a.year):''}</div></div>`;
+  }
+  function stage(root, cls, html, room){
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell">${html}</section>`;
+    roomCacheV108 = room;
+    attachPick(root);
+  }
+  function renderLobby(root, room, msg='Wachten op de host', sub='Iedereen klaar? Dan kan de ronde starten.'){
+    stage(root,'stageLobby',`
+      <img src="bb_logo.png" class="bbStageLogo" alt="Bingo Beats">
+      <h2>${E(msg)}</h2>
+      <p class="bbStageSub">${E(sub)}</p>
+      ${readyList(room)}
+      <div class="bbCardWrap"><h3>Jouw bingokaart</h3>${card(room,null,{large:false})}</div>
+      ${readyButton(room)}
+    `, room);
+  }
+  function renderJudgedV108(root, room, r){
+    const good = room.correct?.[r.id]?.[currentPlayerId] === true;
+    const p = me(room);
+    const picked = p.lastPickedRound === r.id;
+    if(good && !picked){
+      stage(root,'stagePickCard',`
+        <h2>GOED ANTWOORD!</h2>
+        <p class="bbStageSub">Kies één <strong>${E(r.colorName || COLOR_LABEL[r.colorKey] || 'kleur')}</strong> vakje</p>
+        ${card(room,r,{large:true,pick:true})}
+        <p class="bbStageSub bottom">Tik op een opgelicht vakje</p>
+      `, room);
+      return;
+    }
+    if(good && picked){
+      return renderLobby(root, room, 'Vakje gekozen', 'Klik op READY voor de volgende ronde.');
+    }
+    return renderLobby(root, room, 'HELAAS!', 'Klik op READY voor de volgende ronde.');
+  }
+  function renderAnswering(root,room,r){
+    const own = r?.id ? (room.answers?.[r.id]?.[currentPlayerId]) : null;
+    const left = secondsLeft(r);
+    if(own){
+      stage(root,'stageScore',`
+        <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+        <div class="bbOwnSubmitted"><span>Jouw antwoord</span><strong>${E(String(own.answer||'').trim()||'Leeg antwoord')}</strong></div>
+        <h2>Live antwoorden</h2>
+        <p class="bbStageSub">Antwoorden verschijnen zodra spelers insturen. Nog niemand ziet wat goed is.</p>
+        ${scoreHTML(room,r,{reveal:false,results:false})}
+        <div class="bbBottomTimer">⏱ ${left ?? '--'} sec</div>
+      `, room);
+      return;
+    }
+    stage(root,'stageAnswer',`
+      <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+      <div class="bbRoundBadge" style="--chosen:${HEX2[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'')} · ${E(r.category||'')}</div>
+      <div class="bbCountdownBig" style="--pct:${timerPct(r)}"><span>${left ?? ''}</span></div>
+      <h2 class="bbCategoryTitle">🎯 ${E(r.category||'Categorie')}</h2>
+      <input id="bbStageAnswerInput" class="bbStageInput" value="" placeholder="Typ je antwoord..." autocomplete="off">
+      <button id="bbStageSubmitBtn" class="bbStageSubmit">VERSTUREN</button>
+    `, room);
+    const inp = q('bbStageAnswerInput');
+    inp?.addEventListener('keydown', e=>{ if(e.key==='Enter') q('bbStageSubmitBtn')?.click(); });
+    q('bbStageSubmitBtn')?.addEventListener('click',()=>{
+      const v = (q('bbStageAnswerInput')?.value || '').trim();
+      if(!v) return alert('Vul eerst je antwoord in.');
+      submitAnswerValue(v);
+    });
+    setTimeout(()=>inp?.focus(),50);
+  }
+
+  const oldRenderV108 = typeof renderCompactDashboard === 'function' ? renderCompactDashboard : null;
+  renderCompactDashboard = function(room,r){
+    const root = q('screenDashboard');
+    if(!root) return;
+    document.body.classList.add('bbStageMode');
+    if(!r?.id) return renderLobby(root, room);
+    if(r.status === 'judged') return renderJudgedV108(root, room, r);
+    if(r.status === 'answering') return renderAnswering(root, room, r);
+    if(r.status === 'locked'){
+      return stage(root,'stageReveal',`
+        <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+        ${correctBlock(r) || '<h2>Tijd voorbij</h2><p class="bbStageSub">Wachten op de host...</p>'}
+        <h2>Alle antwoorden</h2>
+        ${scoreHTML(room,r,{reveal:true,results:false})}
+        <p class="bbStageSub">De host controleert nu wie goed zat.</p>
+      `, room);
+    }
+    return oldRenderV108 ? oldRenderV108(room,r) : renderLobby(root, room);
+  };
+
+  // Publiceer resultaten: niemand wordt automatisch READY. Iedere speler moet zelf in de lobby READY klikken.
+  publishResults = function(){
+    if(!currentRoomCode) return;
+    db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
+      const room = s.val() || {}, r = room.currentRound || {}, up = {};
+      up[`rooms/${currentRoomCode}/currentRound/status`] = 'judged';
+      Object.keys(room.players || {}).forEach(pid=>{
+        up[`rooms/${currentRoomCode}/players/${pid}/ready`] = false;
+      });
+      return db.ref().update(up);
+    }).then(()=>{ if(q('hostStatus')) q('hostStatus').textContent = 'Resultaten verzonden. Wachten op READY.'; });
+  };
+
+  // Vakje kiezen: na keuze terug naar lobby, maar nog NIET ready.
+  pickCell = function(i){
+    db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId).once('value').then(s=>{
+      const p = s.val() || {}, marked = p.marked || {}, c = p.card || [];
+      if(!activeRound?.id) return;
+      if(c[i] !== activeRound.colorKey || marked[i]) return;
+      marked[i] = true;
+      const bingo = checkBingo(marked);
+      return db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId).update({
+        marked,
+        bingo,
+        lastPickedRound: activeRound.id,
+        ready: false
+      }).then(()=>{
+        if(bingo) return db.ref('rooms/'+currentRoomCode+'/bingos').push({name:currentPlayerName,roundId:activeRound.id,at:firebase.database.ServerValue.TIMESTAMP});
+      });
+    });
+  };
+
+  // Host: na een beoordeelde ronde automatisch door zodra iedereen READY is.
+  function maybeAutoStart(room){
+    try{
+      const r = room.currentRound || {};
+      if(r.status !== 'judged') return;
+      if(isBingoRound(room,r)) return;
+      if(!allReady(room)) return;
+      const key = (currentRoomCode || '') + ':' + r.id;
+      if(lastAutoStartRoundV108 === key) return;
+      lastAutoStartRoundV108 = key;
+      if(q('hostStatus')) q('hostStatus').textContent = 'Iedereen is READY. Volgende ronde start automatisch...';
+      setTimeout(()=>{
+        db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
+          const latest = s.val() || {}, lr = latest.currentRound || {};
+          if(lr.id === r.id && lr.status === 'judged' && allReady(latest) && !isBingoRound(latest,lr)) startRound();
+        });
+      }, 1200);
+    }catch(e){}
+  }
+
+  if(typeof hostReadyState === 'function' && !window.__hostReadyStateV108Wrapped){
+    window.__hostReadyStateV108Wrapped = true;
+    const oldHostReadyState = hostReadyState;
+    hostReadyState = function(room){
+      const r = room?.currentRound || {};
+      if(r.status === 'judged'){
+        const b = q('startRoundBtn');
+        if(b){
+          b.disabled = true;
+          b.textContent = allReady(room) ? '🚀 Volgende ronde start...' : '⏳ Wachten op READY';
+        }
+        const notReady = players(room).filter(([pid,p])=>!p.ready).map(([pid,p])=>p.name || 'Speler');
+        if(q('hostStatus')) q('hostStatus').textContent = notReady.length ? 'Nog niet ready: '+notReady.join(', ') : 'Iedereen is READY. Volgende ronde start automatisch...';
+        maybeAutoStart(room);
+        return;
+      }
+      return oldHostReadyState.apply(this, arguments);
+    };
+  }
+})();
+
+/* =========================
+   V114 - Jury van Bingo Beats + schone nieuwe kamer
+   - Nieuwe kamer/nieuw spel wist oude host-uitslagen uit beeld
+   - Jury is coulant maar niet te soepel
+   - Typfouten/fonetisch/getallen worden goedgekeurd
+   - Ontbrekend belangrijk titelwoord wordt jury-stemming
+   - Foute spelers gaan na beoordeling naar lobby + READY
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+
+  function clearHostRoundUIV114(){
+    try{ clearTimeout(lockTimer); clearTimeout(stopTimer); clearInterval(dashTimer); }catch(_e){}
+    try{ currentTrack = null; currentRoundId = ''; activeRound = null; }catch(_e){}
+    ['hostAnswerArea','hostPickerArea','hostScoreboard','hostRoundInfo'].forEach(id=>{ const el=q(id); if(el) el.innerHTML=''; });
+    q('hostScorePanel')?.classList.add('hidden');
+    q('hostBingoPanel')?.classList.add('hidden');
+    if(q('playBtn')){ q('playBtn').disabled=true; q('playBtn').textContent='🎵 Speel verborgen nummer'; }
+    if(q('stopBtn')) q('stopBtn').disabled=true;
+    if(q('showAnswerBtn')) q('showAnswerBtn').disabled=true;
+    if(q('hostStatus')) q('hostStatus').textContent='Schone kamer. Wachten op spelers.';
+  }
+  const oldCreateRoomV114 = typeof createRoom === 'function' ? createRoom : null;
+  if(oldCreateRoomV114 && !window.__bbCreateRoomV114){
+    window.__bbCreateRoomV114 = true;
+    createRoom = function(){ clearHostRoundUIV114(); return oldCreateRoomV114.apply(this, arguments); };
+  }
+  const oldNewGameV114 = typeof bbStartNewGameSameRoom === 'function' ? bbStartNewGameSameRoom : null;
+  if(oldNewGameV114 && !window.__bbNewGameV114){
+    window.__bbNewGameV114 = true;
+    bbStartNewGameSameRoom = function(){ clearHostRoundUIV114(); return oldNewGameV114.apply(this, arguments); };
+  }
+
+  const filler = new Set(['the','a','an','de','het','een','van','in','on','at','to','for','of','and','&','with','feat','ft']);
+  const variantWords = ['radio edit','radio mix','single edit','edit','remix','live','extended mix','extended','club mix','acoustic','instrumental','remastered','remaster','version','mix'];
+  const numMap = {zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10',won:'1',to:'2',too:'2',for:'4'};
+
+  function stripVariants(s){
+    s = String(s||'');
+    s = s.replace(/\([^)]*\)/g, m => variantWords.some(v=>m.toLowerCase().includes(v)) ? ' ' : m);
+    s = s.replace(/\[[^\]]*\]/g, m => variantWords.some(v=>m.toLowerCase().includes(v)) ? ' ' : m);
+    s = s.replace(/\s[-–—]\s.*\b(radio|edit|remix|mix|live|extended|acoustic|instrumental|remaster|version|feat|ft|with)\b.*$/i, '');
+    s = s.replace(/\b(feat\.?|ft\.?|with)\b.*$/i, '');
+    for(const v of variantWords){
+      const re = new RegExp('\\b'+v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','ig');
+      s = s.replace(re,' ');
+    }
+    return s;
+  }
+  function baseNorm(s){
+    s = stripVariants(s).toLowerCase();
+    s = s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    s = s.replace(/['’`]/g,'');
+    s = s.replace(/&/g,' and ');
+    s = s.replace(/\+/g,' and ');
+    s = s.replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+    return s.split(' ').map(w=>numMap[w]||w).join(' ');
+  }
+  function tokens(s){ return baseNorm(s).split(' ').filter(Boolean); }
+  function coreTokens(s){ return tokens(s).filter(t=>!filler.has(t)); }
+  function lev(a,b){
+    a=String(a||''); b=String(b||'');
+    if(a===b) return 0; if(!a.length) return b.length; if(!b.length) return a.length;
+    const dp = Array(b.length+1).fill(0).map((_,i)=>i);
+    for(let i=1;i<=a.length;i++){
+      let prev=dp[0]; dp[0]=i;
+      for(let j=1;j<=b.length;j++){
+        const tmp=dp[j];
+        dp[j]=Math.min(dp[j]+1, dp[j-1]+1, prev+(a[i-1]===b[j-1]?0:1));
+        prev=tmp;
+      }
+    }
+    return dp[b.length];
+  }
+  function similarity(a,b){
+    a=baseNorm(a); b=baseNorm(b);
+    if(!a && !b) return 1; if(!a || !b) return 0;
+    const d=lev(a,b), m=Math.max(a.length,b.length)||1;
+    return 1-(d/m);
+  }
+  function wordClose(a,b){
+    a=baseNorm(a); b=baseNorm(b);
+    if(a===b) return true;
+    if(!a || !b) return false;
+    const d = lev(a,b), m=Math.max(a.length,b.length);
+    if(m<=4) return d<=1;
+    if(m<=7) return d<=2;
+    return d<=3 || (1-d/m)>=0.72;
+  }
+  function multisetCover(correct, given){
+    const used = new Array(given.length).fill(false);
+    let hit=0;
+    for(const cw of correct){
+      let best=-1, bestScore=-999;
+      for(let i=0;i<given.length;i++){
+        if(used[i]) continue;
+        const gw=given[i];
+        let score = cw===gw ? 100 : (wordClose(cw,gw) ? 80 - lev(cw,gw) : -100);
+        if(score>bestScore){ bestScore=score; best=i; }
+      }
+      if(best>=0 && bestScore>0){ used[best]=true; hit++; }
+    }
+    return {hit,total:correct.length,missing:Math.max(0,correct.length-hit)};
+  }
+  function categoryKind(cat){
+    const c=String(cat||'').toLowerCase();
+    if(c.includes('artiest') || c.includes('artist')) return 'artist';
+    if(c.includes('jaar') || c.includes('jaartal') || c.includes('+/-') || c.includes('±')) return 'year';
+    if(c.includes('decennium') || c.includes('decade')) return 'decade';
+    return 'title';
+  }
+  function correctForKind(kind, ans){
+    ans = ans || {};
+    if(kind==='artist') return ans.artist || '';
+    if(kind==='year') return ans.year || '';
+    if(kind==='decade') return ans.year || '';
+    return ans.track || '';
+  }
+  function parseYearInput(v){
+    const s=String(v||'').trim().toLowerCase().replace(/[’']/g,'');
+    let m=s.match(/\b(19\d{2}|20\d{2})\b/); if(m) return Number(m[1]);
+    m=s.match(/\b(\d{2})\b/); if(m){ const n=Number(m[1]); return n<=35 ? 2000+n : 1900+n; }
+    return null;
+  }
+  function decadeFromYear(y){ y=Number(y); if(!y) return null; return Math.floor(y/10)*10; }
+  function parseDecade(v){
+    const s=String(v||'').toLowerCase();
+    if(/nineties/.test(s)) return 1990;
+    if(/eighties/.test(s)) return 1980;
+    if(/seventies/.test(s)) return 1970;
+    if(/sixties/.test(s)) return 1960;
+    if(/\b00s\b|jaren\s*00|\b00\b/.test(s)) return 2000;
+    if(/\b10s\b|jaren\s*10|\b10\b/.test(s)) return 2010;
+    if(/\b20s\b|jaren\s*20|\b20\b/.test(s)) return 2020;
+    const y = parseYearInput(s); if(y) return decadeFromYear(y);
+    const m=s.match(/\b(60|70|80|90)\s*(s|'s)?\b/); if(m) return 1900+Number(m[1]);
+    return null;
+  }
+  function judgeText(correct, given, kind){
+    const cRaw=String(correct||''), gRaw=String(given||'');
+    if(!gRaw.trim()) return {good:false, review:false, reason:'Geen antwoord'};
+    if(kind==='year'){
+      const cy=parseYearInput(cRaw), gy=parseYearInput(gRaw);
+      if(!cy || !gy) return {good:false, review:false, reason:'Geen geldig jaar'};
+      return {good:Math.abs(cy-gy)<=2, review:false, reason:Math.abs(cy-gy)<=2?'Binnen marge':'Buiten marge'};
+    }
+    if(kind==='decade'){
+      const cy=parseYearInput(cRaw), cd=decadeFromYear(cy), gd=parseDecade(gRaw);
+      return {good:!!cd && cd===gd, review:false, reason:!!cd && cd===gd?'Zelfde decennium':'Ander decennium'};
+    }
+    const c=baseNorm(cRaw), g=baseNorm(gRaw);
+    if(c && g && c===g) return {good:true, review:false, reason:'Exact genoeg'};
+
+    const cTokAll=tokens(cRaw), gTokAll=tokens(gRaw);
+    const ct=coreTokens(cRaw), gt=coreTokens(gRaw);
+
+    // Gezellige jury: duidelijke tik-/fonetische fouten zijn goed.
+    if(similarity(c,g)>=0.80) return {good:true, review:false, reason:'Duidelijke typefout'};
+
+    if(ct.length===0) return {good:false, review:false, reason:'Geen juist antwoord beschikbaar'};
+    const cov=multisetCover(ct,gt);
+    const ratio=cov.hit/ct.length;
+
+    // Voorbeeld: In The Summertime -> Summertime. Het kernwoord klopt, maar de titel is te kaal: jury twijfelt.
+    if(kind==='title' && ct.length===1 && gt.length===1 && cov.missing===0 && cTokAll.length>=3 && gTokAll.length<=1){
+      return {good:false, review:true, reason:'Antwoord lijkt onvolledig'};
+    }
+
+    if(cov.missing===0) return {good:true, review:false, reason:'Alle belangrijke woorden herkend'};
+    if(ct.length>=3 && cov.missing===1 && ratio>=0.66) return {good:false, review:true, reason:'Belangrijk woord ontbreekt'};
+    if(ct.length===2 && cov.hit===1 && gt.length===1) return {good:false, review:true, reason:'Antwoord lijkt onvolledig'};
+    if(kind==='artist'){
+      // Soepel voor fonetische/typefouten, streng voor bandleden of andere artiesten.
+      if(similarity(c,g)>=0.70 && gt.length>=1) return {good:true, review:false, reason:'Artiest duidelijk bedoeld'};
+    }
+    return {good:false, review:false, reason:'Onvoldoende herkenbaar'};
+  }
+  function judgeOneV114(r, answer){
+    const kind=categoryKind(r?.category);
+    const correct=correctForKind(kind, r?.correctAnswer||{});
+    return {...judgeText(correct, answer, kind), kind, correct};
+  }
+  window.bbJudgeOneV114 = judgeOneV114;
+
+  async function runAIJuryV114(roomCode, forceStatus){
+    const snap=await db.ref('rooms/'+roomCode).once('value');
+    const room=snap.val()||{}, r=room.currentRound||{};
+    if(!r.id || !r.correctAnswer) return;
+    const ans=room.answers?.[r.id]||{}, players=room.players||{}, up={}, reviews=[];
+    Object.keys(players).forEach(pid=>{
+      const text=ans[pid]?.answer || '';
+      const j=judgeOneV114(r,text);
+      up[`rooms/${roomCode}/correct/${r.id}/${pid}`] = j.review ? 'review' : !!j.good;
+      up[`rooms/${roomCode}/juryMeta/${r.id}/${pid}`] = {kind:j.kind, reason:j.reason, correct:j.correct, answer:text, review:!!j.review};
+      if(j.review) reviews.push(pid);
+      up[`rooms/${roomCode}/players/${pid}/ready`] = false;
+    });
+    up[`rooms/${roomCode}/currentRound/juryDone`] = true;
+    up[`rooms/${roomCode}/currentRound/reviewList`] = reviews;
+    up[`rooms/${roomCode}/currentRound/reviewIndex`] = 0;
+    if(forceStatus) up[`rooms/${roomCode}/currentRound/status`] = reviews.length ? 'review' : forceStatus;
+    await db.ref().update(up);
+    return {reviews, room, r};
+  }
+  window.bbRunAIJuryV114 = runAIJuryV114;
+
+  // Timer afgelopen: kort antwoordmoment, AI beoordeelt, daarna scoreboard/jury.
+  lockRound = function(){
+    if(!currentRoomCode) return;
+    publishAnswer()
+      .then(()=>runAIJuryV114(currentRoomCode, null))
+      .then(res=>{
+        const hasReviews = res?.reviews?.length;
+        return db.ref('rooms/'+currentRoomCode+'/currentRound').update({status:'locked'}).then(()=>{
+          setTimeout(()=>db.ref('rooms/'+currentRoomCode+'/currentRound').update({status: hasReviews ? 'review' : 'judged'}), 2200);
+        });
+      })
+      .then(()=>{ if(q('hostStatus')) q('hostStatus').textContent='Jury van Bingo Beats heeft de antwoorden beoordeeld.'; })
+      .catch(e=>alert('Jury/timer fout: '+(e.message||e)));
+  };
+  publishResults = function(){
+    if(!currentRoomCode) return;
+    runAIJuryV114(currentRoomCode, 'judged').then(()=>{ if(q('hostStatus')) q('hostStatus').textContent='Jury-scorebord verzonden.'; });
+  };
+
+  // Host correctie: als goed -> speler kan alsnog kiezen. Als fout -> gekozen vakje terugdraaien als bekend.
+  scoreboardClick = function(e){
+    const btn=e.target.closest('button[data-pid]'); if(!btn) return;
+    e.preventDefault();
+    const pid=btn.dataset.pid, good=btn.dataset.good==='true';
+    db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
+      const room=s.val()||{}, r=room.currentRound||{}, p=room.players?.[pid]||{}, up={};
+      if(!r.id) throw Error('Geen actieve ronde.');
+      up[`rooms/${currentRoomCode}/correct/${r.id}/${pid}`]=good;
+      up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false;
+      if(good){
+        up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null;
+      }else{
+        const idx = p.lastPickedIndex;
+        if(p.lastPickedRound===r.id && idx!==undefined && idx!==null){
+          up[`rooms/${currentRoomCode}/players/${pid}/marked/${idx}`]=null;
+        }
+        if(p.lastPickedRound===r.id){
+          up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null;
+          up[`rooms/${currentRoomCode}/players/${pid}/lastPickedIndex`]=null;
+        }
+      }
+      return db.ref().update(up);
+    }).then(()=>{ if(q('hostStatus')) q('hostStatus').textContent='Beoordeling aangepast.'; }).catch(e=>alert(e.message));
+  };
+
+  // Bestaande pickCell uitbreiden met lastPickedIndex voor correctie terugdraaien.
+  pickCell = function(i){
+    db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId).once('value').then(s=>{
+      const p=s.val()||{}, marked=p.marked||{}, c=p.card||[];
+      const r=activeRound || {};
+      if(!r?.id) return;
+      if(c[i]!==r.colorKey || marked[i]) return;
+      marked[i]=true;
+      const bingo = (typeof checkBingo==='function') ? checkBingo(marked) : false;
+      return db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId).update({marked,bingo,lastPickedRound:r.id,lastPickedIndex:i,ready:false}).then(()=>{
+        if(bingo) return db.ref('rooms/'+currentRoomCode+'/bingos').push({name:currentPlayerName,roundId:r.id,at:firebase.database.ServerValue.TIMESTAMP});
+      });
+    });
+  };
+
+  function currentReviewPid(r){ const list=Array.isArray(r?.reviewList)?r.reviewList:[]; return list[Number(r?.reviewIndex)||0] || ''; }
+  function submitJuryVoteV114(pid, vote){
+    if(!currentRoomCode || !activeRound?.id || !currentPlayerId) return;
+    db.ref(`rooms/${currentRoomCode}/juryVotes/${activeRound.id}/${pid}/${currentPlayerId}`).set(vote===true).then(()=>maybeFinalizeReviewV114(pid));
+  }
+  window.bbSubmitJuryVoteV114 = submitJuryVoteV114;
+  async function maybeFinalizeReviewV114(pid){
+    const snap=await db.ref('rooms/'+currentRoomCode).once('value');
+    const room=snap.val()||{}, r=room.currentRound||{};
+    if(r.status!=='review' || currentReviewPid(r)!==pid) return;
+    const voters=Object.keys(room.players||{}).filter(x=>x!==pid);
+    const votes=room.juryVotes?.[r.id]?.[pid]||{};
+    const all = voters.length===0 || voters.every(v=>typeof votes[v] !== 'undefined');
+    if(!all) return;
+    let yes=0,no=0; voters.forEach(v=>votes[v]===true?yes++:no++);
+    const approved = yes>=no;
+    const list=Array.isArray(r.reviewList)?r.reviewList:[], next=(Number(r.reviewIndex)||0)+1, up={};
+    up[`rooms/${currentRoomCode}/correct/${r.id}/${pid}`]=approved;
+    up[`rooms/${currentRoomCode}/juryResults/${r.id}/${pid}`]={approved, yes, no};
+    if(next<list.length){ up[`rooms/${currentRoomCode}/currentRound/reviewIndex`]=next; }
+    else { up[`rooms/${currentRoomCode}/currentRound/status`]='judged'; }
+    await db.ref().update(up);
+  }
+  function renderReviewV114(root, room, r){
+    const pid=currentReviewPid(r), p=room.players?.[pid]||{}, meta=room.juryMeta?.[r.id]?.[pid]||{}, votes=room.juryVotes?.[r.id]?.[pid]||{};
+    const isOwner=pid===currentPlayerId, hasVoted=typeof votes[currentPlayerId] !== 'undefined';
+    const voters=Object.keys(room.players||{}).filter(x=>x!==pid);
+    const received=voters.filter(v=>typeof votes[v]!=='undefined').length;
+    const buttons = isOwner ? '<p class="bbStageSub">Jij mag niet stemmen op je eigen antwoord.</p>' : hasVoted ? '<button class="bbReadyBig isReady" disabled>Stem ontvangen ✓</button>' : `<div class="bbJuryButtons"><button type="button" onclick="bbSubmitJuryVoteV114('${E(pid)}',true)">GOEDKEUREN</button><button type="button" class="secondary" onclick="bbSubmitJuryVoteV114('${E(pid)}',false)">AFKEUREN</button></div>`;
+    const html=`<section class="bbStageShell bbJuryShell">
+      <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+      <h2>Jury van Bingo Beats twijfelt</h2>
+      <p class="bbStageSub">De Jury van Bingo Beats twijfelt over het antwoord van <strong>${E(p.name||'Speler')}</strong>.</p>
+      <div class="bbJuryCompare"><div><span>Juiste antwoord</span><strong>${E(meta.correct||'-')}</strong></div><div><span>Ingevuld</span><strong>${E(meta.answer||'Leeg antwoord')}</strong></div></div>
+      <p class="bbStageSub">${E(meta.reason||'Help de jury met een beslissing!')}</p>
+      ${buttons}
+      <p class="bbStageSub bottom">${received} / ${voters.length} stemmen ontvangen</p>
+    </section>`;
+    root.className='compactDashboard bbStageDashboard stageJury';
+    root.innerHTML=html;
+  }
+
+  // Eind-renderer: review-status toevoegen + review in scorebord tonen.
+  const previousRenderV114 = typeof renderCompactDashboard === 'function' ? renderCompactDashboard : null;
+  renderCompactDashboard = function(room,r){
+    const root=q('screenDashboard');
+    if(!root) return;
+    if(r?.status==='review') return renderReviewV114(root,room,r);
+    return previousRenderV114 ? previousRenderV114(room,r) : null;
+  };
+
+  // Host score toont review als 🤔 en knoppen blijven bruikbaar.
+  renderHostScore = function(room){
+    const r=room.currentRound||{}; if(!r.id||!q('hostScoreboard')) return;
+    q('hostScorePanel')?.classList.remove('hidden');
+    if(q('hostRoundInfo')) q('hostRoundInfo').textContent=`${r.colorEmoji||''} ${r.colorName||''} — ${r.category||''} — ${r.status||''}`;
+    const ps=room.players||{}, ans=room.answers?.[r.id]||{}, cor=room.correct?.[r.id]||{};
+    q('hostScoreboard').innerHTML=Object.entries(ps).map(([pid,p])=>{
+      const st=cor[pid], cls=st===true?'scoreGood':st===false?'scoreBad':st==='review'?'scorePending':'scorePending';
+      const label=st==='review'?'🤔 Jury':st===true?'✅ Goed':st===false?'❌ Fout':'—';
+      return `<div class="scoreCard ${cls}"><div>${E(p.name||'Speler')}</div><div>${E(ans[pid]?.answer||'Geen antwoord')}</div><div><strong>${label}</strong><br><button type="button" class="goodBtn ${st===true?'goodSelected':''}" data-pid="${pid}" data-good="true">✅</button><button type="button" class="badBtn ${st===false?'badSelected':''}" data-pid="${pid}" data-good="false">❌</button></div></div>`;
+    }).join('');
+  };
+})();
+
+
+/* =========================
+   V115 - Spelerscherm categorie + gezellige jury polish
+   - Countdown toont alleen kleur + categorienaam
+   - Geen vraagzin meer zoals 'Hoe heet deze track?'
+   - Bij GO korte trilling, geen geluid
+   - Host opent schoon en verbergt oude wheel-overlays
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const oldSetupHostV115 = typeof setupHostMode === 'function' ? setupHostMode : null;
+  if(oldSetupHostV115 && !window.__setupHostV115Clean){
+    window.__setupHostV115Clean = true;
+    setupHostMode = function(){
+      try{ document.body.classList.remove('bbStageMode','bbKeyboardOpen','playerMode'); }catch(e){}
+      try{ window.__bbWheelV110?.hideWheelV110?.(); window.__bbWheelV92?.hideWheelFull?.(0); }catch(e){}
+      const o=q('bbWheelFullOverlayV92'); if(o){ o.classList.add('hidden'); o.style.display='none'; }
+      return oldSetupHostV115.apply(this, arguments);
+    };
+  }
+})();
+
+/* =========================
+   V116 - Categorietekst onder timer fix
+   - Onder de timer staat altijd alleen de categorienaam
+   - Geen automatische vraagzinnen meer tijdens pre-count of answering
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#101716'};
+  function secondsLeft(r){
+    if(!r?.deadlineMs) return null;
+    return Math.max(0, Math.ceil((Number(r.deadlineMs)-Date.now())/1000));
+  }
+  function timerPct(r){
+    const left = secondsLeft(r);
+    const sec = Math.max(1, Number(r?.seconds)||20);
+    return left === null ? 100 : Math.max(0, Math.min(100, left / sec * 100));
+  }
+  function precountLeft(r){
+    const end = Number(r?.precountEndsAt || 0);
+    if(!end) return 0;
+    return Math.max(0, Math.ceil((end - Date.now())/1000));
+  }
+  function categoryLabel(r){
+    return String(r?.category || 'Categorie').trim() || 'Categorie';
+  }
+  function setStage(root, cls, html){
+    document.body.classList.add('bbStageMode');
+    root.className = 'compactDashboard bbStageDashboard ' + cls;
+    root.innerHTML = html;
+  }
+
+  const previousRenderV116 = typeof renderCompactDashboard === 'function' ? renderCompactDashboard : null;
+  renderCompactDashboard = function(room,r){
+    const root = q('screenDashboard');
+    if(!root) return previousRenderV116 ? previousRenderV116(room,r) : null;
+
+    if(r?.status === 'precount'){
+      const left = precountLeft(r);
+      const goText = left ? String(left) : 'GO';
+      setStage(root,'stagePrecount stageAnswer',`<section class="bbStageShell">
+        <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+        <div class="bbRoundBadge" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'')} · ${E(categoryLabel(r))}</div>
+        <div class="bbPrecountBig" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span>${E(goText)}</span></div>
+        <h2 class="bbCategoryTitle">🎯 ${E(categoryLabel(r))}</h2>
+        <input class="bbStageInput" value="" placeholder="Maak je klaar..." autocomplete="off" disabled>
+        <button class="bbStageSubmit" disabled>${left ? 'START OVER '+left : 'START!'}</button>
+        <p class="bbStageSub">Het liedje start zo meteen.</p>
+      </section>`);
+      return;
+    }
+
+    if(r?.status === 'answering'){
+      const own = r?.id ? (room.answers?.[r.id]?.[currentPlayerId]) : null;
+      if(!own){
+        const left = secondsLeft(r);
+        setStage(root,'stageAnswer',`<section class="bbStageShell">
+          <img src="bb_logo.png" class="bbStageLogo mini" alt="Bingo Beats">
+          <div class="bbRoundBadge" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'')} · ${E(categoryLabel(r))}</div>
+          <div class="bbCountdownBig" style="--pct:${timerPct(r)};--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span>${left ?? ''}</span></div>
+          <h2 class="bbCategoryTitle">🎯 ${E(categoryLabel(r))}</h2>
+          <input id="bbStageAnswerInput" class="bbStageInput" value="" placeholder="Typ je antwoord..." autocomplete="off">
+          <button id="bbStageSubmitBtn" class="bbStageSubmit">VERSTUREN</button>
+        </section>`);
+        const inp = q('bbStageAnswerInput');
+        inp?.addEventListener('keydown', e=>{ if(e.key==='Enter') q('bbStageSubmitBtn')?.click(); });
+        q('bbStageSubmitBtn')?.addEventListener('click',()=>{
+          const v=(q('bbStageAnswerInput')?.value||'').trim();
+          if(!v) return alert('Vul eerst je antwoord in.');
+          if(typeof submitAnswerValue === 'function') submitAnswerValue(v);
+        });
+        setTimeout(()=>inp?.focus(),50);
+        return;
+      }
+    }
+    return previousRenderV116 ? previousRenderV116(room,r) : null;
+  };
+})();
+
+/* =========================
+   V117 - Categorie UI + Jury + Clean Host
+   - Spelerscherm: boven alleen kleur, categorienaam alleen onder timer
+   - Maximaal 1 BB-logo: stage-logo's verborgen
+   - Categorie-specifieke Jury van Bingo Beats
+   - Nieuwe kamer/nieuw spel maakt hostscore schoon
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX={yellow:'#FFCC33',pink:'#00D4C7',purple:'#FF8A1F',blue:'#7ED957',green:'#FF5A5F',free:'#101716'};
+  function catLabel(r){return String(r?.category||'Categorie').trim()||'Categorie'}
+  function secondsLeft117(r){if(!r?.deadlineMs)return null;return Math.max(0,Math.ceil((Number(r.deadlineMs)-Date.now())/1000))}
+  function timerPct117(r){const left=secondsLeft117(r),sec=Math.max(1,Number(r?.seconds)||20);return left===null?100:Math.max(0,Math.min(100,left/sec*100))}
+  function precountLeft117(r){const end=Number(r?.precountEndsAt||0);return end?Math.max(0,Math.ceil((end-Date.now())/1000)):0}
+  function setStage117(root,cls,html){document.body.classList.add('bbStageMode');root.className='compactDashboard bbStageDashboard '+cls;root.innerHTML=html}
+
+  // Oude vraagzinnen uitschakelen: overal waar oude code nog vraagt, gewoon categorienaam teruggeven.
+  window.bbCategoryLabelV117=catLabel;
+  try{ if(typeof questionForCategoryV93==='function') questionForCategoryV93=function(cat){return String(cat||'Categorie')}; }catch(e){}
+  try{ if(typeof categoryQuestion==='function') categoryQuestion=function(cat){return String(cat||'Categorie')}; }catch(e){}
+  try{ if(typeof questionFor==='function') questionFor=function(cat){return String(cat||'Categorie')}; }catch(e){}
+
+  const prevRender117=typeof renderCompactDashboard==='function'?renderCompactDashboard:null;
+  renderCompactDashboard=function(room,r){
+    const root=q('screenDashboard');
+    if(!root) return prevRender117?prevRender117(room,r):null;
+
+    if(r?.status==='precount'){
+      const left=precountLeft117(r),goText=left?String(left):'GO';
+      setStage117(root,'stagePrecount stageAnswer',`<section class="bbStageShell bbNoInnerLogo">
+        <div class="bbRoundBadge bbColorOnly" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'KLEUR')}</div>
+        <div class="bbPrecountBig" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span>${E(goText)}</span></div>
+        <h2 class="bbCategoryTitle">🎯 ${E(catLabel(r))}</h2>
+        <input class="bbStageInput" value="" placeholder="Maak je klaar..." autocomplete="off" disabled>
+        <button class="bbStageSubmit" disabled>${left?'START OVER '+left:'START!'}</button>
+        <p class="bbStageSub">Het liedje start zo meteen.</p>
+      </section>`);
+      return;
+    }
+
+    if(r?.status==='answering'){
+      const own=r?.id?(room.answers?.[r.id]?.[currentPlayerId]):null;
+      if(!own){
+        const left=secondsLeft117(r);
+        setStage117(root,'stageAnswer',`<section class="bbStageShell bbNoInnerLogo">
+          <div class="bbRoundBadge bbColorOnly" style="--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span></span>${E(r.colorName||'KLEUR')}</div>
+          <div class="bbCountdownBig" style="--pct:${timerPct117(r)};--chosen:${HEX[r.colorKey]||'#FFCC33'}"><span>${left??''}</span></div>
+          <h2 class="bbCategoryTitle">🎯 ${E(catLabel(r))}</h2>
+          <input id="bbStageAnswerInput" class="bbStageInput" value="" placeholder="Typ je antwoord..." autocomplete="off">
+          <button id="bbStageSubmitBtn" class="bbStageSubmit">VERSTUREN</button>
+        </section>`);
+        const inp=q('bbStageAnswerInput');
+        inp?.addEventListener('keydown',e=>{if(e.key==='Enter')q('bbStageSubmitBtn')?.click()});
+        q('bbStageSubmitBtn')?.addEventListener('click',()=>{const v=(q('bbStageAnswerInput')?.value||'').trim();if(!v)return alert('Vul eerst je antwoord in.');if(typeof submitAnswerValue==='function')submitAnswerValue(v)});
+        setTimeout(()=>inp?.focus(),50);
+        return;
+      }
+    }
+    return prevRender117?prevRender117(room,r):null;
+  };
+
+  function cleanHostUi117(){
+    try{['hostAnswerArea','hostScoreboard','hostRoundInfo','hostBingoMessage'].forEach(id=>{const el=q(id);if(el)el.innerHTML=''})}catch(e){}
+    try{q('hostScorePanel')?.classList.add('hidden');q('hostBingoPanel')?.classList.add('hidden')}catch(e){}
+    try{if(q('hostPickerArea'))q('hostPickerArea').innerHTML='🎮<br>Klaar om te spelen'}catch(e){}
+    try{if(q('hostStatus'))q('hostStatus').textContent='Nieuwe start. Maak of hervat een kamer.'}catch(e){}
+  }
+  window.bbCleanHostUi117=cleanHostUi117;
+  document.addEventListener('click',e=>{if(e.target?.id==='newRoomBtn'||e.target?.id==='confirmNewGameBtn'||e.target?.id==='newGameBtn')cleanHostUi117()},true);
+
+  // ===== Jury van Bingo Beats V117 =====
+  const STOP=new Set(['the','de','het','een','a','an','of','van']);
+  const WORDNUM={zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10',eleven:'11',twelve:'12'};
+  function stripMixInfo(s){
+    s=String(s||'');
+    s=s.replace(/\s*[\(\[][^\)\]]*(radio\s*edit|edit|remix|mix|live|extended|acoustic|instrumental|remaster|version|club|single)[^\)\]]*[\)\]]/ig,'');
+    s=s.replace(/\s*[-–—]\s*.*\b(radio\s*edit|edit|remix|mix|live|extended|acoustic|instrumental|remaster|version|club|single)\b.*$/ig,'');
+    s=s.replace(/\s+(feat\.?|ft\.?|featuring)\s+.*$/ig,'');
+    return s.trim();
+  }
+  function baseNorm117(s){
+    s=stripMixInfo(s).toLowerCase();
+    s=s.replace(/&/g,' and ');
+    Object.entries(WORDNUM).forEach(([w,n])=>{s=s.replace(new RegExp('\\b'+w+'\\b','g'),n)});
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+  }
+  function tokens117(s){const b=baseNorm117(s);return b?b.split(' ').filter(Boolean):[]}
+  function coreTokens117(s){return tokens117(s).filter(w=>!STOP.has(w))}
+  function lev117(a,b){a=String(a||'');b=String(b||'');const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return dp[m][n]}
+  function sim117(a,b){a=baseNorm117(a);b=baseNorm117(b);if(!a&&!b)return 1;if(!a||!b)return 0;const m=Math.max(a.length,b.length);return 1-lev117(a,b)/m}
+  function wordClose117(a,b){a=baseNorm117(a);b=baseNorm117(b);if(a===b)return true;if(!a||!b)return false;if((a==='i'&&b==='it')||(a==='it'&&b==='i'))return true;const d=lev117(a,b),m=Math.max(a.length,b.length);if(m<=4)return d<=1;if(m<=7)return d<=2;return d<=3||(1-d/m)>=0.72}
+  function cover117(correct,given){const used=new Array(given.length).fill(false);let hit=0;for(const cw of correct){let best=-1,score=-999;for(let i=0;i<given.length;i++){if(used[i])continue;const gw=given[i];let sc=cw===gw?100:(wordClose117(cw,gw)?80-lev117(cw,gw):-100);if(sc>score){score=sc;best=i}}if(best>=0&&score>0){used[best]=true;hit++}}return{hit,total:correct.length,missing:Math.max(0,correct.length-hit)}}
+  function parseYear117(v){const s=String(v||'').toLowerCase().replace(/[’']/g,'');let m=s.match(/\b(19\d{2}|20\d{2})\b/);if(m)return Number(m[1]);m=s.match(/\b(\d{2})\b/);if(m){const n=Number(m[1]);return n<=35?2000+n:1900+n}return null}
+  function decade117(y){y=Number(y);return y?Math.floor(y/10)*10:null}
+  function parseDecade117(v){const s=String(v||'').toLowerCase();if(/nineties/.test(s))return 1990;if(/eighties/.test(s))return 1980;if(/seventies/.test(s))return 1970;if(/sixties/.test(s))return 1960;if(/\b00s\b|jaren\s*00|\b00\b/.test(s))return 2000;if(/\b10s\b|jaren\s*10|\b10\b/.test(s))return 2010;if(/\b20s\b|jaren\s*20|\b20\b/.test(s))return 2020;let m=s.match(/\b(60|70|80|90)\s*(s|'s)?\b/);if(m)return 1900+Number(m[1]);const y=parseYear117(s);return y?decade117(y):null}
+  function kind117(cat){const c=String(cat||'').toLowerCase();if((c.includes('voor')&&c.includes('na'))||c.includes('2001'))return'beforeafter';if(c.includes('decennium')||c.includes('decade'))return'decade';if(c.includes('jaartal')||c.includes('jaar')||c.includes('+/-')||c.includes('±'))return'year';if(c.includes('artiest')||c.includes('artist'))return'artist';return'title'}
+  function correct117(kind,ans){ans=ans||{};if(kind==='beforeafter'){const y=parseYear117(ans.year);return y&&y<2001?'voor':'na'}if(kind==='artist')return ans.artist||'';if(kind==='year'||kind==='decade')return ans.year||'';return ans.track||''}
+  function judge117(r,answer){
+    const kind=kind117(r?.category), corr=correct117(kind,r?.correctAnswer||{}), raw=String(answer||'').trim();
+    if(!raw)return{good:false,review:false,reason:'Geen antwoord',kind,correct:corr};
+    if(kind==='beforeafter'){
+      const g=baseNorm117(raw);let val='';if(['voor','ervoor','before'].includes(g))val='voor';if(['na','erna','after'].includes(g))val='na';return{good:val===corr,review:false,reason:val?(val===corr?'Voor/na klopt':'Voor/na klopt niet'):'Antwoord moet voor of na zijn',kind,correct:corr};
+    }
+    if(kind==='year'){
+      const cy=parseYear117(corr),gy=parseYear117(raw);const ok=!!cy&&!!gy&&Math.abs(cy-gy)<=2;return{good:ok,review:false,reason:ok?'Binnen marge':'Buiten marge',kind,correct:corr};
+    }
+    if(kind==='decade'){
+      const cd=decade117(parseYear117(corr)),gd=parseDecade117(raw);const ok=!!cd&&cd===gd;return{good:ok,review:false,reason:ok?'Zelfde decennium':'Ander decennium',kind,correct:corr};
+    }
+    const c=baseNorm117(corr),g=baseNorm117(raw);
+    if(c&&g&&c===g)return{good:true,review:false,reason:'Exact genoeg',kind,correct:corr};
+    // Coulanter voor duidelijke typefouten zoals Gravity -> grqvity.
+    if((kind==='title'||kind==='artist')&&c&&g){
+      const d=lev117(c,g), m=Math.max(c.length,g.length);
+      if(m>=5 && d<=2) return{good:true,review:false,reason:'Duidelijke typefout',kind,correct:corr};
+    }
+    if(sim117(corr,raw)>=0.74)return{good:true,review:false,reason:'Duidelijk bedoeld',kind,correct:corr};
+    const allC=tokens117(corr),allG=tokens117(raw),ct=coreTokens117(corr),gt=coreTokens117(raw);
+    if(!ct.length)return{good:false,review:false,reason:'Geen juist antwoord beschikbaar',kind,correct:corr};
+    const cov=cover117(ct,gt),ratio=cov.hit/ct.length;
+    if(kind==='title'&&ct.length===1&&gt.length===1&&cov.missing===0&&allC.length>=3&&allG.length<=1)return{good:false,review:true,reason:'Antwoord lijkt onvolledig',kind,correct:corr};
+    if(cov.missing===0)return{good:true,review:false,reason:'Alle belangrijke woorden herkend',kind,correct:corr};
+    if(kind==='title'&&ct.length>=3&&cov.missing===1&&ratio>=0.66)return{good:false,review:true,reason:'Belangrijk woord ontbreekt',kind,correct:corr};
+    if(kind==='title'&&ct.length===2&&cov.hit===1&&gt.length===1)return{good:false,review:true,reason:'Antwoord lijkt onvolledig',kind,correct:corr};
+    if(kind==='artist'&&sim117(corr,raw)>=0.68&&gt.length>=1)return{good:true,review:false,reason:'Artiest duidelijk bedoeld',kind,correct:corr};
+    return{good:false,review:false,reason:'Onvoldoende herkenbaar',kind,correct:corr};
+  }
+  window.bbJudgeOneV117=judge117;
+  async function runJury117(roomCode,forceStatus){
+    const snap=await db.ref('rooms/'+roomCode).once('value');const room=snap.val()||{},r=room.currentRound||{};if(!r.id||!r.correctAnswer)return{reviews:[],room,r};
+    const ans=room.answers?.[r.id]||{},players=room.players||{},up={},reviews=[];
+    Object.keys(players).forEach(pid=>{const text=ans[pid]?.answer||'';const j=judge117(r,text);up[`rooms/${roomCode}/correct/${r.id}/${pid}`]=j.review?'review':!!j.good;up[`rooms/${roomCode}/juryMeta/${r.id}/${pid}`]={kind:j.kind,reason:j.reason,correct:j.correct,answer:text,review:!!j.review};if(j.review)reviews.push(pid)});
+    up[`rooms/${roomCode}/currentRound/juryDone`]=true;up[`rooms/${roomCode}/currentRound/reviewList`]=reviews;up[`rooms/${roomCode}/currentRound/reviewIndex`]=0;if(forceStatus)up[`rooms/${roomCode}/currentRound/status`]=reviews.length?'review':forceStatus;await db.ref().update(up);return{reviews,room,r};
+  }
+  window.bbRunJuryV117=runJury117;
+  lockRound=function(){
+    if(!currentRoomCode)return;publishAnswer().then(()=>runJury117(currentRoomCode,null)).then(res=>{const has=!!res?.reviews?.length;return db.ref('rooms/'+currentRoomCode+'/currentRound').update({status:'locked'}).then(()=>setTimeout(()=>db.ref('rooms/'+currentRoomCode+'/currentRound').update({status:has?'review':'judged'}),2200))}).then(()=>{if(q('hostStatus'))q('hostStatus').textContent='Jury van Bingo Beats heeft de antwoorden beoordeeld.'}).catch(e=>alert('Jury/timer fout: '+(e.message||e)))};
+  publishResults=function(){if(!currentRoomCode)return;runJury117(currentRoomCode,'judged').then(()=>{if(q('hostStatus'))q('hostStatus').textContent='Jury-scorebord verzonden.'})};
+})();
+
+
+/* =========================
+   V131 - Carrousel + Lichtronde, geen draaiend rad meer
+   - Vervangt de oude wiel/rad-flow volledig in actieve code
+   - Host en spelers zien dezelfde gekozen animatie
+   - 12 seconden: snel naar rustig naar duidelijke stop
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX={yellow:'#FFCC33',pink:'#00D4C7',purple:'#FF8A1F',blue:'#7ED957',green:'#FF5A5F'};
+  const EMOJI={yellow:'🟡',pink:'🩵',purple:'🟠',blue:'🟢',green:'🔴'};
+  const NAME={yellow:'GOUD',pink:'AQUA',purple:'ORANJE',blue:'LIME',green:'KORAAL'};
+  const INPUT={yellow:'cat-yellow',pink:'cat-pink',purple:'cat-purple',blue:'cat-blue',green:'cat-green'};
+  const KEYS=['yellow','pink','purple','blue','green'];
+  const INTRO_MS=12000;
+  let activeIntroKey='';
+  let rafId=null;
+
+  function colorObj(key){
+    const c=(typeof COLORS!=='undefined'&&COLORS.find(x=>x.key===key))||{};
+    return {key,name:c.name||NAME[key]||'KLEUR',emoji:c.emoji||EMOJI[key]||'',hex:c.hex||HEX[key]||'#FFCC33',input:c.input||INPUT[key]};
+  }
+  function categoryFor(color){try{return q(color.input)?.value||'Geen categorie'}catch(_e){return'Geen categorie'}}
+  function pickOne(a){return a[Math.floor(Math.random()*a.length)]}
+  function easeOutCubic(t){return 1-Math.pow(1-t,3)}
+
+  function makeSequence(targetKey, len=85){
+    const seq=[];
+    for(let i=0;i<len;i++) seq.push(KEYS[(i*7+i*3+Math.floor(i/2))%KEYS.length]);
+    const targetIndex=len-8;
+    seq[targetIndex]=targetKey;
+    return {seq,targetIndex};
+  }
+  function randomIntro(targetKey){
+    const mode=Math.random()<0.5?'carousel':'lights';
+    const data=makeSequence(targetKey);
+    return {mode,seq:data.seq,targetIndex:data.targetIndex};
+  }
+
+  function ensureOverlay(){
+    let o=q('bbIntroOverlayV131');
+    if(!o){o=document.createElement('div');o.id='bbIntroOverlayV131';o.className='bbIntroOverlayV131 hidden';document.body.appendChild(o)}
+    return o;
+  }
+  function cancelAnim(){if(rafId){cancelAnimationFrame(rafId);rafId=null}}
+  function hideOldVisuals(){
+    // Oude rad/wiel-elementen hard verbergen als ze nog in DOM staan uit eerdere versies/cache.
+    document.querySelectorAll('#bbWheelFullOverlayV92,#bbWheelV123Overlay,#bbWheelV125Overlay,.bbWheelFullCardV92,.bbWheelInlineV110,.bbWheelInlineV121,.bbWheelInlineV122,.bbWheelInlineV123,.bbWheelHostStatusV125,.bbWheelHostResultV125,.wheelWrap,.wheel,.showWheel,.dashWheel').forEach(el=>{
+      if(el.closest('#bbIntroOverlayV131')) return;
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('visibility','hidden','important');
+      if(el.id&&el.id!=='bbIntroOverlayV131') el.innerHTML='';
+    });
+  }
+  function hideIntro(){
+    cancelAnim();activeIntroKey='';
+    const o=q('bbIntroOverlayV131');
+    if(o){o.classList.add('hidden');o.classList.remove('show');o.innerHTML=''}
+  }
+
+  function carouselHTML(seq,targetIndex,roundId){
+    return `<div class="bbIntroCardV131 carousel" data-round="${E(roundId||'')}" data-target="${targetIndex}">
+      <div class="bbIntroPointerV131"></div>
+      <div class="bbIntroTitleV131">Categorie wordt gekozen...</div>
+      <div class="bbCarouselWindowV131">
+        <div class="bbCarouselTrackV131">${seq.map((k,i)=>`<span class="bbCarouselSegV131" data-i="${i}" data-key="${E(k)}" style="--seg:${HEX[k]}"></span>`).join('')}</div>
+      </div>
+      <div class="bbIntroHintV131">Even spannend...</div>
+    </div>`;
+  }
+  function lightsHTML(targetKey,roundId){
+    return `<div class="bbIntroCardV131 lights" data-round="${E(roundId||'')}" data-target-key="${E(targetKey)}">
+      <div class="bbIntroTitleV131">Categorie wordt gekozen...</div>
+      <div class="bbLightRingV131">
+        ${KEYS.map((k,i)=>`<div class="bbLightNodeV131" data-key="${E(k)}" data-i="${i}" style="--seg:${HEX[k]}"><span>${EMOJI[k]}</span></div>`).join('')}
+      </div>
+      <div class="bbIntroHintV131">De lampjes lopen rond...</div>
+    </div>`;
+  }
+  function resultHTML(color,cat){
+    return `<div class="bbIntroResultV131" style="--result:${color.hex}">
+      <div class="bbIntroResultDotV131"></div>
+      <div class="bbIntroResultNameV131">${E(color.emoji)} ${E(color.name)}</div>
+      <div class="bbIntroResultCatV131">${E(cat||'')}</div>
+    </div>`;
+  }
+  function animateCarousel(card,targetIndex){
+    const track=card.querySelector('.bbCarouselTrackV131');
+    const win=card.querySelector('.bbCarouselWindowV131');
+    if(!track||!win)return;
+    // BELANGRIJK: niet rekenen met alleen segment-breedte, want CSS heeft margin/gap.
+    // We pakken het echte doelvakje uit de DOM en zetten het midden daarvan exact onder de witte lijn.
+    const targetEl=track.querySelector(`.bbCarouselSegV131[data-i="${targetIndex}"]`) || track.children[targetIndex];
+    if(!targetEl)return;
+    const winW=win.getBoundingClientRect().width||window.innerWidth;
+    const targetCenter=targetEl.offsetLeft + (targetEl.offsetWidth/2);
+    const end=(winW/2)-targetCenter;
+    const start=Math.min(140, winW/4);
+    track.style.transform=`translate3d(${start}px,0,0)`;
+    const t0=performance.now();
+    function frame(now){
+      const t=Math.min(1,(now-t0)/INTRO_MS);
+      const e=easeOutCubic(t);
+      const x=start+(end-start)*e;
+      track.style.transform=`translate3d(${x}px,0,0)`;
+      if(t<1) rafId=requestAnimationFrame(frame);
+      else{track.style.transform=`translate3d(${end}px,0,0)`;rafId=null;}
+    }
+    rafId=requestAnimationFrame(frame);
+  }
+  function animateLights(card,targetKey){
+    const nodes=[...card.querySelectorAll('.bbLightNodeV131')];
+    if(!nodes.length)return;
+    const targetIdx=Math.max(0,KEYS.indexOf(targetKey));
+    // Kies een totaal aantal stappen dat exact eindigt op targetIdx.
+    // 80 is deelbaar door 5, dus 80 + targetIdx eindigt altijd op targetIdx.
+    // Hierdoor is er geen correctie-stap of terugstap meer na het stoppen.
+    const totalSteps=80+targetIdx;
+    const t0=performance.now();
+    let lastStep=-1;
+    function setActive(i, final=false){
+      const idx=((i%nodes.length)+nodes.length)%nodes.length;
+      if(idx===lastStep && !final) return;
+      lastStep=idx;
+      nodes.forEach(n=>n.classList.remove('active','final'));
+      const n=nodes[idx];
+      if(n)n.classList.add('active');
+      if(final&&n)n.classList.add('final');
+    }
+    function frame(now){
+      const t=Math.min(1,(now-t0)/INTRO_MS);
+      const e=easeOutCubic(t);
+      const step=Math.min(totalSteps,Math.floor(e*totalSteps));
+      if(t<1){
+        setActive(step,false);
+        rafId=requestAnimationFrame(frame);
+      }else{
+        setActive(totalSteps,true);
+        rafId=null;
+      }
+    }
+    rafId=requestAnimationFrame(frame);
+  }
+  function showIntro(mode,seq,targetIndex,targetKey,roundId){
+    const introKey=[mode,targetIndex,targetKey,roundId].join(':');
+    const o=ensureOverlay();
+    hideOldVisuals();
+    if(activeIntroKey===introKey && o.classList.contains('show')) return;
+    cancelAnim();activeIntroKey=introKey;
+    if(mode==='lights') o.innerHTML=lightsHTML(targetKey,roundId);
+    else o.innerHTML=carouselHTML(seq,targetIndex,roundId);
+    o.classList.remove('hidden');o.classList.add('show');
+    const card=o.querySelector('.bbIntroCardV131');
+    if(mode==='lights') animateLights(card,targetKey); else animateCarousel(card,targetIndex);
+  }
+  function showResult(color,cat){
+    cancelAnim();activeIntroKey='result';hideOldVisuals();
+    const o=ensureOverlay();o.innerHTML=resultHTML(color,cat);o.classList.remove('hidden');o.classList.add('show');
+  }
+
+  // Oude publieke wiel-API's neutraal maken zodat oudere listeners niets opnieuw kunnen tonen.
+  window.__bbWheelV92={showWheelFull:()=>{},showWheelResult:()=>{},hideWheelFull:()=>{}};
+  window.__bbWheelV110={showWheelV110:()=>{},showResultV110:()=>{},hideWheelV110:()=>{},wheelHTMLV110:()=>''};
+  window.__bbWheelV119={showWheel:()=>{},showResult:()=>{},hideWheel:()=>{},wheelHTML:()=>'',resultHTML:()=>''};
+  window.__bbWheelFixedV121={showIndex:()=>{},showKey:()=>{},showResult:()=>{},hide:()=>{},htmlWheel:()=>'',htmlResult:()=>''};
+  window.__bbIntroV131={showIntro,showResult,hideIntro};
+
+  if(typeof pickerHTML==='function') pickerHTML=function(){return '<div class="bbIntroHostStatusV131">Categorie wordt gekozen...</div>'};
+
+  startRoundVisual=function(room){
+    hideIntro();hideOldVisuals();
+    if(q('hostAnswerArea'))q('hostAnswerArea').innerHTML='';
+    if(q('playBtn')){q('playBtn').disabled=true;q('playBtn').textContent='🎵 Nummer start zo...'}
+    if(q('showAnswerBtn'))q('showAnswerBtn').disabled=true;
+    if(q('hostPickerArea'))q('hostPickerArea').innerHTML='<div class="bbIntroHostStatusV131">Categorie wordt gekozen...</div>';
+
+    const color=pickOne((typeof COLORS!=='undefined'&&COLORS.length)?COLORS.map(c=>colorObj(c.key)):KEYS.map(colorObj));
+    const cat=categoryFor(color);
+    const intro=randomIntro(color.key);
+    currentRoundId='r_'+Date.now();
+
+    db.ref('rooms/'+room+'/currentRound').set({
+      id:currentRoundId,
+      status:'picking',
+      pickerMode:'introV131',
+      introMode:intro.mode,
+      introSequence:intro.seq,
+      introTargetIndex:intro.targetIndex,
+      pendingColorKey:color.key,
+      pendingColorName:color.name,
+      pendingColorEmoji:color.emoji,
+      pendingCategory:cat,
+      pickerStartedAt:firebase.database.ServerValue.TIMESTAMP,
+      seconds:Number(q('duration')?.value)||20
+    }).then(()=>showIntro(intro.mode,intro.seq,intro.targetIndex,color.key,currentRoundId));
+
+    setTimeout(()=>{
+      try{if(typeof flash==='function')flash()}catch(_e){}
+      showResult(color,cat);
+      if(q('hostPickerArea'))q('hostPickerArea').innerHTML=`<div class="bbIntroHostResultV131">${E(color.emoji)} ${E(color.name)}<br><span>${E(cat)}</span></div>`;
+      const ends=Date.now()+3000;
+      db.ref('rooms/'+room+'/currentRound').set({
+        id:currentRoundId,
+        status:'precount',
+        pickerMode:'introV131',
+        introMode:intro.mode,
+        introSequence:intro.seq,
+        introTargetIndex:intro.targetIndex,
+        colorKey:color.key,
+        colorName:color.name,
+        colorEmoji:color.emoji,
+        category:cat,
+        seconds:Number(q('duration')?.value)||20,
+        precountStartedAt:firebase.database.ServerValue.TIMESTAMP,
+        precountEndsAt:ends
+      }).then(()=>{
+        q('hostScorePanel')?.classList.remove('hidden');
+        if(q('hostStatus'))q('hostStatus').textContent='Categorie gekozen. 3-2-1... daarna start het nummer.';
+        setTimeout(()=>{hideIntro();if(typeof playHidden==='function')playHidden()},3000);
+      });
+    },INTRO_MS);
+  };
+
+  const previousRender=typeof renderCompactDashboard==='function'?renderCompactDashboard:null;
+  renderCompactDashboard=function(room,r){
+    if(r&&r.status==='picking'){
+      const root=q('screenDashboard');
+      if(root){document.body.classList.add('bbStageMode');root.className='compactDashboard bbStageDashboard stageIntroV131';root.innerHTML='<section class="bbIntroPlayerStatusV131">Categorie wordt gekozen...</section>'}
+      const seq=Array.isArray(r.introSequence)&&r.introSequence.length?r.introSequence:makeSequence(r.pendingColorKey||'yellow').seq;
+      const target=Number.isFinite(Number(r.introTargetIndex))?Number(r.introTargetIndex):makeSequence(r.pendingColorKey||'yellow').targetIndex;
+      showIntro(r.introMode||'carousel',seq,target,r.pendingColorKey||'yellow',r.id||'');
+      return;
+    }
+    if(r&&r.status!=='picking')hideIntro();
+    return previousRender?previousRender(room,r):null;
+  };
+
+  let listeningRoom='';
+  function roomCode(){return(currentRoomCode||new URLSearchParams(location.search).get('room')||localStorage.hb_player_room||localStorage.hb_host_room||'').toUpperCase()}
+  function attach(){
+    try{
+      if(!db)return;const room=roomCode();if(!room||room===listeningRoom)return;
+      if(listeningRoom)db.ref('rooms/'+listeningRoom+'/currentRound').off('value.bbIntroV131');
+      listeningRoom=room;
+      db.ref('rooms/'+room+'/currentRound').on('value.bbIntroV131',s=>{
+        const r=s.val()||{};hideOldVisuals();
+        if(r.status==='picking'){
+          const seq=Array.isArray(r.introSequence)&&r.introSequence.length?r.introSequence:makeSequence(r.pendingColorKey||'yellow').seq;
+          const target=Number.isFinite(Number(r.introTargetIndex))?Number(r.introTargetIndex):makeSequence(r.pendingColorKey||'yellow').targetIndex;
+          showIntro(r.introMode||'carousel',seq,target,r.pendingColorKey||'yellow',r.id||'');
+          if(q('hostPickerArea'))q('hostPickerArea').innerHTML='<div class="bbIntroHostStatusV131">Categorie wordt gekozen...</div>';
+        }else hideIntro();
+      });
+    }catch(_e){}
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(attach,250));
+  setInterval(()=>{attach();hideOldVisuals()},600);
+})();
+
+/* =========================
+   V134 - Alleen carrousel + timer fix
+   - Lichtjesanimatie volledig uit de actieve flow
+   - Ook oude/current rounds met introMode='lights' worden als carrousel getoond
+   - Timer/precount telt lokaal door en blijft niet op 20 staan
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const KEY_MAP={yellow:'#FFCC33',pink:'#00D4C7',purple:'#FF8A1F',blue:'#7ED957',green:'#FF5A5F'};
+  let uiTicker=null;
+  let lastRoomSnap=null;
+  let lastRoundSnap=null;
+
+  function safeMakeSequence(targetKey,len=85){
+    if(typeof makeSequence==='function') return makeSequence(targetKey,len);
+    const keys=['yellow','pink','purple','blue','green'];
+    const seq=[];
+    for(let i=0;i<len;i++) seq.push(keys[(i*7+i*3+Math.floor(i/2))%keys.length]);
+    const targetIndex=len-8;
+    seq[targetIndex]=targetKey||'yellow';
+    return {seq,targetIndex};
+  }
+
+  function forceCarouselData(r){
+    const key=r?.pendingColorKey || r?.colorKey || 'yellow';
+    const made=safeMakeSequence(key);
+    return {
+      mode:'carousel',
+      seq:Array.isArray(r?.introSequence)&&r.introSequence.length?r.introSequence:made.seq,
+      target:Number.isFinite(Number(r?.introTargetIndex))?Number(r.introTargetIndex):made.targetIndex,
+      key
+    };
+  }
+
+  function secondsLeft(r){
+    if(!r?.deadlineMs) return null;
+    return Math.max(0,Math.ceil((Number(r.deadlineMs)-Date.now())/1000));
+  }
+  function precountLeft(r){
+    const end=Number(r?.precountEndsAt||0);
+    return end?Math.max(0,Math.ceil((end-Date.now())/1000)):0;
+  }
+  function pct(r){
+    const left=secondsLeft(r), sec=Math.max(1,Number(r?.seconds)||20);
+    return left===null?100:Math.max(0,Math.min(100,left/sec*100));
+  }
+
+  function patchVisibleTimer(){
+    const r=lastRoundSnap;
+    if(!r) return;
+    if(r.status==='precount'){
+      const left=precountLeft(r), txt=left?String(left):'GO';
+      document.querySelectorAll('.bbPrecountBig span').forEach(el=>el.textContent=txt);
+      document.querySelectorAll('.bbStageSubmit[disabled]').forEach(el=>el.textContent=left?'START OVER '+left:'START!');
+    }
+    if(r.status==='answering'){
+      const left=secondsLeft(r);
+      document.querySelectorAll('.bbCountdownBig span').forEach(el=>el.textContent=left??'');
+      document.querySelectorAll('.bbCountdownBig').forEach(el=>{
+        el.style.setProperty('--pct',String(pct(r)));
+        el.style.setProperty('--chosen',KEY_MAP[r.colorKey]||'#FFCC33');
+      });
+    }
+  }
+  function startTicker(){
+    if(uiTicker) return;
+    uiTicker=setInterval(patchVisibleTimer,250);
+  }
+
+  // Forceer nieuwe rondes naar carrousel en niet meer naar lichtjes.
+  if(typeof randomIntro==='function'){
+    randomIntro=function(targetKey){
+      const data=safeMakeSequence(targetKey);
+      return {mode:'carousel',seq:data.seq,targetIndex:data.targetIndex};
+    };
+  }
+
+  // Negeer lichtjesfunctie volledig, mocht oude code hem toch aanroepen.
+  if(typeof animateLights==='function') animateLights=function(){};
+  if(typeof lightsHTML==='function') lightsHTML=function(){return ''};
+
+  // Wrapper om showIntro nooit meer lights te laten tonen.
+  if(typeof showIntro==='function'){
+    const oldShowIntro=showIntro;
+    showIntro=function(mode,seq,targetIndex,targetKey,roundId){
+      return oldShowIntro('carousel',seq,targetIndex,targetKey,roundId);
+    };
+  }
+
+  // Wrapper om player render bij te houden + timers lokaal te laten doorlopen.
+  if(typeof renderCompactDashboard==='function'){
+    const prev=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){
+      lastRoomSnap=room; lastRoundSnap=r; startTicker();
+      if(r && r.status==='picking'){
+        try{
+          const d=forceCarouselData(r);
+          if(typeof showIntro==='function') showIntro('carousel',d.seq,d.target,d.key,r.id||'');
+        }catch(_e){}
+      }
+      const out=prev(room,r);
+      setTimeout(patchVisibleTimer,30);
+      return out;
+    };
+  }
+
+  // Extra Firebase listener: als een oude ronde introMode=lights bevat, toon alsnog carrousel.
+  let boundRoom='';
+  function currentRoom(){return (window.currentRoomCode||currentRoomCode||new URLSearchParams(location.search).get('room')||localStorage.hb_player_room||localStorage.hb_host_room||'').toUpperCase();}
+  function bindRoundListener(){
+    try{
+      if(!db) return;
+      const room=currentRoom();
+      if(!room || room===boundRoom) return;
+      if(boundRoom) db.ref('rooms/'+boundRoom+'/currentRound').off('value.bbV134');
+      boundRoom=room;
+      db.ref('rooms/'+room+'/currentRound').on('value.bbV134',s=>{
+        const r=s.val()||{};
+        lastRoundSnap=r; startTicker(); setTimeout(patchVisibleTimer,30);
+        if(r.status==='picking'){
+          const d=forceCarouselData(r);
+          if(typeof showIntro==='function') showIntro('carousel',d.seq,d.target,d.key,r.id||'');
+        }
+      });
+    }catch(_e){}
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(bindRoundListener,300));
+  setInterval(bindRoundListener,800);
+})();
+
+/* =========================
+   V136 - DJ Pads enige categorie-animatie
+   - Alle oude rad/carrousel/lichtjes overlays worden verborgen
+   - Host en speler zien dezelfde DJ Pads animatie
+   - 12 seconden, eindigt rechtstreeks op gekozen kleur
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const INTRO_MS=12000;
+  const KEYS=['yellow','pink','purple','blue','green'];
+  const FALLBACK={
+    yellow:{key:'yellow',name:'GOUD',emoji:'🟡',hex:'#FFCC33',input:'cat-yellow'},
+    pink:{key:'pink',name:'AQUA',emoji:'🩵',hex:'#00D4C7',input:'cat-pink'},
+    purple:{key:'purple',name:'ORANJE',emoji:'🟠',hex:'#FF8A1F',input:'cat-purple'},
+    blue:{key:'blue',name:'LIME',emoji:'🟢',hex:'#7ED957',input:'cat-blue'},
+    green:{key:'green',name:'KORAAL',emoji:'🔴',hex:'#FF5A5F',input:'cat-green'}
+  };
+  let raf=null;
+  let activeKey='';
+  let boundRoom='';
+
+  function colorObj(key){
+    const base=FALLBACK[key]||FALLBACK.yellow;
+    const fromColors=(typeof COLORS!=='undefined'&&Array.isArray(COLORS))?COLORS.find(c=>c.key===key):null;
+    return {...base,...(fromColors||{})};
+  }
+  function pickColor(){
+    if(typeof COLORS!=='undefined'&&Array.isArray(COLORS)&&COLORS.length){
+      const c=COLORS[Math.floor(Math.random()*COLORS.length)];
+      return colorObj(c.key);
+    }
+    return colorObj(KEYS[Math.floor(Math.random()*KEYS.length)]);
+  }
+  function categoryFor(c){try{return q(c.input)?.value||'Geen categorie'}catch(_){return 'Geen categorie'}}
+  function easeOutCubic(t){return 1-Math.pow(1-t,3)}
+  function cancel(){if(raf){cancelAnimationFrame(raf);raf=null}}
+
+  function hideOld(){
+    document.querySelectorAll('#bbIntroOverlayV131,#bbWheelFullOverlayV92,#bbWheelV123Overlay,#bbWheelV125Overlay,.bbWheelFullCardV92,.bbWheelInlineV110,.bbWheelInlineV121,.bbWheelInlineV122,.bbWheelInlineV123,.bbWheelHostStatusV125,.bbWheelHostResultV125,.wheelWrap,.wheel,.showWheel,.dashWheel,.bbCarouselWindowV131,.bbLightRingV131').forEach(el=>{
+      if(el.id==='bbDjPadsOverlayV136')return;
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('visibility','hidden','important');
+      el.classList?.add?.('hidden');
+    });
+  }
+  function overlay(){
+    let o=q('bbDjPadsOverlayV136');
+    if(!o){o=document.createElement('div');o.id='bbDjPadsOverlayV136';o.className='bbDjPadsOverlayV136 hidden';document.body.appendChild(o)}
+    return o;
+  }
+  function hideDj(){cancel();activeKey='';const o=q('bbDjPadsOverlayV136');if(o){o.classList.add('hidden');o.classList.remove('show');o.innerHTML=''}}
+
+  function padsHTML(roundId){
+    return `<div class="bbDjPadsCardV136" data-round="${E(roundId||'')}">
+      <div class="bbDjPadsTitleV136">Categorie wordt gekozen...</div>
+      <div class="bbDjMixerV136">
+        ${KEYS.map(k=>{const c=colorObj(k);return `<div class="bbDjPadV136" data-key="${E(k)}" style="--pad:${E(c.hex)}"><div class="bbDjPadEmojiV136">${E(c.emoji)}</div><div class="bbDjPadNameV136">${E(c.name)}</div></div>`}).join('')}
+      </div>
+      <div class="bbDjBeatV136"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="bbDjPadsSubV136">DJ kiest de categorie...</div>
+    </div>`;
+  }
+  function resultHTML(c,cat){
+    return `<div class="bbDjPadsResultV136" style="--pad:${E(c.hex)}">
+      <div class="bbDjResultDotV136"></div>
+      <div class="bbDjResultNameV136">${E(c.emoji)} ${E(c.name)}</div>
+      <div class="bbDjResultCatV136">${E(cat||'')}</div>
+    </div>`;
+  }
+  function setActive(o,key,final=false){
+    o.querySelectorAll('.bbDjPadV136').forEach(p=>p.classList.remove('active','final','near'));
+    o.querySelectorAll('.bbDjPadV136').forEach(p=>{
+      if(p.dataset.key===key){p.classList.add('active');if(final)p.classList.add('final')}
+    });
+  }
+  function showDj(roundId,targetKey,startedAt){
+    hideOld();
+    const introKey=`${roundId||''}:${targetKey||''}`;
+    const o=overlay();
+    if(activeKey!==introKey || !o.classList.contains('show')){
+      cancel(); activeKey=introKey; o.innerHTML=padsHTML(roundId); o.classList.remove('hidden'); o.classList.add('show');
+    }
+    const start=Number(startedAt)||Date.now();
+    const targetIdx=Math.max(0,KEYS.indexOf(targetKey));
+    const totalSteps=65+targetIdx; // 13 rondes + gekozen kleur, eindigt altijd exact op doel
+    let last=-1;
+    function frame(){
+      const t=Math.min(1,(Date.now()-start)/INTRO_MS);
+      const e=easeOutCubic(t);
+      const step=Math.min(totalSteps,Math.floor(e*totalSteps));
+      if(step!==last){last=step;setActive(o,KEYS[step%KEYS.length],t>=1)}
+      if(t<1)raf=requestAnimationFrame(frame);else{setActive(o,targetKey,true);raf=null;}
+    }
+    cancel(); raf=requestAnimationFrame(frame);
+  }
+  function showDjResult(c,cat){
+    cancel();hideOld();activeKey='result';
+    const o=overlay();o.innerHTML=resultHTML(c,cat);o.classList.remove('hidden');o.classList.add('show');
+    try{if(navigator.vibrate)navigator.vibrate(35)}catch(_e){}
+  }
+
+  function currentRoom(){return (window.currentRoomCode||currentRoomCode||new URLSearchParams(location.search).get('room')||localStorage.hb_player_room||localStorage.hb_host_room||'').toUpperCase()}
+  function attachListener(){
+    try{
+      if(!db)return; const room=currentRoom(); if(!room||room===boundRoom)return;
+      if(boundRoom)db.ref('rooms/'+boundRoom+'/currentRound').off('value.bbDjV136');
+      boundRoom=room;
+      db.ref('rooms/'+room+'/currentRound').on('value.bbDjV136',s=>{
+        const r=s.val()||{}; hideOld();
+        if(r.status==='picking' && r.pickerMode==='djPadsV136'){
+          showDj(r.id||'',r.pendingColorKey||r.colorKey||'yellow',r.pickerStartedAt||Date.now());
+          if(q('hostPickerArea'))q('hostPickerArea').innerHTML='<div class="bbDjHostStatusV136">Categorie wordt gekozen...</div>';
+        }else if(r.status==='precount' || r.status==='ready' || r.status==='answering' || r.status==='locked' || r.status==='judged'){
+          hideDj();
+        }
+      });
+    }catch(_e){}
+  }
+
+  // Negeer oude intro-API's volledig.
+  window.__bbWheelV92={showWheelFull:()=>{},showWheelResult:()=>{},hideWheelFull:()=>{}};
+  window.__bbWheelV110={showWheelV110:()=>{},showResultV110:()=>{},hideWheelV110:()=>{},wheelHTMLV110:()=>''};
+  window.__bbWheelV119={showWheel:()=>{},showResult:()=>{},hideWheel:()=>{},wheelHTML:()=>'',resultHTML:()=>''};
+  window.__bbWheelFixedV121={showIndex:()=>{},showKey:()=>{},showResult:()=>{},hide:()=>{},htmlWheel:()=>'',htmlResult:()=>''};
+  window.__bbIntroV131={showIntro:()=>{},showResult:()=>{},hideIntro:hideDj};
+  window.__bbDjPadsV136={showDj,showDjResult,hideDj};
+  if(typeof pickerHTML==='function') pickerHTML=()=>'<div class="bbDjHostStatusV136">Categorie wordt gekozen...</div>';
+
+  // Nieuwe enige startflow: DJ pads -> resultaat -> precount -> muziek.
+  startRoundVisual=function(room){
+    hideDj();hideOld();
+    if(q('hostAnswerArea'))q('hostAnswerArea').innerHTML='';
+    if(q('playBtn')){q('playBtn').disabled=true;q('playBtn').textContent='🎵 Nummer start zo...'}
+    if(q('showAnswerBtn'))q('showAnswerBtn').disabled=true;
+    if(q('hostPickerArea'))q('hostPickerArea').innerHTML='<div class="bbDjHostStatusV136">Categorie wordt gekozen...</div>';
+
+    const color=pickColor();
+    const cat=categoryFor(color);
+    currentRoundId='r_'+Date.now();
+    const roundId=currentRoundId;
+    db.ref('rooms/'+room+'/currentRound').set({
+      id:roundId,
+      status:'picking',
+      pickerMode:'djPadsV136',
+      pendingColorKey:color.key,
+      pendingColorName:color.name,
+      pendingColorEmoji:color.emoji,
+      pendingCategory:cat,
+      pickerStartedAt:firebase.database.ServerValue.TIMESTAMP,
+      seconds:Number(q('duration')?.value)||20
+    }).then(()=>{
+      // Firebase listener toont hem ook, maar host direct starten voorkomt lege wachttijd.
+      showDj(roundId,color.key,Date.now());
+    });
+
+    setTimeout(()=>{
+      showDjResult(color,cat);
+      if(q('hostPickerArea'))q('hostPickerArea').innerHTML=`<div class="bbDjHostResultV136">${E(color.emoji)} ${E(color.name)}<br><span>${E(cat)}</span></div>`;
+      const ends=Date.now()+3000;
+      db.ref('rooms/'+room+'/currentRound').set({
+        id:roundId,
+        status:'precount',
+        pickerMode:'djPadsV136',
+        colorKey:color.key,
+        colorName:color.name,
+        colorEmoji:color.emoji,
+        category:cat,
+        seconds:Number(q('duration')?.value)||20,
+        precountStartedAt:firebase.database.ServerValue.TIMESTAMP,
+        precountEndsAt:ends
+      }).then(()=>{
+        q('hostScorePanel')?.classList.remove('hidden');
+        if(q('hostStatus'))q('hostStatus').textContent='Categorie gekozen. 3-2-1... daarna start het nummer.';
+        setTimeout(()=>{hideDj(); if(typeof playHidden==='function')playHidden();},3000);
+      });
+    },INTRO_MS);
+  };
+
+  // Spelerscherm: bij picking altijd DJ pads tonen en niets anders.
+  if(typeof renderCompactDashboard==='function'){
+    const previous=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){
+      hideOld();
+      if(r&&r.status==='picking'&&r.pickerMode==='djPadsV136'){
+        const root=q('screenDashboard');
+        if(root){document.body.classList.add('bbStageMode');root.className='compactDashboard bbStageDashboard stageIntroV136';root.innerHTML='<section class="bbDjPlayerStatusV136">Categorie wordt gekozen...</section>'}
+        showDj(r.id||'',r.pendingColorKey||'yellow',r.pickerStartedAt||Date.now());
+        return;
+      }
+      if(!r || r.status!=='picking') hideDj();
+      return previous?previous(room,r):null;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(attachListener,250));
+  setInterval(()=>{attachListener();hideOld()},700);
+})();
+
+/* =========================
+   V137 - DJ Pads INLINE enige picking-scherm
+   Fix: geen losse overlay meer die kan verdwijnen; host en speler tonen DJ pads direct in hun actieve scherm.
+   ========================= */
+(function(){
+  const q=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const INTRO_MS=12000;
+  const KEYS=['yellow','pink','purple','blue','green'];
+  const DEF={
+    yellow:{key:'yellow',name:'GOUD',emoji:'🟡',hex:'#FFCC33',input:'cat-yellow'},
+    pink:{key:'pink',name:'AQUA',emoji:'🩵',hex:'#00D4C7',input:'cat-pink'},
+    purple:{key:'purple',name:'ORANJE',emoji:'🟠',hex:'#FF8A1F',input:'cat-purple'},
+    blue:{key:'blue',name:'LIME',emoji:'🟢',hex:'#7ED957',input:'cat-blue'},
+    green:{key:'green',name:'KORAAL',emoji:'🔴',hex:'#FF5A5F',input:'cat-green'}
+  };
+  let inlineTimers={};
+  function col(key){
+    const from=(typeof COLORS!=='undefined'&&Array.isArray(COLORS))?COLORS.find(c=>c.key===key):null;
+    return {...(DEF[key]||DEF.yellow),...(from||{})};
+  }
+  function pickCol(){
+    if(typeof COLORS!=='undefined'&&Array.isArray(COLORS)&&COLORS.length){return col(COLORS[Math.floor(Math.random()*COLORS.length)].key)}
+    return col(KEYS[Math.floor(Math.random()*KEYS.length)]);
+  }
+  function catFor(c){try{return q(c.input)?.value||'Geen categorie'}catch(_){return 'Geen categorie'}}
+  function stopInline(id){ if(inlineTimers[id]){clearInterval(inlineTimers[id]); delete inlineTimers[id];} }
+  function hideAllOld(){
+    // Verberg alleen oude rad/carrousel/licht/overlay elementen, nooit de inline DJ pads.
+    document.querySelectorAll('#bbDjPadsOverlayV136,#bbIntroOverlayV131,#bbWheelFullOverlayV92,#bbWheelV123Overlay,#bbWheelV125Overlay,.bbWheelFullCardV92,.bbWheelInlineV110,.bbWheelInlineV121,.bbWheelInlineV122,.bbWheelInlineV123,.bbWheelHostStatusV125,.bbWheelHostResultV125,.wheelWrap,.wheel,.showWheel,.dashWheel,.bbCarouselWindowV131,.bbLightRingV131').forEach(el=>{
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('visibility','hidden','important');
+      el.classList?.add?.('hidden');
+    });
+  }
+  function djInlineHTML(targetKey, roundId, size){
+    const target=col(targetKey||'yellow');
+    return `<div class="bbDjInlineV137 ${size==='host'?'host':'player'}" data-target="${E(target.key)}" data-round="${E(roundId||'')}">
+      <div class="bbDjInlineTitleV137">Categorie wordt gekozen...</div>
+      <div class="bbDjInlineMixerV137">
+        ${KEYS.map(k=>{const c=col(k);return `<div class="bbDjInlinePadV137" data-key="${E(k)}" style="--pad:${E(c.hex)}"><div class="bbDjInlineEmojiV137">${E(c.emoji)}</div><div class="bbDjInlineNameV137">${E(c.name)}</div></div>`}).join('')}
+      </div>
+      <div class="bbDjInlineBarsV137"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="bbDjInlineSubV137">DJ kiest de categorie...</div>
+    </div>`;
+  }
+  function djResultHTML(key, cat){
+    const c=col(key||'yellow');
+    return `<div class="bbDjInlineResultV137" style="--pad:${E(c.hex)}"><div class="bbDjInlineResultDotV137"></div><div class="bbDjInlineResultNameV137">${E(c.emoji)} ${E(c.name)}</div><div class="bbDjInlineResultCatV137">${E(cat||'')}</div></div>`;
+  }
+  function runInline(container, targetKey, startedAt, roundId){
+    if(!container)return;
+    hideAllOld();
+    const box=container.querySelector('.bbDjInlineV137');
+    if(!box)return;
+    const timerId=(container.id||'dj')+'_'+(roundId||'');
+    stopInline(timerId);
+    const start=Number(startedAt)||Date.now();
+    const targetIdx=Math.max(0,KEYS.indexOf(targetKey||'yellow'));
+    const totalSteps=65+targetIdx;
+    function set(k,final){
+      box.querySelectorAll('.bbDjInlinePadV137').forEach(p=>p.classList.remove('active','final'));
+      box.querySelectorAll('.bbDjInlinePadV137').forEach(p=>{if(p.dataset.key===k){p.classList.add('active'); if(final)p.classList.add('final')}});
+    }
+    const tick=()=>{
+      const t=Math.min(1,(Date.now()-start)/INTRO_MS);
+      const e=1-Math.pow(1-t,3);
+      const step=Math.min(totalSteps,Math.floor(e*totalSteps));
+      const k=t>=1?(targetKey||'yellow'):KEYS[step%KEYS.length];
+      set(k,t>=1);
+      if(t>=1)stopInline(timerId);
+    };
+    tick();
+    inlineTimers[timerId]=setInterval(tick,80);
+  }
+
+  // Oude animatie API's neutraal maken.
+  window.__bbWheelV92={showWheelFull:()=>{},showWheelResult:()=>{},hideWheelFull:()=>{}};
+  window.__bbWheelV110={showWheelV110:()=>{},showResultV110:()=>{},hideWheelV110:()=>{},wheelHTMLV110:()=>''};
+  window.__bbWheelV119={showWheel:()=>{},showResult:()=>{},hideWheel:()=>{},wheelHTML:()=>'',resultHTML:()=>''};
+  window.__bbWheelFixedV121={showIndex:()=>{},showKey:()=>{},showResult:()=>{},hide:()=>{},htmlWheel:()=>'',htmlResult:()=>''};
+  window.__bbIntroV131={showIntro:()=>{},showResult:()=>{},hideIntro:()=>{}};
+  window.__bbDjPadsV136={showDj:()=>{},showDjResult:()=>{},hideDj:()=>{}};
+  if(typeof pickerHTML==='function') pickerHTML=()=>djInlineHTML('yellow','', 'host');
+
+  // Enige startflow: DJ pads inline -> resultaat -> precount -> muziek.
+  startRoundVisual=function(room){
+    hideAllOld();
+    if(q('hostAnswerArea'))q('hostAnswerArea').innerHTML='';
+    if(q('playBtn')){q('playBtn').disabled=true;q('playBtn').textContent='🎵 Nummer start zo...'}
+    if(q('showAnswerBtn'))q('showAnswerBtn').disabled=true;
+    const color=pickCol();
+    const cat=catFor(color);
+    currentRoundId='r_'+Date.now();
+    const roundId=currentRoundId;
+    if(q('hostPickerArea')){q('hostPickerArea').innerHTML=djInlineHTML(color.key,roundId,'host');runInline(q('hostPickerArea'),color.key,Date.now(),roundId)}
+    db.ref('rooms/'+room+'/currentRound').set({
+      id:roundId,status:'picking',pickerMode:'djPadsV137',
+      pendingColorKey:color.key,pendingColorName:color.name,pendingColorEmoji:color.emoji,pendingCategory:cat,
+      pickerStartedAt:firebase.database.ServerValue.TIMESTAMP,seconds:Number(q('duration')?.value)||20
+    });
+    setTimeout(()=>{
+      if(q('hostPickerArea'))q('hostPickerArea').innerHTML=djResultHTML(color.key,cat);
+      const ends=Date.now()+3000;
+      db.ref('rooms/'+room+'/currentRound').set({
+        id:roundId,status:'precount',pickerMode:'djPadsV137',
+        colorKey:color.key,colorName:color.name,colorEmoji:color.emoji,category:cat,
+        seconds:Number(q('duration')?.value)||20,precountStartedAt:firebase.database.ServerValue.TIMESTAMP,precountEndsAt:ends
+      }).then(()=>{
+        q('hostScorePanel')?.classList.remove('hidden');
+        if(q('hostStatus'))q('hostStatus').textContent='Categorie gekozen. 3-2-1... daarna start het nummer.';
+        setTimeout(()=>{hideAllOld();if(typeof playHidden==='function')playHidden();},3000);
+      });
+    },INTRO_MS);
+  };
+
+  // Speler: bij status picking altijd inline DJ pads in het echte spelersscherm.
+  if(typeof renderCompactDashboard==='function'){
+    const prevV137=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){
+      hideAllOld();
+      if(r && r.status==='picking'){
+        const root=q('screenDashboard');
+        const target=r.pendingColorKey||r.colorKey||'yellow';
+        if(root){
+          document.body.classList.add('bbStageMode');
+          root.className='compactDashboard bbStageDashboard stageIntroV137';
+          root.innerHTML=`<section id="bbDjPlayerInlineMountV137" class="bbDjPlayerInlineMountV137">${djInlineHTML(target,r.id||'', 'player')}</section>`;
+          runInline(q('bbDjPlayerInlineMountV137'),target,r.pickerStartedAt||Date.now(),r.id||'');
+        }
+        return;
+      }
+      return prevV137?prevV137(room,r):null;
+    };
+  }
+})();
+
+/* =========================
+   V138 - SINGLE SOURCE DJ PADS FIX
+   Fixes category mismatch: engine chooses one color once, DJ animation only reads that color.
+   ========================= */
+(function(){
+  const $id=id=>document.getElementById(id);
+  const E=s=>(typeof esc==='function'?esc(String(s??'')):String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const KEYS=['yellow','pink','purple','blue','green'];
+  const FALLBACK={
+    yellow:{key:'yellow',name:'GOUD',emoji:'🟡',hex:'#FFCC33',input:'cat-yellow'},
+    pink:{key:'pink',name:'AQUA',emoji:'🩵',hex:'#00D4C7',input:'cat-pink'},
+    purple:{key:'purple',name:'ORANJE',emoji:'🟠',hex:'#FF8A1F',input:'cat-purple'},
+    blue:{key:'blue',name:'LIME',emoji:'🟢',hex:'#7ED957',input:'cat-blue'},
+    green:{key:'green',name:'KORAAL',emoji:'🔴',hex:'#FF5A5F',input:'cat-green'}
+  };
+  const INTRO_MS=12000;
+  const rafs=new WeakMap();
+  function colorObj(key){
+    const from=(typeof COLORS!=='undefined'&&Array.isArray(COLORS))?COLORS.find(c=>c.key===key):null;
+    return {...(FALLBACK[key]||FALLBACK.yellow),...(from||{})};
+  }
+  function chooseColorOnce(){
+    const list=(typeof COLORS!=='undefined'&&Array.isArray(COLORS)&&COLORS.length)?COLORS.map(c=>c.key):KEYS;
+    return colorObj(list[Math.floor(Math.random()*list.length)]||'yellow');
+  }
+  function categoryForColor(c){try{return $id(c.input)?.value||'Geen categorie'}catch(_){return 'Geen categorie'}}
+  function hideLegacy(){
+    document.querySelectorAll('#bbDjPadsOverlayV136,#bbIntroOverlayV131,#bbWheelFullOverlayV92,#bbWheelV123Overlay,#bbWheelV125Overlay,.bbWheelFullCardV92,.bbWheelInlineV110,.bbWheelInlineV121,.bbWheelInlineV122,.bbWheelInlineV123,.bbWheelHostStatusV125,.bbWheelHostResultV125,.wheelWrap,.wheel,.showWheel,.dashWheel,.bbCarouselWindowV131,.bbLightRingV131').forEach(el=>{
+      if(el.closest('.bbDjFinalV138')) return;
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('visibility','hidden','important');
+      el.classList?.add?.('hidden');
+    });
+  }
+  function html(targetKey, roundId){
+    return `<div class="bbDjFinalV138" data-target="${E(targetKey)}" data-round="${E(roundId||'')}">
+      <div class="bbDjFinalTitleV138">Categorie wordt gekozen...</div>
+      <div class="bbDjFinalPadsV138">
+        ${KEYS.map(k=>{const c=colorObj(k);return `<div class="bbDjFinalPadV138" data-key="${E(k)}" style="--pad:${E(c.hex)}"><div>${E(c.emoji)}</div><strong>${E(c.name)}</strong></div>`}).join('')}
+      </div>
+      <div class="bbDjFinalBarsV138"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="bbDjFinalSubV138">DJ kiest de categorie...</div>
+    </div>`;
+  }
+  function resultHtml(key,cat){
+    const c=colorObj(key);
+    return `<div class="bbDjFinalResultV138" style="--pad:${E(c.hex)}"><div class="bbDjFinalDotV138"></div><div class="bbDjFinalNameV138">${E(c.emoji)} ${E(c.name)}</div><div class="bbDjFinalCatV138">${E(cat||'')}</div></div>`;
+  }
+  function setPad(mount,key,final){
+    const box=mount?.querySelector?.('.bbDjFinalV138'); if(!box) return;
+    box.querySelectorAll('.bbDjFinalPadV138').forEach(p=>p.classList.remove('active','final','near'));
+    box.querySelectorAll('.bbDjFinalPadV138').forEach(p=>{if(p.dataset.key===key){p.classList.add('active');if(final)p.classList.add('final')}});
+  }
+  function run(mount,targetKey,startedAt,roundId){
+    if(!mount) return;
+    hideLegacy();
+    if(!mount.querySelector('.bbDjFinalV138') || mount.querySelector('.bbDjFinalV138')?.dataset.round!==String(roundId||'')){
+      mount.innerHTML=html(targetKey,roundId);
+    }
+    const old=rafs.get(mount); if(old) cancelAnimationFrame(old);
+    const start=Number(startedAt)||Date.now();
+    const targetIdx=Math.max(0,KEYS.indexOf(targetKey));
+    const steps=(KEYS.length*15)+targetIdx; // exact eindigt op targetKey
+    let lastKey='';
+    const ease=t=>1-Math.pow(1-t,3);
+    function frame(){
+      const t=Math.min(1,(Date.now()-start)/INTRO_MS);
+      // Laatste 350ms altijd op de doelkleur vastzetten. Geen nabeweging, geen mismatch.
+      const final=t>=0.97;
+      const key=final?targetKey:KEYS[Math.floor(ease(t)*steps)%KEYS.length];
+      if(key!==lastKey || final){setPad(mount,key,final);lastKey=key;}
+      if(t<1){const id=requestAnimationFrame(frame);rafs.set(mount,id);}else{setPad(mount,targetKey,true);rafs.delete(mount);}
+    }
+    frame();
+  }
+  function renderPlayerPicking(r){
+    const root=$id('screenDashboard'); if(!root) return;
+    document.body.classList.add('bbStageMode');
+    root.className='compactDashboard bbStageDashboard stageIntroV138';
+    const key=r.pendingColorKey||r.colorKey||'yellow';
+    const roundId=r.id||'';
+    const existing=$id('bbDjFinalPlayerMountV138');
+    if(!existing || existing.dataset.round!==String(roundId)){
+      root.innerHTML=`<section id="bbDjFinalPlayerMountV138" class="bbDjFinalPlayerMountV138" data-round="${E(roundId)}"></section>`;
+    }
+    run($id('bbDjFinalPlayerMountV138'),key,r.pickerStartedAt||Date.now(),roundId);
+  }
+  function renderHostPicking(r){
+    const mount=$id('hostPickerArea'); if(!mount) return;
+    const key=r.pendingColorKey||r.colorKey||'yellow';
+    run(mount,key,r.pickerStartedAt||Date.now(),r.id||'');
+  }
+
+  // Zet oude animatie-API's neutraal.
+  window.__bbWheelV92={showWheelFull:()=>{},showWheelResult:()=>{},hideWheelFull:()=>{}};
+  window.__bbWheelV110={showWheelV110:()=>{},showResultV110:()=>{},hideWheelV110:()=>{},wheelHTMLV110:()=>''};
+  window.__bbWheelV119={showWheel:()=>{},showResult:()=>{},hideWheel:()=>{},wheelHTML:()=>'',resultHTML:()=>''};
+  window.__bbWheelFixedV121={showIndex:()=>{},showKey:()=>{},showResult:()=>{},hide:()=>{},htmlWheel:()=>'',htmlResult:()=>''};
+  window.__bbIntroV131={showIntro:()=>{},showResult:()=>{},hideIntro:()=>{}};
+  window.__bbDjPadsV136={showDj:()=>{},showDjResult:()=>{},hideDj:()=>{}};
+  if(typeof pickerHTML==='function') pickerHTML=()=>'<div class="bbDjFinalHostStatusV138">Categorie wordt gekozen...</div>';
+
+  // Startflow: kies kleur ÉÉN keer en sla die meteen als enige waarheid op in Firebase.
+  startRoundVisual=function(room){
+    hideLegacy();
+    if($id('hostAnswerArea')) $id('hostAnswerArea').innerHTML='';
+    if($id('playBtn')){$id('playBtn').disabled=true;$id('playBtn').textContent='🎵 Nummer start zo...'}
+    if($id('showAnswerBtn')) $id('showAnswerBtn').disabled=true;
+    const color=chooseColorOnce();
+    const cat=categoryForColor(color);
+    currentRoundId='r_'+Date.now();
+    const roundId=currentRoundId;
+    const started=Date.now();
+    // BELANGRIJK: colorKey/category staan al tijdens picking vast. Animatie en spel lezen dezelfde velden.
+    const round={
+      id:roundId,status:'picking',pickerMode:'djPadsV138',
+      colorKey:color.key,colorName:color.name,colorEmoji:color.emoji,category:cat,
+      pendingColorKey:color.key,pendingColorName:color.name,pendingColorEmoji:color.emoji,pendingCategory:cat,
+      pickerStartedAt:started,seconds:Number($id('duration')?.value)||20
+    };
+    if($id('hostPickerArea')) run($id('hostPickerArea'),color.key,started,roundId);
+    db.ref('rooms/'+room+'/currentRound').set(round);
+    setTimeout(()=>{
+      if($id('hostPickerArea')) $id('hostPickerArea').innerHTML=resultHtml(color.key,cat);
+      const ends=Date.now()+3000;
+      db.ref('rooms/'+room+'/currentRound').update({
+        status:'precount',pickerMode:'djPadsV138',
+        colorKey:color.key,colorName:color.name,colorEmoji:color.emoji,category:cat,
+        precountStartedAt:Date.now(),precountEndsAt:ends
+      }).then(()=>{
+        $id('hostScorePanel')?.classList.remove('hidden');
+        if($id('hostStatus')) $id('hostStatus').textContent='Categorie gekozen. 3-2-1... daarna start het nummer.';
+        setTimeout(()=>{hideLegacy(); if(typeof playHidden==='function') playHidden();},3000);
+      });
+    },INTRO_MS);
+  };
+
+  if(typeof renderCompactDashboard==='function'){
+    const prev=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){
+      hideLegacy();
+      if(r && r.status==='picking'){
+        renderPlayerPicking(r);
+        return;
+      }
+      return prev?prev(room,r):null;
+    };
+  }
+  let bound='';
+  function bind(){
+    try{
+      if(!db) return;
+      const room=(window.currentRoomCode||currentRoomCode||new URLSearchParams(location.search).get('room')||localStorage.hb_player_room||localStorage.hb_host_room||'').toUpperCase();
+      if(!room||room===bound) return;
+      if(bound) db.ref('rooms/'+bound+'/currentRound').off('value.bbV138');
+      bound=room;
+      db.ref('rooms/'+room+'/currentRound').on('value.bbV138',s=>{
+        const r=s.val()||{};
+        hideLegacy();
+        if(r.status==='picking'){
+          if($id('hostPickerArea') && !document.body.classList.contains('playerMode')) renderHostPicking(r);
+        }
+      });
+    }catch(_e){}
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,250));
+  setInterval(()=>{bind();hideLegacy();},800);
+})();
+
+/* =========================
+   V139 - Antwoordscherm + Scoreboard flow
+   - Na tijd op: spelers zien JUIST ANTWOORD met TITEL / ARTIEST / JAAR en knop VERDER
+   - Daarna scoreboard deze ronde
+   - Bij twijfel eerst jury beoordelen
+   - Daarna knop NAAR BINGOKAART of NAAR LOBBY
+   - Lobby: Klaar voor de volgende? + OKAY, LET'S GO?!
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#141414'};
+  const LABEL = {yellow:'GOUD', pink:'AQUA', purple:'ORANJE', blue:'LIME', green:'KORAAL', free:'BB'};
+
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function storageKey(type,r){ return 'bb_v139_'+type+'_'+(r?.id||''); }
+  function seen(type,r){ try{return sessionStorage.getItem(storageKey(type,r))==='1'}catch(e){return false} }
+  function setSeen(type,r){ try{sessionStorage.setItem(storageKey(type,r),'1')}catch(e){} }
+  function answerStatus(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return answerStatus(room,r,currentPlayerId); }
+  function pickedThisRound(room,r){ const p=me(room); return !!(r?.id && p.lastPickedRound===r.id); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{
+      if(!currentRoomCode || !db || typeof renderCompactDashboard !== 'function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{});});
+    }catch(e){}
+  }
+  window.bbV139SeenAnswer = function(roundId){
+    setSeen('answer',{id:roundId});
+    rerender();
+  };
+  window.bbV139SeenScore = function(roundId){
+    setSeen('score',{id:roundId});
+    try{ if(currentRoomCode && currentPlayerId) db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){}
+    rerender();
+  };
+  window.bbV139Ready = function(){
+    try{ if(currentRoomCode && currentPlayerId) db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){}
+  };
+
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell bbV139Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'stageCorrectV139',`
+      <div class="bbV139AnswerCard">
+        <div class="bbV139Eyebrow">🎵 JUIST ANTWOORD</div>
+        <div class="bbV139AnswerLine"><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+        <div class="bbV139AnswerLine"><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+        <div class="bbV139AnswerLine"><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+        <button type="button" class="bbV139MainBtn" onclick="bbV139SeenAnswer('${E(r.id||'')}')">VERDER</button>
+      </div>
+    `);
+  }
+  function statusText(st){
+    if(st === true) return {cls:'good', icon:'✅', label:'GOED'};
+    if(st === false) return {cls:'bad', icon:'❌', label:'FOUT'};
+    if(st === 'review') return {cls:'review', icon:'🤔', label:'TWIJFEL'};
+    return {cls:'wait', icon:'…', label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    let btn = '';
+    if(hasReview){
+      btn = `<button type="button" class="bbV139MainBtn review" onclick="bbV139SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`;
+    }else if(own === true){
+      btn = `<button type="button" class="bbV139MainBtn" onclick="bbV139SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`;
+    }else{
+      btn = `<button type="button" class="bbV139MainBtn lobby" onclick="bbV139SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    }
+    const rows = players(room).map(([pid,p])=>{
+      const st = statusText(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV139ScoreRow ${st.cls}">
+        <div class="bbV139Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV139Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ Antwoordtijd: ${E(t)}</small>`:''}</div>
+        <div class="bbV139State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    const a = r?.correctAnswer || {};
+    stage(root,'stageScoreV139',`
+      <div class="bbV139SmallAnswer"><span>JUIST ANTWOORD</span><strong>${E(a.track||'-')}</strong><small>${E(a.artist||'-')}${a.year?' • '+E(a.year):''}</small></div>
+      <h2>SCOREBOARD DEZE RONDE</h2>
+      <div class="bbV139ScoreList">${rows}</div>
+      ${btn}
+    `);
+  }
+  function cardHTML(room){
+    const p = me(room), c=p.card||[], marked=p.marked||{};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const mark = !!marked[i] || key==='free';
+      return `<div class="bbV139Cell ${mark?'marked':''}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}">${mark?'<span>BB</span>':''}</div>`;
+    }).join('');
+    return `<div class="bbV139MiniCard">${cells}</div>`;
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV139ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p=me(room);
+    stage(root,'stageLobbyV139',`
+      <h2>Klaar voor de volgende?</h2>
+      <div class="bbV139Lets">OKAY, LET'S GO?!</div>
+      <div class="bbV139ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      ${cardHTML(room)}
+      ${p.ready?'<button class="bbV139MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV139MainBtn" onclick="bbV139Ready()">READY</button>'}
+    `);
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const previousV139 = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return previousV139 ? previousV139(room,r) : null;
+        const st = ownStatus(room,r);
+        if(st === true && !pickedThisRound(room,r)) return previousV139 ? previousV139(room,r) : null;
+        return lobbyScreen(root,room);
+      }
+      return previousV139 ? previousV139(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V140 - Flow polish
+   - Live antwoorden: geen groen vinkje meer voordat er beoordeeld is
+   - Na bingovakje kiezen eerst VERDER, daarna lobby + READY
+   - Lobby terug naar lijst met READY/Wacht, geen grote bingokaart
+   - Juist antwoord + scoreboard compacter
+   - Bingokaart vakjes altijd exact even groot
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#141414'};
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function k(type,r){ return 'bb_v140_'+type+'_'+(r?.id||''); }
+  function seen(type,r){ try{return sessionStorage.getItem(k(type,r))==='1'}catch(e){return false} }
+  function setSeen(type,r){ try{sessionStorage.setItem(k(type,r),'1')}catch(e){} }
+  function status(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return status(room,r,currentPlayerId); }
+  function picked(room,r){ return !!(r?.id && me(room).lastPickedRound===r.id); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{ if(!currentRoomCode || !db || typeof renderCompactDashboard!=='function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{});});
+    }catch(e){}
+  }
+  window.bbV140SeenAnswer = function(roundId){ setSeen('answer',{id:roundId}); rerender(); };
+  window.bbV140SeenScore = function(roundId){ setSeen('score',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV140SeenPicked = function(roundId){ setSeen('picked',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV140Ready = function(){ try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){} };
+
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell bbV140Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'stageCorrectV140',`
+      <div class="bbV140AnswerCard">
+        <div class="bbV140Eyebrow">🎵 JUIST ANTWOORD</div>
+        <div class="bbV140AnswerGrid">
+          <div><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+          <div><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+        </div>
+        <button type="button" class="bbV140MainBtn" onclick="bbV140SeenAnswer('${E(r.id||'')}')">VERDER</button>
+      </div>
+    `);
+  }
+  function stObj(st){
+    if(st===true) return {cls:'good',icon:'✅',label:'GOED'};
+    if(st===false) return {cls:'bad',icon:'❌',label:'FOUT'};
+    if(st==='review') return {cls:'review',icon:'🤔',label:'TWIJFEL'};
+    return {cls:'wait',icon:'…',label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    let btn = hasReview
+      ? `<button type="button" class="bbV140MainBtn review" onclick="bbV140SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`
+      : own===true
+        ? `<button type="button" class="bbV140MainBtn" onclick="bbV140SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`
+        : `<button type="button" class="bbV140MainBtn lobby" onclick="bbV140SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    const rows = players(room).map(([pid,p])=>{
+      const st = stObj(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV140ScoreRow ${st.cls}">
+        <div class="bbV140Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV140Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ ${E(t)}</small>`:''}</div>
+        <div class="bbV140State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    const a = r?.correctAnswer || {};
+    stage(root,'stageScoreV140',`
+      <div class="bbV140SmallAnswer"><span>JUIST ANTWOORD</span><strong>${E(a.track||'-')}</strong><small>${E(a.artist||'-')}${a.year?' • '+E(a.year):''}</small></div>
+      <h2>SCOREBOARD DEZE RONDE</h2>
+      <div class="bbV140ScoreList">${rows}</div>
+      <div class="bbV140ButtonBottom">${btn}</div>
+    `);
+  }
+  function pickedScreen(root,room,r){
+    stage(root,'stagePickedV140',`
+      <h2>Vakje gekozen</h2>
+      <p class="bbStageSub">Je bingovakje is opgeslagen.</p>
+      <button type="button" class="bbV140MainBtn" onclick="bbV140SeenPicked('${E(r.id||'')}')">VERDER NAAR LOBBY</button>
+    `);
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV140ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p = me(room);
+    stage(root,'stageLobbyV140',`
+      <h2>Klaar voor de volgende?</h2>
+      <div class="bbV140Lets">OKAY, LET'S GO?!</div>
+      <div class="bbV140ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      <div class="bbV140ButtonBottom">${p.ready?'<button class="bbV140MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV140MainBtn" onclick="bbV140Ready()">READY</button>'}</div>
+    `);
+  }
+  function liveAnswerScreen(root,room,r){
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ans[currentPlayerId];
+    const rows = players(room).map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      return `<div class="bbV140LiveRow ${has?'sent':'wait'}">
+        <div class="bbV140Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV140Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${has?'Ingezonden':'Wacht op antwoord'}</span></div>
+        <div class="bbV140LiveAnswer">${has?E(text):'—'}</div>
+      </div>`;
+    }).join('');
+    const t = answerTime(room,r,currentPlayerId);
+    stage(root,'stageLiveV140',`
+      <div class="bbV140Own"><span>Jouw antwoord</span><strong>${E(String(own?.answer||'').trim()||'Leeg antwoord')}</strong></div>
+      <h2>Live antwoorden</h2>
+      <p class="bbStageSub">Antwoorden verschijnen zodra spelers insturen. Nog niemand ziet wat goed is.</p>
+      <div class="bbV140ScoreList live">${rows}</div>
+      <div class="bbV140AnswerTime">${t?'⚡ Ingevuld na '+E(t):'⏱ Ingezonden'}</div>
+    `);
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const prev = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      if(r?.status === 'answering' && room.answers?.[r.id]?.[currentPlayerId]) return liveAnswerScreen(root,room,r);
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return prev ? prev(room,r) : null;
+        const st = ownStatus(room,r);
+        if(st === true && !picked(room,r)) return prev ? prev(room,r) : null;
+        if(st === true && picked(room,r) && !seen('picked',r)) return pickedScreen(root,room,r);
+        return lobbyScreen(root,room);
+      }
+      return prev ? prev(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V141 - Definitieve compacte antwoord/score flow
+   - Geen dubbele JUIST ANTWOORD / SCOREBOARD schermen
+   - Scoreboard toont GEEN juist antwoord meer
+   - Goed: SCOREBOARD -> NAAR BINGOKAART -> kiezen -> LOBBY
+   - Fout: SCOREBOARD -> NAAR LOBBY -> LOBBY
+   - Lobby als lijst met READY/Wacht + READY knop
+   - Eigen pickscreen en gelijke 5x5 vakjes
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#161616'};
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function key(type,r){ return 'bb_v141_'+type+'_'+(r?.id||''); }
+  function seen(type,r){ try{return sessionStorage.getItem(key(type,r))==='1'}catch(e){return false} }
+  function setSeen(type,r){ try{sessionStorage.setItem(key(type,r),'1')}catch(e){} }
+  function status(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return status(room,r,currentPlayerId); }
+  function picked(room,r){ return !!(r?.id && me(room).lastPickedRound===r.id); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{ if(!currentRoomCode || !db || typeof renderCompactDashboard!=='function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{});});
+    }catch(e){}
+  }
+  window.bbV141SeenAnswer = function(roundId){ setSeen('answer',{id:roundId}); rerender(); };
+  window.bbV141SeenScore = function(roundId){ setSeen('score',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV141Ready = function(){ try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){} rerender(); };
+
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode','bbV141Mode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell bbV141Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'stageCorrectV141',`
+      <div class="bbV141AnswerCard">
+        <div class="bbV141Eyebrow">🎵 JUIST ANTWOORD</div>
+        <div class="bbV141AnswerGrid">
+          <div><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+          <div><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+        </div>
+      </div>
+      <div class="bbV141Bottom"><button type="button" class="bbV141MainBtn" onclick="bbV141SeenAnswer('${E(r.id||'')}')">VERDER</button></div>
+    `);
+  }
+  function stObj(st){
+    if(st===true) return {cls:'good',icon:'✅',label:'GOED'};
+    if(st===false) return {cls:'bad',icon:'❌',label:'FOUT'};
+    if(st==='review') return {cls:'review',icon:'🤔',label:'TWIJFEL'};
+    return {cls:'wait',icon:'…',label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    let btn = hasReview
+      ? `<button type="button" class="bbV141MainBtn review" onclick="bbV141SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`
+      : own===true
+        ? `<button type="button" class="bbV141MainBtn" onclick="bbV141SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`
+        : `<button type="button" class="bbV141MainBtn lobby" onclick="bbV141SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    const rows = players(room).map(([pid,p])=>{
+      const st = stObj(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV141ScoreRow ${st.cls}">
+        <div class="bbV141Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV141Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ ${E(t)}</small>`:''}</div>
+        <div class="bbV141State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    stage(root,'stageScoreV141',`
+      <h2>SCOREBOARD DEZE RONDE</h2>
+      <div class="bbV141ScoreList">${rows}</div>
+      <div class="bbV141Bottom">${btn}</div>
+    `);
+  }
+  function pickCardScreen(root,room,r){
+    const p = me(room), card = p.card || [], marked = p.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const k = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || k==='free';
+      const canPick = k===r.colorKey && k!=='free' && !marked[i];
+      const content = isMarked ? '<span class="bbV141Mark">BB</span>' : '';
+      return `<button type="button" class="bbV141Cell ${k} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[k]||'#777'};background:${HEX[k]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
+    }).join('');
+    stage(root,'stagePickV141',`
+      <h2>GOED ANTWOORD</h2>
+      <p class="bbV141Sub">Kies één ${E(r.colorEmoji||'')} ${E(r.colorName||'')} vakje</p>
+      <div class="bbV141Card">${cells}</div>
+      <p class="bbV141Hint">Alleen de juiste kleur is klikbaar.</p>
+    `);
+    root.querySelectorAll('.bbV141Cell.pickable').forEach(btn=>btn.addEventListener('click',()=>{
+      try{ pickCell(Number(btn.dataset.i)); }catch(e){}
+      setTimeout(rerender,450);
+    }));
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV141ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p = me(room);
+    stage(root,'stageLobbyV141',`
+      <h2>Klaar voor de volgende?</h2>
+      <div class="bbV141Lets">OKAY, LET'S GO?!</div>
+      <div class="bbV141ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      <div class="bbV141Bottom">${p.ready?'<button class="bbV141MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV141MainBtn" onclick="bbV141Ready()">READY</button>'}</div>
+    `);
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const prev = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return scoreScreen(root,room,r);
+        const st = ownStatus(room,r);
+        if(st === true && !picked(room,r)) return pickCardScreen(root,room,r);
+        return lobbyScreen(root,room);
+      }
+      return prev ? prev(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V142 - Clean final player flow override
+   - Eén keer JUIST ANTWOORD
+   - Eén keer SCOREBOARD
+   - Scoreboard zonder juist antwoord
+   - Bij goed: NAAR BINGOKAART -> kies vakje -> direct LOBBY
+   - Bij fout: NAAR LOBBY -> LOBBY
+   - Geen 'Vakje gekozen' tussenscherm
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#161616'};
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function key(type,r){ return 'bb_v142_'+type+'_'+(r?.id||''); }
+  function seen(type,r){ try{return sessionStorage.getItem(key(type,r))==='1'}catch(e){return false} }
+  function setSeen(type,r){ try{sessionStorage.setItem(key(type,r),'1')}catch(e){} }
+  function status(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return status(room,r,currentPlayerId); }
+  function picked(room,r){ return !!(r?.id && (me(room).lastPickedRound===r.id || seen('picked',r))); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{
+      if(!currentRoomCode || !db || typeof renderCompactDashboard!=='function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{ const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{}); });
+    }catch(e){}
+  }
+  window.bbV142SeenAnswer = function(roundId){ setSeen('answer',{id:roundId}); rerender(); };
+  window.bbV142SeenScore = function(roundId){ setSeen('score',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV142Ready = function(){ try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){} rerender(); };
+
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode','bbV142Mode');
+    document.body.classList.remove('bbV141Mode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell bbV142Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'stageCorrectV142',`
+      <div class="bbV142AnswerCard">
+        <div class="bbV142Eyebrow">🎵 JUIST ANTWOORD</div>
+        <div class="bbV142AnswerGrid">
+          <div><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+          <div><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+        </div>
+      </div>
+      <div class="bbV142Bottom"><button type="button" class="bbV142MainBtn" onclick="bbV142SeenAnswer('${E(r.id||'')}')">VERDER</button></div>
+    `);
+  }
+  function stObj(st){
+    if(st===true) return {cls:'good',icon:'✅',label:'GOED'};
+    if(st===false) return {cls:'bad',icon:'❌',label:'FOUT'};
+    if(st==='review') return {cls:'review',icon:'🤔',label:'TWIJFEL'};
+    return {cls:'wait',icon:'…',label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    let btn = hasReview
+      ? `<button type="button" class="bbV142MainBtn review" onclick="bbV142SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`
+      : own===true
+        ? `<button type="button" class="bbV142MainBtn" onclick="bbV142SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`
+        : `<button type="button" class="bbV142MainBtn lobby" onclick="bbV142SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    const rows = players(room).map(([pid,p])=>{
+      const st = stObj(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV142ScoreRow ${st.cls}">
+        <div class="bbV142Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV142Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ ${E(t)}</small>`:''}</div>
+        <div class="bbV142State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    stage(root,'stageScoreV142',`
+      <h2>SCOREBOARD DEZE RONDE</h2>
+      <div class="bbV142ScoreList">${rows}</div>
+      <div class="bbV142Bottom">${btn}</div>
+    `);
+  }
+  function pickCardScreen(root,room,r){
+    const p = me(room), card = p.card || [], marked = p.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const k = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || k==='free';
+      const canPick = k===r.colorKey && k!=='free' && !marked[i];
+      const content = isMarked ? '<span class="bbV142Mark">BB</span>' : '';
+      return `<button type="button" class="bbV142Cell ${k} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[k]||'#777'};background:${HEX[k]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
+    }).join('');
+    stage(root,'stagePickV142',`
+      <h2>GOED ANTWOORD</h2>
+      <p class="bbV142Sub">Kies één ${E(r.colorEmoji||'')} ${E(r.colorName||'')} vakje</p>
+      <div class="bbV142Card">${cells}</div>
+      <p class="bbV142Hint">Alleen de juiste kleur is klikbaar.</p>
+    `);
+    root.querySelectorAll('.bbV142Cell.pickable').forEach(btn=>btn.addEventListener('click',()=>{
+      setSeen('picked',r);
+      try{ pickCell(Number(btn.dataset.i)); }catch(e){}
+      setTimeout(rerender,250);
+      setTimeout(rerender,900);
+    }));
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV142ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p = me(room);
+    stage(root,'stageLobbyV142',`
+      <h2>Klaar voor de volgende?</h2>
+      <div class="bbV142Lets">OKAY, LET'S GO?!</div>
+      <div class="bbV142ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      <div class="bbV142Bottom">${p.ready?'<button class="bbV142MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV142MainBtn" onclick="bbV142Ready()">READY</button>'}</div>
+    `);
+  }
+  function liveAnswerScreen(root,room,r){
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ans[currentPlayerId];
+    const rows = players(room).map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      return `<div class="bbV142ScoreRow wait">
+        <div class="bbV142Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV142Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${has?E(text):'Wacht op antwoord'}</span></div>
+        <div class="bbV142State"><b>${has?'📨':'…'}</b><span>${has?'INGEZONDEN':'WACHT'}</span></div>
+      </div>`;
+    }).join('');
+    const t = answerTime(room,r,currentPlayerId);
+    stage(root,'stageLiveV142',`
+      <div class="bbV142Own"><span>Jouw antwoord</span><strong>${E(String(own?.answer||'').trim()||'Leeg antwoord')}</strong></div>
+      <h2>Live antwoorden</h2>
+      <p class="bbV142Sub">Nog niemand ziet wat goed of fout is.</p>
+      <div class="bbV142ScoreList live">${rows}</div>
+      <div class="bbV142Hint">${t?'⚡ Ingevuld na '+E(t):'⏱ Ingezonden'}</div>
+    `);
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const prev = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      if(r?.status === 'answering' && room.answers?.[r.id]?.[currentPlayerId]) return liveAnswerScreen(root,room,r);
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return scoreScreen(root,room,r);
+        const st = ownStatus(room,r);
+        if(st === true && !picked(room,r)) return pickCardScreen(root,room,r);
+        return lobbyScreen(root,room);
+      }
+      return prev ? prev(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V143 REAL - Mooie compacte eindflow + harde dedupe
+   - 1x JUIST ANTWOORD, 1x SCOREBOARD
+   - Scoreboard zonder juist antwoord
+   - Na vakje kiezen direct lobby, geen tussenbericht
+   - Live antwoorden zonder goed/fout vinkje
+   - Lobby READY/Wacht-lijst
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#17111f'};
+  const EMO = {yellow:'🟡', pink:'🩵', purple:'🟠', blue:'🟢', green:'🔴', free:'🐵'};
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function rid(r){ return r?.id || ''; }
+  function k(type,r){ return 'bb_v143_'+type+'_'+rid(r); }
+  function seen(type,r){ try{return sessionStorage.getItem(k(type,r))==='1'}catch(e){return false} }
+  function mark(type,r){
+    try{
+      sessionStorage.setItem(k(type,r),'1');
+      // voorkom dat oudere overrides dezelfde schermen opnieuw tonen
+      ['v139','v140','v141','v142'].forEach(v=>sessionStorage.setItem('bb_'+v+'_'+type+'_'+rid(r),'1'));
+    }catch(e){}
+  }
+  function status(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return status(room,r,currentPlayerId); }
+  function picked(room,r){ return !!(r?.id && (me(room).lastPickedRound===r.id || seen('picked',r))); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{
+      const old = document.querySelector('.bbOverlay.show');
+      if(old) old.classList.remove('show');
+      if(!currentRoomCode || !db || typeof renderCompactDashboard!=='function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{ const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{}); });
+    }catch(e){}
+  }
+  window.bbV143SeenAnswer = function(roundId){ mark('answer',{id:roundId}); rerender(); };
+  window.bbV143SeenScore = function(roundId){ mark('score',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV143Ready = function(){ try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){} rerender(); };
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode','bbV143Mode');
+    document.body.classList.remove('bbV139Mode','bbV140Mode','bbV141Mode','bbV142Mode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbStageShell bbV143Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'stageCorrectV143',`
+      <div class="bbV143CardBlock answer">
+        <div class="bbV143Eyebrow">🎵 JUIST ANTWOORD</div>
+        <div class="bbV143AnswerLine"><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+        <div class="bbV143AnswerLine"><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+        <div class="bbV143AnswerLine"><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+      </div>
+      <div class="bbV143Bottom"><button type="button" class="bbV143MainBtn" onclick="bbV143SeenAnswer('${E(r.id||'')}')">VERDER</button></div>
+    `);
+  }
+  function stObj(st){
+    if(st===true) return {cls:'good',icon:'✅',label:'GOED'};
+    if(st===false) return {cls:'bad',icon:'❌',label:'FOUT'};
+    if(st==='review') return {cls:'review',icon:'🤔',label:'TWIJFEL'};
+    return {cls:'wait',icon:'…',label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    const btn = hasReview
+      ? `<button type="button" class="bbV143MainBtn review" onclick="bbV143SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`
+      : own===true
+        ? `<button type="button" class="bbV143MainBtn" onclick="bbV143SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`
+        : `<button type="button" class="bbV143MainBtn lobby" onclick="bbV143SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    const rows = players(room).map(([pid,p])=>{
+      const st = stObj(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV143ScoreRow ${st.cls}">
+        <div class="bbV143Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV143Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ ${E(t)}</small>`:''}</div>
+        <div class="bbV143State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    stage(root,'stageScoreV143',`
+      <h2>SCOREBOARD DEZE RONDE</h2>
+      <div class="bbV143ScoreList">${rows}</div>
+      <div class="bbV143Bottom">${btn}</div>
+    `);
+  }
+  function pickCardScreen(root,room,r){
+    const p = me(room), card = p.card || [], marked = p.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || key==='free';
+      const canPick = key===r.colorKey && key!=='free' && !marked[i];
+      const content = isMarked ? '<span class="bbV143Mark">BB</span>' : `<span class="bbV143Emoji">${EMO[key]||''}</span>`;
+      return `<button type="button" class="bbV143Cell ${key} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
+    }).join('');
+    stage(root,'stagePickV143',`
+      <h2>GOED ANTWOORD</h2>
+      <p class="bbV143Sub">Kies één ${E(r.colorEmoji||'')} ${E(r.colorName||'')} vakje</p>
+      <div class="bbV143Card">${cells}</div>
+      <p class="bbV143Hint">Daarna ga je automatisch terug naar de lobby.</p>
+    `);
+    root.querySelectorAll('.bbV143Cell.pickable').forEach(btn=>btn.addEventListener('click',()=>{
+      mark('picked',r);
+      try{ pickCell(Number(btn.dataset.i)); }catch(e){}
+      setTimeout(rerender,250);
+      setTimeout(rerender,900);
+    }));
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV143ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p = me(room);
+    stage(root,'stageLobbyV143',`
+      <h2>Klaar voor de volgende?</h2>
+      <div class="bbV143Lets">OKAY, LET'S GO?!</div>
+      <div class="bbV143ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      <div class="bbV143Bottom">${p.ready?'<button class="bbV143MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV143MainBtn" onclick="bbV143Ready()">READY</button>'}</div>
+    `);
+  }
+  function liveAnswerScreen(root,room,r){
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ans[currentPlayerId];
+    const rows = players(room).map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      return `<div class="bbV143ScoreRow wait">
+        <div class="bbV143Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV143Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${has?E(text):'Wacht op antwoord'}</span></div>
+        <div class="bbV143State"><b>${has?'📨':'…'}</b><span>${has?'INGEZONDEN':'WACHT'}</span></div>
+      </div>`;
+    }).join('');
+    const t = answerTime(room,r,currentPlayerId);
+    stage(root,'stageLiveV143',`
+      <div class="bbV143CardBlock own"><span>Jouw antwoord</span><strong>${E(String(own?.answer||'').trim()||'Leeg antwoord')}</strong>${t?`<small>⚡ Ingevuld na ${E(t)}</small>`:''}</div>
+      <h2>Live antwoorden</h2>
+      <p class="bbV143Sub">Nog niemand ziet wat goed of fout is.</p>
+      <div class="bbV143ScoreList live">${rows}</div>
+    `);
+  }
+  if(typeof renderCompactDashboard === 'function'){
+    const prev = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      if(r?.status === 'answering' && room.answers?.[r.id]?.[currentPlayerId]) return liveAnswerScreen(root,room,r);
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        // Bij dezelfde ronde blijven deze schermen maar één keer zichtbaar, ook als status wijzigt locked -> judged.
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return scoreScreen(root,room,r);
+        const st = ownStatus(room,r);
+        if(st === true && !picked(room,r)) return pickCardScreen(root,room,r);
+        return lobbyScreen(root,room);
+      }
+      return prev ? prev(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V144 - Premium kleurrijke spelerflow
+   - Mooier antwoord/verzonden/scoreboard/lobby
+   - Geen dubbele antwoord/scoreboard
+   - Scoreboard zonder juist antwoord
+   - Na vakje kiezen direct lobby
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const HEX = {yellow:'#FFCC33', pink:'#00D4C7', purple:'#FF8A1F', blue:'#7ED957', green:'#FF5A5F', free:'#1b1028'};
+  const EMO = {yellow:'🟡', pink:'🩵', purple:'🟠', blue:'🟢', green:'🔴', free:'🐵'};
+  const COLORNAME = {yellow:'GOUD', pink:'AQUA', purple:'ORANJE', blue:'LIME', green:'KORAAL'};
+  function players(room){ return Object.entries(room?.players || {}); }
+  function me(room){ return room?.players?.[currentPlayerId] || {}; }
+  function rid(r){ return r?.id || ''; }
+  function key(type,r){ return 'bb_v144_'+type+'_'+rid(r); }
+  function seen(type,r){ try{return sessionStorage.getItem(key(type,r))==='1'}catch(e){return false} }
+  function mark(type,r){
+    try{
+      sessionStorage.setItem(key(type,r),'1');
+      ['v139','v140','v141','v142','v143'].forEach(v=>sessionStorage.setItem('bb_'+v+'_'+type+'_'+rid(r),'1'));
+    }catch(e){}
+  }
+  function status(room,r,pid){ return r?.id ? (room.correct?.[r.id]?.[pid]) : undefined; }
+  function ownStatus(room,r){ return status(room,r,currentPlayerId); }
+  function picked(room,r){ return !!(r?.id && (me(room).lastPickedRound===r.id || seen('picked',r))); }
+  function answerTime(room,r,pid){
+    const ans = r?.id ? room.answers?.[r.id]?.[pid] : null;
+    if(!ans?.submittedAt) return '';
+    let start = Number(r.musicStartedAt || 0);
+    if(!start && r.deadlineMs && r.seconds) start = Number(r.deadlineMs) - (Number(r.seconds)||20)*1000;
+    if(!start || !Number.isFinite(start)) return '';
+    const sec = Math.max(0,(Number(ans.submittedAt)-start)/1000);
+    if(!Number.isFinite(sec)) return '';
+    return sec < 10 ? sec.toFixed(1)+' sec' : Math.round(sec)+' sec';
+  }
+  function rerender(){
+    try{
+      document.querySelectorAll('.bbOverlay.show').forEach(x=>x.classList.remove('show'));
+      if(!currentRoomCode || !db || typeof renderCompactDashboard!=='function') return;
+      db.ref('rooms/'+currentRoomCode).once('value').then(s=>{ const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{}); });
+    }catch(e){}
+  }
+  window.bbV144SeenAnswer = function(roundId){ mark('answer',{id:roundId}); rerender(); };
+  window.bbV144SeenScore = function(roundId){ mark('score',{id:roundId}); try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(false); }catch(e){} rerender(); };
+  window.bbV144Ready = function(){ try{ db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true); }catch(e){} rerender(); };
+  function stage(root, cls, html){
+    document.body.classList.add('bbStageMode','bbV144Mode');
+    document.body.classList.remove('bbV139Mode','bbV140Mode','bbV141Mode','bbV142Mode','bbV143Mode');
+    root.className = 'compactDashboard bbStageDashboard '+cls;
+    root.innerHTML = `<section class="bbV144Shell">${html}</section>`;
+  }
+  function correctAnswerScreen(root,r){
+    const a = r?.correctAnswer || {};
+    stage(root,'bbV144Correct',`
+      <div class="bbV144HeroCard">
+        <div class="bbV144Kicker">🎵 JUIST ANTWOORD</div>
+        <div class="bbV144Record"><div class="bbV144RecordInner">BB</div></div>
+        <div class="bbV144AnswerGrid">
+          <div><span>TITEL</span><strong>${E(a.track||'-')}</strong></div>
+          <div><span>ARTIEST</span><strong>${E(a.artist||'-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year||'-')}</strong></div>
+        </div>
+      </div>
+      <div class="bbV144Bottom"><button type="button" class="bbV144MainBtn" onclick="bbV144SeenAnswer('${E(r.id||'')}')">VERDER</button></div>
+    `);
+  }
+  function stObj(st){
+    if(st===true) return {cls:'good',icon:'✅',label:'GOED'};
+    if(st===false) return {cls:'bad',icon:'❌',label:'FOUT'};
+    if(st==='review') return {cls:'review',icon:'🤔',label:'TWIJFEL'};
+    return {cls:'wait',icon:'…',label:'WACHT'};
+  }
+  function scoreScreen(root,room,r){
+    const cor = r?.id ? (room.correct?.[r.id] || {}) : {};
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ownStatus(room,r);
+    const counts = players(room).reduce((acc,[pid])=>{ const st=cor[pid]; if(st===true)acc.good++; else if(st===false)acc.bad++; else if(st==='review')acc.review++; else acc.wait++; return acc; },{good:0,bad:0,review:0,wait:0});
+    const hasReview = Object.values(cor).some(v=>v==='review') || r.status === 'review';
+    const btn = hasReview
+      ? `<button type="button" class="bbV144MainBtn review" onclick="bbV144SeenScore('${E(r.id||'')}')">BEOORDEEL TWIJFELGEVALLEN</button>`
+      : own===true
+        ? `<button type="button" class="bbV144MainBtn" onclick="bbV144SeenScore('${E(r.id||'')}')">NAAR BINGOKAART</button>`
+        : `<button type="button" class="bbV144MainBtn lobby" onclick="bbV144SeenScore('${E(r.id||'')}')">NAAR LOBBY</button>`;
+    const order = players(room).sort(([a],[b])=>{
+      const va=cor[a]==='review'?0:cor[a]===false?1:cor[a]===true?2:3;
+      const vb=cor[b]==='review'?0:cor[b]===false?1:cor[b]===true?2:3;
+      return va-vb;
+    });
+    const rows = order.map(([pid,p])=>{
+      const st = stObj(cor[pid]);
+      const text = ans[pid]?.answer ? String(ans[pid].answer).trim() : 'Geen antwoord';
+      const t = answerTime(room,r,pid);
+      return `<div class="bbV144ScoreRow ${st.cls}">
+        <div class="bbV144Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV144Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${E(text)}</span>${t?`<small>⏱ ${E(t)}</small>`:''}</div>
+        <div class="bbV144State"><b>${st.icon}</b><span>${st.label}</span></div>
+      </div>`;
+    }).join('');
+    stage(root,'bbV144Score',`
+      <div class="bbV144TopTitle"><span>📊</span><h2>SCOREBOARD DEZE RONDE</h2></div>
+      <div class="bbV144Stats"><div class="good">${counts.good}<span>GOED</span></div><div class="bad">${counts.bad}<span>FOUT</span></div><div class="review">${counts.review}<span>TWIJFEL</span></div></div>
+      <div class="bbV144ScoreList">${rows}</div>
+      <div class="bbV144Bottom">${btn}</div>
+    `);
+  }
+  function pickCardScreen(root,room,r){
+    const p = me(room), card = p.card || [], marked = p.marked || {};
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || key==='free';
+      const canPick = key===r.colorKey && key!=='free' && !marked[i];
+      const content = isMarked ? '<span class="bbV144Mark">BB</span>' : '';
+      return `<button type="button" class="bbV144Cell ${key} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
+    }).join('');
+    stage(root,'bbV144Pick',`
+      <div class="bbV144PickHeader"><h2>GOED ANTWOORD</h2><p>Kies één <strong>${E(r.colorEmoji||'')} ${E(COLORNAME[r.colorKey]||r.colorName||'')}</strong> vakje</p></div>
+      <div class="bbV144Card">${cells}</div>
+    `);
+    root.querySelectorAll('.bbV144Cell.pickable').forEach(btn=>btn.addEventListener('click',()=>{
+      mark('picked',r);
+      try{ pickCell(Number(btn.dataset.i)); }catch(e){}
+      setTimeout(rerender,200);
+      setTimeout(rerender,700);
+    }));
+  }
+  function lobbyScreen(root,room){
+    const rows = players(room).map(([pid,p])=>`<div class="bbV144ReadyRow ${p.ready?'ready':'wait'}"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${p.ready?'READY':'Wacht'}</span></div>`).join('');
+    const p = me(room);
+    stage(root,'bbV144Lobby',`
+      <div class="bbV144LobbyHero"><div>🎉</div><h2>Klaar voor de volgende?</h2><strong>OKAY, LET'S GO?!</strong></div>
+      <div class="bbV144ReadyList">${rows || '<div class="small">Nog geen spelers.</div>'}</div>
+      <div class="bbV144Bottom">${p.ready?'<button class="bbV144MainBtn isReady" disabled>READY ✓</button>':'<button class="bbV144MainBtn" onclick="bbV144Ready()">READY</button>'}</div>
+    `);
+  }
+  function liveAnswerScreen(root,room,r){
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const own = ans[currentPlayerId];
+    const rows = players(room).map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Nog niet ingevuld';
+      return `<div class="bbV144ScoreRow wait live">
+        <div class="bbV144Avatar">${E((p.name||'?').trim().slice(0,1).toUpperCase())}</div>
+        <div class="bbV144Who"><strong>${E(p.name||'Speler')}${pid===currentPlayerId?' <em>jij</em>':''}</strong><span>${has?E(text):'Wacht op antwoord'}</span></div>
+        <div class="bbV144State"><b>${has?'📨':'…'}</b><span>${has?'INGEZONDEN':'WACHT'}</span></div>
+      </div>`;
+    }).join('');
+    stage(root,'bbV144Live bbV146LiveOnly',`
+      <div class="bbV144TopTitle bbV146LiveTitle"><span>📨</span><h2>Live antwoorden</h2></div>
+      <p class="bbV144Sub bbV146LiveSub">Alle spelers staan hieronder. Zodra iemand iets invult, verschijnt het automatisch.</p>
+      <div class="bbV144ScoreList live bbV146LiveList">${rows}</div>
+    `);
+  }
+  if(typeof renderCompactDashboard === 'function'){
+    const prev = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const root = q('screenDashboard');
+      if(!root) return;
+      if(r?.status === 'answering' && room.answers?.[r.id]?.[currentPlayerId]) return liveAnswerScreen(root,room,r);
+      const isEnd = r && r.id && ['locked','review','judged'].includes(r.status);
+      if(isEnd){
+        if(!seen('answer',r)) return correctAnswerScreen(root,r);
+        if(!seen('score',r)) return scoreScreen(root,room,r);
+        if(r.status === 'review') return scoreScreen(root,room,r);
+        const st = ownStatus(room,r);
+        if(st === true && !picked(room,r)) return pickCardScreen(root,room,r);
+        return lobbyScreen(root,room);
+      }
+      return prev ? prev(room,r) : null;
+    };
+  }
+})();
+
+/* =========================
+   V147 - Host categoriepaneel + Bingo keuzes
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+
+  // Maak het host-venster direct passend zodra er categorie-animatie/resultaat in komt.
+  function fitHostPicker(){
+    const area = q('hostPickerArea');
+    if(!area || document.body.classList.contains('playerMode')) return;
+    area.classList.add('bbV147HostPickerFitted');
+  }
+  const oldPickerHTML = (typeof pickerHTML === 'function') ? pickerHTML : null;
+  if(oldPickerHTML){
+    pickerHTML = function(){
+      setTimeout(fitHostPicker,0);
+      return oldPickerHTML.apply(this,arguments);
+    };
+  }
+  const oldStartRoundVisualV147 = (typeof startRoundVisual === 'function') ? startRoundVisual : null;
+  if(oldStartRoundVisualV147){
+    startRoundVisual = function(){
+      fitHostPicker();
+      const result = oldStartRoundVisualV147.apply(this,arguments);
+      setTimeout(fitHostPicker,50);
+      setTimeout(fitHostPicker,500);
+      setTimeout(fitHostPicker,1500);
+      return result;
+    };
+  }
+
+  function hideBingo(){ q('bingoFullOverlay')?.classList.add('hidden'); }
+  window.bbBingoVerderSpelen = function(){
+    hideBingo();
+    try{
+      if(currentRoomCode && db && typeof renderCompactDashboard === 'function'){
+        db.ref('rooms/'+currentRoomCode).once('value').then(s=>{ const room=s.val()||{}; renderCompactDashboard(room, room.currentRound||{}); });
+      }
+    }catch(e){}
+  };
+  window.bbBingoNieuweRonde = function(){
+    hideBingo();
+    try{
+      // Host kan echt een nieuw spel/nieuwe kaart starten. Spelers melden zich klaar en wachten op host.
+      if(typeof isPlayerPage === 'function' && !isPlayerPage() && typeof bbStartNewGameSameRoom === 'function'){
+        bbStartNewGameSameRoom();
+        return;
+      }
+      if(currentRoomCode && currentPlayerId && db){
+        db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true);
+      }
+    }catch(e){}
+    window.bbBingoVerderSpelen();
+  };
+
+  const oldShowWinner = (typeof showWinner === 'function') ? showWinner : null;
+  showWinner = function(name){
+    try{
+      if(q('winnerPanel')){
+        q('winnerPanel').classList.remove('hidden');
+        q('winnerMessage').innerHTML='🏆 BINGO!<br>Speler '+E(name)+' heeft gewonnen!';
+      }
+      if(q('hostBingoPanel')){
+        q('hostBingoPanel').classList.remove('hidden');
+        q('hostBingoMessage').innerHTML='🏆 BINGO!<br>Speler '+E(name)+' heeft gewonnen!';
+      }
+      const overlay=q('bingoFullOverlay');
+      const card=overlay?.querySelector('.bingoFullCard');
+      if(overlay && card){
+        overlay.classList.remove('hidden');
+        if(q('bingoFullName')) q('bingoFullName').textContent=name||'Speler';
+        let actions=card.querySelector('.bingoFullActions');
+        if(!actions){
+          actions=document.createElement('div');
+          actions.className='bingoFullActions';
+          actions.innerHTML=`
+            <button type="button" class="bingoFullBtn secondary" onclick="bbBingoVerderSpelen()">VERDER SPELEN</button>
+            <button type="button" class="bingoFullBtn" onclick="bbBingoNieuweRonde()">NIEUWE RONDE</button>
+          `;
+          card.appendChild(actions);
+          const hint=document.createElement('div');
+          hint.className='bingoFullHint';
+          hint.textContent='Kies wat jullie willen doen.';
+          card.appendChild(hint);
+        }
+      }
+      if(typeof confetti==='function') confetti();
+      if(typeof tune==='function') tune();
+    }catch(e){
+      if(oldShowWinner) return oldShowWinner(name);
+    }
+  };
+})();
+
+/* =========================
+   V148 - Host speelt mee lobby
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  let hostPlayerListenerActive = false;
+  let hostPlayerRoomRef = null;
+  let hostPlayerMode = false;
+  let autoStartedRound = '';
+
+  function hostPid(){
+    let id = localStorage.bb_host_player_id || '';
+    if(!id){
+      id = 'host_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+      localStorage.bb_host_player_id = id;
+    }
+    return id;
+  }
+  function cleanHostName(name){ return String(name||'').replace(/^🎤\s*/,'').trim() || 'Host'; }
+  function hostDisplayName(){ return '🎤 ' + cleanHostName(localStorage.bb_host_player_name || 'Host'); }
+
+  function injectSettings(){
+    const staticBtn = q('bbHostPlayBtn');
+    if(staticBtn && !staticBtn.dataset.bbWired){ staticBtn.dataset.bbWired = '1'; staticBtn.addEventListener('click', enterHostPlayerMode); }
+    const settings = Array.from(document.querySelectorAll('#hostApp .panel')).find(p => (p.querySelector('h2')?.textContent||'').includes('5.'));
+    if(!settings || q('bbHostPlayBlock')) return;
+    const block = document.createElement('div');
+    block.id = 'bbHostPlayBlock';
+    block.className = 'bbHostPlayBlock';
+    block.innerHTML = `
+      <h3>🎤 Hostinstellingen</h3>
+      <button type="button" id="bbHostPlayBtn" class="bbHostPlayBtn">🎤 Host speelt mee</button>
+      <p class="small bbHostPlayText">Speel je als host gezellig mee? Klik dan hier.</p>
+    `;
+    settings.appendChild(block);
+    q('bbHostPlayBtn')?.addEventListener('click',enterHostPlayerMode);
+  }
+
+  async function ensureRoom(){
+    if(currentRoomCode) return currentRoomCode;
+    const saved = localStorage.hb_host_room || localStorage.hb_last_stable_room || '';
+    if(saved){
+      currentRoomCode = saved;
+      try{ renderRoomBox(currentRoomCode); listenBingo(currentRoomCode); }catch(e){}
+      return currentRoomCode;
+    }
+    alert('Maak eerst een kamer bij stap 4.');
+    return '';
+  }
+
+  async function enterHostPlayerMode(){
+    const room = await ensureRoom();
+    if(!room) return;
+    let name = cleanHostName(localStorage.bb_host_player_name || '');
+    if(!name || name === 'Host'){
+      const n = prompt('Naam van de host/speler:', name || 'Georgio');
+      if(n === null) return;
+      name = cleanHostName(n);
+      localStorage.bb_host_player_name = name;
+    }
+    currentPlayerId = hostPid();
+    currentPlayerName = hostDisplayName();
+    localStorage.hb_player_id = currentPlayerId;
+    localStorage.hb_player_name = currentPlayerName;
+    localStorage.hb_player_room = room;
+    const ref = db.ref('rooms/'+room+'/players/'+currentPlayerId);
+    const snap = await ref.once('value');
+    const ex = snap.val() || {};
+    await ref.update({
+      name: currentPlayerName,
+      emoji: ex.emoji || bbAnimalFor(currentPlayerId,ex),
+      isHost: true,
+      isPlayer: true,
+      online: true,
+      ready: !!ex.ready,
+      joinedAt: ex.joinedAt || firebase.database.ServerValue.TIMESTAMP,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      card: ex.card || genCard(),
+      marked: ex.marked || {},
+      bingo: !!ex.bingo
+    });
+    try{ ref.child('online').onDisconnect().set(false); }catch(e){}
+    hostPlayerMode = true;
+    document.body.classList.add('playerMode','bbHostPlayerMode');
+    setModeLabel('🎤 Host speelt mee');
+    q('hostApp')?.classList.add('hidden');
+    q('playerApp')?.classList.remove('hidden');
+    q('screenJoin')?.classList.add('hidden');
+    startHostPlayerListener(room);
+  }
+
+  window.bbEnterHostPlayerMode = enterHostPlayerMode;
+
+  function exitHostPlayerMode(){
+    hostPlayerMode = false;
+    document.body.classList.remove('playerMode','bbHostPlayerMode');
+    document.querySelectorAll('.bbHostTopBtn,.bbHostStartFloat,#bbHostPlayerDock').forEach(el=>el.remove());
+    setModeLabel('🎤 Host');
+    q('playerApp')?.classList.add('hidden');
+    q('hostApp')?.classList.remove('hidden');
+    if(hostPlayerRoomRef && hostPlayerListenerActive){ try{ hostPlayerRoomRef.off('value'); }catch(e){} }
+    hostPlayerListenerActive = false;
+    if(currentRoomCode){ try{ listenHost(currentRoomCode); listenBingo(currentRoomCode); }catch(e){} }
+  }
+  window.bbHostPlayerExit = exitHostPlayerMode;
+
+  function startHostPlayerListener(room){
+    if(hostPlayerRoomRef && hostPlayerListenerActive){ try{ hostPlayerRoomRef.off('value'); }catch(e){} }
+    hostPlayerRoomRef = db.ref('rooms/'+room);
+    hostPlayerListenerActive = true;
+    hostPlayerRoomRef.on('value',s=>{
+      const data = s.val() || {}, r = data.currentRound || {};
+      activeRound = r;
+      try{ renderCompactDashboard(data,r); }catch(e){ console.error(e); }
+      q('screenJoin')?.classList.add('hidden');
+      q('screenDashboard')?.classList.remove('hidden');
+      setTimeout(()=>enhanceHostLobby(data,r),20);
+      setTimeout(()=>enhanceHostLobby(data,r),250);
+      const players = Object.values(data.players || {});
+      const startableLobby = !r.id || ['judged','finished','complete','results'].includes(String(r.status||'').toLowerCase());
+      const hasBingo = Object.values(data.bingos || {}).some(b=>b?.roundId===r.id);
+      const roundKey = r.id || '__first_round__';
+      if(hostPlayerMode && startableLobby && !hasBingo && players.length && players.every(p=>p.ready) && autoStartedRound!==roundKey){
+        autoStartedRound = roundKey;
+        setTimeout(()=>window.bbHostPlayerStart(false),250);
+      }
+    });
+    listenBingo(room);
+  }
+
+  function isHostPlayerLobby(root,r){
+    if(!root) return false;
+    return !!root.querySelector('.bbV144Lobby,.stageLobbyV143,.stageLobbyV142,.stageLobbyV141,.stageLobbyV140,.stageLobbyV139,.stageLobby') || !r?.id;
+  }
+
+  function canShowJury(room,r,root){
+    if(!r || !r.id) return false;
+    // V153: in Host-speelt-mee moet de juryknop betrouwbaar zichtbaar worden
+    // zodra de ronde klaar/beoordeeld is. Niet tijdens categorie kiezen of antwoorden.
+    if(['picking','ready','answering'].includes(r.status)) return false;
+    const hasAnswers = !!(room.answers && room.answers[r.id]);
+    const judged = ['locked','review','judged'].includes(r.status) || !!r.juryDone || hasAnswers;
+    return !!judged;
+  }
+
+  window.bbHostPlayerReady = function(){
+    if(currentRoomCode && currentPlayerId) db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true);
+  };
+
+  window.bbHostPlayerStart = async function(isTest){
+    if(!currentRoomCode) return alert('Geen kamer actief.');
+    try{
+      const oldDuration = q('duration')?.value;
+      if(isTest && q('duration')) q('duration').value = '10';
+      startRound();
+      const room = currentRoomCode;
+      const startedAt = Date.now();
+      const timer = setInterval(async()=>{
+        const s = await db.ref('rooms/'+room+'/currentRound').once('value');
+        const r = s.val() || {};
+        if(r.status === 'ready'){
+          clearInterval(timer);
+          try{ await playHidden(); }catch(e){}
+          if(isTest && q('duration') && oldDuration) q('duration').value = oldDuration;
+        }
+        if(Date.now()-startedAt > 10000){ clearInterval(timer); if(isTest && q('duration') && oldDuration) q('duration').value = oldDuration; }
+      },350);
+    }catch(e){ alert('Ronde starten lukt niet: '+(e.message||e)); }
+  };
+
+  function enhanceHostLobby(room,r){
+    if(!hostPlayerMode) return;
+    const root = q('screenDashboard');
+    const oldDock = q('bbHostPlayerDock');
+    if(oldDock) oldDock.remove();
+    if(!root) return;
+    const oldTop = document.querySelectorAll('.bbHostTopBtn,.bbHostStartFloat');
+    oldTop.forEach(el=>el.remove());
+
+    const isLobby = isHostPlayerLobby(root,r);
+
+    const exitBtn = document.createElement('button');
+    exitBtn.type = 'button';
+    exitBtn.className = 'bbHostTopBtn bbHostTopExit';
+    exitBtn.title = 'Terug naar hostscherm';
+    exitBtn.setAttribute('aria-label','Terug naar hostscherm');
+    exitBtn.textContent = 'TERUG';
+    exitBtn.onclick = window.bbHostPlayerExit;
+    document.body.appendChild(exitBtn);
+
+    if(canShowJury(room,r,root)){
+      const juryBtn = document.createElement('button');
+      juryBtn.type = 'button';
+      juryBtn.className = 'bbHostTopBtn bbHostTopJury';
+      juryBtn.title = 'Jury / overrule';
+      juryBtn.setAttribute('aria-label','Jury / overrule');
+      juryBtn.textContent = 'JURY';
+      juryBtn.onclick = window.bbHostPlayerOpenJury;
+      document.body.appendChild(juryBtn);
+    }
+
+    // Starten gebeurt altijd automatisch zodra host en alle spelers READY zijn.
+  }
+
+  window.bbHostPlayerOpenJury = function(){
+    if(!currentRoomCode) return;
+    db.ref('rooms/'+currentRoomCode).once('value').then(s=>{
+      const room = s.val() || {}, r = room.currentRound || {};
+      if(!r.id) return alert('Geen ronde om te beoordelen.');
+      const ans = room.answers?.[r.id] || {}, cor = room.correct?.[r.id] || {};
+      const rows = Object.entries(room.players||{}).map(([pid,p])=>{
+        const st = cor[pid];
+        const a = ans[pid]?.answer || 'Geen antwoord';
+        return `<div class="bbHostJuryRow compact ${st===true?'good':st===false?'bad':'wait'}">
+<div class="bbHostJuryName">${E(p.name||'Speler')}</div><div class="bbHostJuryAnswer">${E(a)}</div><div class="bbHostJuryBtns"><button type="button" onclick="bbHostPlayerSetJudge('${E(pid)}',true)">✅</button><button type="button" onclick="bbHostPlayerSetJudge('${E(pid)}',false)">❌</button></div></div>`;
+      }).join('');
+      let modal = q('bbHostJuryModal');
+      if(!modal){
+        modal = document.createElement('div');
+        modal.id = 'bbHostJuryModal';
+        modal.className = 'bbHostJuryModal hidden';
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = `<div class="bbHostJuryCard">
+        <button type="button" class="bbHostJuryClose" onclick="bbHostPlayerCloseJury()">×</button>
+        <h2>⚖️ Jury / overrule</h2>
+        <p class="small">Corrigeer alleen als de AI/jury een antwoord verkeerd heeft beoordeeld.</p>
+        <div class="bbHostJuryList">${rows || 'Nog geen antwoorden.'}</div>
+      </div>`;
+      modal.classList.remove('hidden');
+    });
+  };
+  window.bbHostPlayerCloseJury = function(){ q('bbHostJuryModal')?.classList.add('hidden'); };
+  window.bbHostPlayerSetJudge = function(pid,good){
+    db.ref('rooms/'+currentRoomCode+'/currentRound').once('value').then(s=>{
+      const r = s.val() || {}; if(!r.id) throw Error('Geen actieve ronde.');
+      return db.ref('rooms/'+currentRoomCode+'/correct/'+r.id+'/'+pid).set(!!good);
+    }).then(()=>bbHostPlayerOpenJury()).catch(e=>alert(e.message||e));
+  };
+
+  const oldSetupHostModeV148 = (typeof setupHostMode === 'function') ? setupHostMode : null;
+  if(oldSetupHostModeV148){
+    setupHostMode = function(){
+      const result = oldSetupHostModeV148.apply(this,arguments);
+      setTimeout(injectSettings,50);
+      setTimeout(injectSettings,500);
+      return result;
+    };
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(injectSettings,800));
+})();
+
+/* =========================
+   V160 - Compacte lobby + spelers/score scrollvensters
+   - Alle lobby's: 2 kolommen, scrollbaar, eigen kaart klein zichtbaar
+   - Klik op speler opent bingokaart
+   - Live antwoorden: geen avatarvak/INGEZONDEN meer
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+  const hex = c => {
+    try{ if(typeof colorHex === 'function') return colorHex(c); }catch(e){}
+    return ({yellow:'#FFCC33',pink:'#00D4C7',purple:'#FF8A1F',blue:'#7ED957',green:'#FF5A5F',free:'#222'})[c] || '#333';
+  };
+  function allPlayers(room){
+    return Object.entries(room?.players || {}).sort((a,b)=>{
+      const ar = a[1]?.ready ? 1 : 0, br = b[1]?.ready ? 1 : 0;
+      if(ar !== br) return ar - br; // wacht eerst
+      return String(a[1]?.name||'').localeCompare(String(b[1]?.name||''),'nl');
+    });
+  }
+  function cleanName(n){ return String(n||'Speler').replace(/^🎤\s*/,'').trim() || 'Speler'; }
+  function isHost(p){ return !!p?.isHost || /^🎤/.test(String(p?.name||'')); }
+  function readyCount(room){
+    const ps = Object.values(room?.players || {});
+    return {ready:ps.filter(p=>p.ready).length,total:ps.length};
+  }
+  function miniCard(card, marked){
+    const arr = Array.isArray(card) ? card : [];
+    return `<div class="bbV160OwnMiniCard">${arr.map((c,i)=>`<div class="bbV160MiniCell ${i===12||marked?.[i]?'marked':''}" style="background:${hex(c)}">${i===12||marked?.[i]?'🐵':''}</div>`).join('')}</div>`;
+  }
+  function playerGrid(room){
+    const rc = readyCount(room);
+    const rows = allPlayers(room).map(([pid,p])=>{
+      const own = pid === currentPlayerId;
+      return `<button type="button" class="bbV160PlayerChip ${p.ready?'ready':'wait'} ${own?'own':''}" data-view-card="${E(pid)}" onclick="bbV160ShowCard('${E(pid)}')">
+        <span class="bbV160PlayerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${own?' <em>jij</em>':''}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span>
+        <span class="bbV160ReadyIcon">${p.ready?'✅':'⏳'}</span>
+      </button>`;
+    }).join('');
+    return `<div class="bbV160LobbyBox">
+      <div class="bbV160ReadyCount">👥 ${rc.ready} / ${rc.total} READY</div>
+      <div class="bbV160PlayerGrid">${rows || '<div class="bbV160Empty">Nog geen spelers.</div>'}</div>
+      <div class="bbV160Hint">Klik op de speler voor de bingokaart.</div>
+    </div>`;
+  }
+  function renderLobby(root,room,title='Wachten op de host',sub='Iedereen klaar? Dan kan de ronde starten.'){
+    const me = room?.players?.[currentPlayerId] || {};
+    const isReady = !!me.ready;
+    root.className = 'compactDashboard bbV160LobbyStage';
+    root.innerHTML = `
+      <div class="bbV160Hero"><h2>${E(title)}</h2><p>${E(sub)}</p></div>
+      ${playerGrid(room)}
+      <div class="bbV160OwnCardWrap">
+        <div class="bbV160OwnTitle">Jouw bingokaart</div>
+        ${miniCard(me.card, me.marked||{})}
+      </div>
+      <div class="bbV160Bottom">${isReady?'<button class="bbV160ReadyBtn isReady" disabled>READY ✓</button>':'<button class="bbV160ReadyBtn" onclick="bbV160Ready()">READY</button>'}</div>
+    `;
+  }
+  window.bbV160Ready = function(){
+    try{
+      if(currentRoomCode && currentPlayerId) db.ref('rooms/'+currentRoomCode+'/players/'+currentPlayerId+'/ready').set(true);
+    }catch(e){}
+  };
+  window.bbV160ShowCard = function(pid){
+    const room = window.bbV160LastRoom || {};
+    const p = room.players?.[pid];
+    if(!p) return;
+    let modal = q('bbV160CardModal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'bbV160CardModal';
+      modal.className = 'bbV160CardModal hidden';
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = `<div class="bbV160CardPop">
+      <button type="button" class="bbV160Close" onclick="bbV160CloseCard()">×</button>
+      <h2>${bbAnimalFor(pid,p)} ${E(cleanName(p.name))}</h2>
+      ${miniCard(p.card, p.marked||{})}
+    </div>`;
+    modal.classList.remove('hidden');
+  };
+  window.bbV160CloseCard = function(){ q('bbV160CardModal')?.classList.add('hidden'); };
+
+  function liveAnswers(root,room,r){
+    const ans = r?.id ? (room.answers?.[r.id] || {}) : {};
+    const rows = allPlayers(room).map(([pid,p])=>{
+      const has = ans[pid] && typeof ans[pid].answer !== 'undefined';
+      const text = has ? (String(ans[pid].answer).trim() || 'Leeg antwoord') : 'Geen antwoord';
+      return `<div class="bbV160AnswerRow ${has?'sent':'wait'}">
+        <div class="bbV160AnswerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${pid===currentPlayerId?' <em>jij</em>':''}</div>
+        <div class="bbV160AnswerText">${E(text)}</div>
+      </div>`;
+    }).join('');
+    root.className = 'compactDashboard bbV160LiveStage';
+    root.innerHTML = `
+      <div class="bbV160LiveHead"><span>📨</span><h2>Live antwoorden</h2></div>
+      <p class="bbV160LiveSub">Zodra iemand iets invult, verschijnt het automatisch.</p>
+      <div class="bbV160AnswerList">${rows}</div>
+    `;
+  }
+
+  const prevRender = (typeof renderCompactDashboard === 'function') ? renderCompactDashboard : null;
+  if(prevRender){
+    renderCompactDashboard = function(room,r){
+      window.bbV160LastRoom = room || {};
+      const root = q('screenDashboard');
+      if(!root) return prevRender.apply(this,arguments);
+      // compact live antwoorden zodra eigen antwoord ingestuurd is
+      if(r?.status === 'answering' && r.id && room.answers?.[r.id]?.[currentPlayerId]) return liveAnswers(root,room,r);
+      // FLITS-FIX V165:
+      // Als we al in de compacte V160-lobby zitten, mag een Firebase-update
+      // (bijv. READY klikken) niet eerst terugvallen naar de oude renderer.
+      // Dat veroorzaakte de korte flits van een ander scherm.
+      const alreadyCompactLobby = root.classList.contains('bbV160LobbyStage');
+      const noRound = !r || !r.id;
+      const nextRoundLobby = r && r.id && r.status === 'judged';
+      if(alreadyCompactLobby && (noRound || nextRoundLobby)){
+        renderLobby(
+          root,
+          room,
+          nextRoundLobby ? 'Klaar voor de volgende?' : 'Wachten op de host',
+          nextRoundLobby ? 'Klik op READY voor de volgende ronde.' : 'Iedereen klaar? Dan kan de ronde starten.'
+        );
+        return;
+      }
+
+      const result = prevRender.apply(this,arguments);
+      // Vervang alleen echte lobby-vensters, zodat pick/score/antwoord-schermen intact blijven.
+      // requestAnimationFrame is stabieler dan setTimeout(0) en voorkomt zichtbare tussenframes.
+      requestAnimationFrame(()=>{
+        const txt = root.textContent || '';
+        const isLobby = root.querySelector('.bbV144Lobby,.bbV143Lobby,.bbV142Lobby,.bbV141Lobby,.bbV140Lobby,.bbV139Lobby') || txt.includes('Wachten op de host') || txt.includes('Klaar voor de volgende?');
+        const active = r && r.id && ['picking','ready','answering','locked','review'].includes(r.status);
+        if(isLobby && !active) renderLobby(root,room,'Wachten op de host','Iedereen klaar? Dan kan de ronde starten.');
+        else if(isLobby && r?.status === 'judged') renderLobby(root,room,'Klaar voor de volgende?','Klik op READY voor de volgende ronde.');
+      });
+      return result;
+    };
+  }
+
+  // Hostscherm spelerslijst ook compact en scrollbaar.
+  if(typeof renderHostPlayers === 'function'){
+    renderHostPlayers = function(room){
+      const box = q('hostPlayers');
+      if(!box) return;
+      const rc = readyCount(room);
+      const rows = allPlayers(room).map(([pid,p])=>`<div class="bbV160HostChip ${p.ready?'ready':'wait'}"><span><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span><b>${p.ready?'✅':'⏳'}</b></div>`).join('');
+      box.innerHTML = `<div class="bbV160ReadyCount host">👥 ${rc.ready} / ${rc.total} READY</div><div class="bbV160HostGrid">${rows || '<div class="small">Nog geen spelers.</div>'}</div>`;
+    };
+  }
+})();
+
+
+/* =========================
+   V105 - Spotify playlist importeren
+   - Host is al bovenin ingelogd met Spotify
+   - Playlists laden vanuit eigen Spotify-account
+   - Gekozen playlist automatisch omzetten naar Bingo Beats tracks
+   - CSV upload blijft als backup
+   ========================= */
+(function(){
+  const q = (id) => document.getElementById(id);
+  let bbPlaylistsCache = [];
+
+  function setPlaylistStatus(msg, ok){
+    const el = q('playlistStatus');
+    if(!el) return;
+    el.textContent = msg;
+    el.className = 'small ' + (ok === true ? 'playlistOk' : ok === false ? 'playlistErr' : '');
+  }
+
+  function deepFindSpotifyTrack(obj, depth=0, seen=new Set()){
+    if(!obj || typeof obj !== 'object' || depth > 6 || seen.has(obj)) return null;
+    seen.add(obj);
+    // Accepteer elke echte Spotify track, ook als het veld "type" ontbreekt door fields-filters.
+    if((obj.uri && String(obj.uri).startsWith('spotify:track:')) || (obj.type === 'track' && obj.id && obj.name)) return obj;
+    // Meest voorkomende Spotify-vormen eerst.
+    const direct = obj.item || obj.track;
+    const foundDirect = deepFindSpotifyTrack(direct, depth+1, seen);
+    if(foundDirect) return foundDirect;
+    for(const k of Object.keys(obj)){
+      const v = obj[k];
+      if(v && typeof v === 'object'){
+        if(Array.isArray(v)){
+          for(const it of v){
+            const f = deepFindSpotifyTrack(it, depth+1, seen);
+            if(f) return f;
+          }
+        }else{
+          const f = deepFindSpotifyTrack(v, depth+1, seen);
+          if(f) return f;
+        }
+      }
+    }
+    return null;
+  }
+
+  function spotifyTrackToBB(row){
+    const track = deepFindSpotifyTrack(row);
+    if(!track || !track.id) return null;
+    if(row?.is_local || track.is_local) return null;
+    const artists = Array.isArray(track.artists)
+      ? track.artists.map(a => a && a.name).filter(Boolean).join(', ')
+      : (track.artist || track.artists || '');
+    return {
+      id: track.id,
+      uri: track.uri || ('spotify:track:' + track.id),
+      name: track.name || 'Onbekend',
+      artists: artists || 'Onbekend',
+      album: track.album?.name || '',
+      release_date: track.album?.release_date || '',
+      duration_ms: Number(track.duration_ms) || 180000
+    };
+  }
+
+  async function fetchAllSpotifyPages(url){
+    const all = [];
+    let next = url;
+    while(next){
+      const data = await api(next);
+      all.push(...(data.items || []));
+      next = data.next || '';
+    }
+    return all;
+  }
+
+  async function bbLoadPlaylists(){
+    try{
+      const token = await getToken();
+      if(!token){
+        setPlaylistStatus('Log eerst bovenin in met Spotify om je playlists te laden.', false);
+        return;
+      }
+      setPlaylistStatus('Playlists laden...', null);
+      const items = await fetchAllSpotifyPages('https://api.spotify.com/v1/me/playlists?limit=50');
+      bbPlaylistsCache = items.filter(p => p && p.id);
+      const select = q('playlistSelect');
+      if(!select) return;
+      select.innerHTML = bbPlaylistsCache.map(p => {
+        const count = typeof p.tracks?.total === 'number' ? ` (${p.tracks.total} nummers)` : '';
+        return `<option value="${esc(p.id)}">${esc(p.name || 'Naamloze playlist')}${esc(count)}</option>`;
+      }).join('');
+      q('playlistImportBox')?.classList.toggle('hidden', !bbPlaylistsCache.length);
+      if(!bbPlaylistsCache.length){
+        setPlaylistStatus('Geen playlists gevonden in dit Spotify-account.', false);
+      }else{
+        setPlaylistStatus(`${bbPlaylistsCache.length} playlists gevonden. Kies een playlist en importeer.`, true);
+      }
+    }catch(e){
+      console.error(e);
+      setPlaylistStatus('Playlists laden mislukt. Log eventueel opnieuw in met Spotify.', false);
+    }
+  }
+
+  async function bbImportSelectedPlaylist(){
+    try{
+      const select = q('playlistSelect');
+      const playlistId = select?.value;
+      if(!playlistId) return setPlaylistStatus('Kies eerst een playlist.', false);
+      const playlist = bbPlaylistsCache.find(p => p.id === playlistId) || {name:'Playlist'};
+      setPlaylistStatus(`Playlist ophalen v115: ${playlist.name}...`, null);
+
+      const cleanId = encodeURIComponent(playlistId);
+      const fields = encodeURIComponent('total,limit,next,items(is_local,track(id,uri,name,type,duration_ms,album(name,release_date),artists(name)),item(id,uri,name,type,duration_ms,album(name,release_date),artists(name)))');
+      const urls = [
+        `https://api.spotify.com/v1/playlists/${cleanId}/items?limit=50&market=NL&fields=${fields}`,
+        `https://api.spotify.com/v1/playlists/${cleanId}/items?limit=50&fields=${fields}`,
+        playlist.tracks?.href || `https://api.spotify.com/v1/playlists/${cleanId}/tracks?limit=100`
+      ].filter(Boolean);
+
+      let items = [];
+      let lastError = '';
+      for(const url of urls){
+        try{
+          items = await fetchAllSpotifyPages(url);
+          if(items && items.length) break;
+        }catch(e){
+          lastError = e.message || String(e);
+        }
+      }
+
+      const seen = new Set();
+      const imported = [];
+      for(const row of items){
+        const t = spotifyTrackToBB(row);
+        if(!t || seen.has(t.id)) continue;
+        seen.add(t.id);
+        imported.push(t);
+      }
+
+      if(!imported.length){
+        const sample = items[0] ? JSON.stringify(items[0]).slice(0,450) : 'geen items ontvangen';
+        setPlaylistStatus(`Geen bruikbare Spotify-tracks gevonden. API items: ${items.length}. Laatste fout: ${lastError || 'geen'}. Eerste item: ${sample}`, false);
+        return;
+      }
+
+      tracks = imported;
+      localStorage.hb_csv_tracks = JSON.stringify(tracks);
+      localStorage.removeItem('hb_used');
+      localStorage.bb_imported_playlist = JSON.stringify({id:playlistId,name:playlist.name || 'Playlist',count:tracks.length,importedAt:new Date().toISOString()});
+      updateStatus();
+      setPlaylistStatus(`✅ ${tracks.length} nummers geïmporteerd uit “${playlist.name || 'Playlist'}”. Je kunt nu een kamer maken of een ronde starten.`, true);
+      const preview = q('playlistPreview');
+      if(preview){
+        preview.classList.remove('hidden');
+        preview.innerHTML = `<strong>🎵 ${esc(playlist.name || 'Playlist')}</strong><br>${tracks.length} nummers klaar voor Bingo Beats.<br><span>CSV upload is niet meer nodig.</span>`;
+      }
+    }catch(e){
+      console.error(e);
+      const msg = (e && e.message) ? e.message : 'Onbekende fout';
+      setPlaylistStatus('Playlist importeren mislukt: ' + msg, false);
+    }
+  }
+
+  function wirePlaylistImport(){
+    q('loadPlaylistsBtn')?.addEventListener('click', bbLoadPlaylists);
+    q('importPlaylistBtn')?.addEventListener('click', bbImportSelectedPlaylist);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setTimeout(wirePlaylistImport, 250));
+})();
+
+/* =========================
+   V167 - Juist antwoord: compact trackblok + Wist je dat
+   - Verwijdert de grote BB-cirkel/plaat
+   - Toont Titel, Artiest, Album en Jaar compact
+   - Toont daaronder een apart Wist-je-dat-venster
+   ========================= */
+(function(){
+  const q = id => document.getElementById(id);
+  const E = s => (typeof esc === 'function' ? esc(String(s ?? '')) : String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
+
+  function factText(a){
+    const track = String(a?.track || '').trim();
+    const artist = String(a?.artist || '').trim();
+    const album = String(a?.album || '').trim();
+    const year = Number(String(a?.year || '').match(/\d{4}/)?.[0] || 0);
+    const facts=[];
+    const titleWords=track.split(/\s+/).filter(Boolean);
+    const artists=artist.split(/,|&| feat\.? | ft\.? | featuring /i).map(x=>x.trim()).filter(Boolean);
+    if(year) facts.push(`Dit nummer komt uit de jaren ${Math.floor(year/10)*10}. Aan de productie, instrumenten en zangstijl is een muziekperiode vaak sneller te herkennen dan aan de tekst.`);
+    if(artists.length>1) facts.push(`Aan dit nummer werken ${artists.length} uitvoerende artiesten mee: ${artists.join(', ')}.`);
+    if(album && track && album.toLowerCase()!==track.toLowerCase()) facts.push(`De albumtitel “${album}” is anders dan de songtitel “${track}”.`);
+    if(titleWords.length===1) facts.push(`De titel bestaat uit maar één woord: “${track}”. Zulke korte titels zijn vaak makkelijker te onthouden.`);
+    if(titleWords.length>=6) facts.push(`De titel “${track}” telt ${titleWords.length} woorden en is daarmee opvallend lang voor een songtitel.`);
+    if(/[!?]/.test(track)) facts.push(`In de officiële titel staat een leesteken. Daardoor valt “${track}” ook visueel extra op.`);
+    if(year&&album) facts.push(`Het nummer verscheen in ${year} op het album “${album}”.`);
+    if(!facts.length) facts.push('Je brein kan een bekend nummer soms al aan enkele noten herkennen, nog voordat je bewust weet welke titel erbij hoort.');
+    let h=0;for(const c of `${track}|${artist}|${album}|${year}`)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;
+    return facts[h%facts.length];
+  }
+
+  function enhanceCorrectAnswer(room, r){
+    const root = q('screenDashboard');
+    if(!root || !root.classList.contains('bbV144Correct')) return;
+    const hero = root.querySelector('.bbV144HeroCard');
+    if(!hero || hero.dataset.bbV167Done === '1') return;
+    hero.dataset.bbV167Done = '1';
+
+    const a = r?.correctAnswer || {};
+    const info = `
+      <div class="bbV167AnswerCard">
+        <div class="bbV167Kicker">🎵 JUIST ANTWOORD</div>
+        <div class="bbV167TrackTitle">${E(a.track || '-')}</div>
+        <div class="bbV167MetaGrid">
+          <div><span>ARTIEST</span><strong>${E(a.artist || '-')}</strong></div>
+          <div><span>ALBUM</span><strong>${E(a.album || '-')}</strong></div>
+          <div><span>JAAR</span><strong>${E(a.year || '-')}</strong></div>
+        </div>
+      </div>
+      <div class="bbV167FactCard">
+        <div class="bbV167FactTitle">💡 Wist je dat...</div>
+        <p>${E(factText(a))}</p>
+      </div>`;
+    hero.innerHTML = info;
+  }
+
+  if(typeof renderCompactDashboard === 'function'){
+    const previous = renderCompactDashboard;
+    renderCompactDashboard = function(room,r){
+      const result = previous.apply(this,arguments);
+      setTimeout(()=>enhanceCorrectAnswer(room,r),0);
+      setTimeout(()=>enhanceCorrectAnswer(room,r),80);
+      return result;
+    };
+  }
+
+  // Extra vangnet voor Firebase/DOM-updates die het scherm opnieuw tekenen.
+  const observer = new MutationObserver(()=>{
+    try{
+      const room = window.bbV160LastRoom || {};
+      const r = room.currentRound || activeRound || {};
+      enhanceCorrectAnswer(room,r);
+    }catch(e){}
+  });
+  document.addEventListener('DOMContentLoaded',()=>{
+    const root=q('screenDashboard');
+    if(root) observer.observe(root,{childList:true,subtree:true});
+  });
+})();
+
+/* V171 laatste renderlaag: alleen dieren toevoegen, zonder schermen te vervangen. */
+(function(){
+  function cleanName(s){return String(s||'').replace(/^🎤\s*/,'').replace(/\bjij\b/gi,'').trim()}
+  function decorateLast(room){
+    const root=document.getElementById('screenDashboard');if(!root||!room?.players)return;
+    const entries=Object.entries(room.players);
+    root.querySelectorAll('.bbV144ScoreRow').forEach(row=>{
+      const name=row.querySelector('.bbV144Who strong'),avatar=row.querySelector('.bbV144Avatar');if(!name||!avatar)return;
+      const shown=cleanName(name.textContent),found=entries.find(([,p])=>cleanName(p?.name)===shown);if(found)avatar.textContent=bbAnimalFor(found[0],found[1]);
+    });
+  }
+  if(typeof renderCompactDashboard==='function'){
+    const previous=renderCompactDashboard;
+    renderCompactDashboard=function(room,r){const result=previous.apply(this,arguments);decorateLast(room);return result};
+  }
+})();

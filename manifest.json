@@ -1,11 +1,14 @@
 {
   "name": "Bingo Beats",
   "short_name": "Bingo Beats",
+  "description": "Interactieve muziekbingo voor host en spelers",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#07120f",
-  "theme_color": "#07120f",
-  "icons": [],
-  "scope": "./"
+  "orientation": "any",
+  "background_color": "#071712",
+  "theme_color": "#071712",
+  "icons": [
+    {"src":"app-icon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
 }

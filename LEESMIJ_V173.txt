@@ -1,0 +1,35 @@
+BINGO BEATS V173 - PERFECT EDITION
+==================================
+
+INSTALLATIE
+Upload alle bestanden uit deze map samen naar dezelfde hoofdmap van de website.
+Vervang bij het uploaden de oude index.html, app.js, style.css, manifest.json en sw.js.
+
+EERSTE START
+1. Open de hostpagina.
+2. Activeer de testlicentie.
+3. Kies Spotify of upload een CSV-bestand.
+4. Maak een kamer en laat spelers de QR-code scannen.
+5. Klik één keer op TEST MUZIEK.
+6. Zodra alle actieve spelers Ready zijn, start elke ronde automatisch.
+
+BELANGRIJK
+- Voor Spotify-afspelen is een Spotify Premium-account nodig.
+- Open Spotify op het hostapparaat en laat het niet op een ander apparaat afspelen.
+- Een slim fragment kiest een waarschijnlijk interessant deel van het nummer. Spotify levert geen exact refreinmoment, waardoor een refrein niet bij ieder nummer gegarandeerd kan worden.
+- Voor productiegebruik horen Firebase Database Rules en een echte servergestuurde licentie apart geconfigureerd te worden. De meegeleverde TEST-2026-code blijft een testlicentie.
+
+GETEST IN DEZE RELEASE
+- Geen oud vier-vensterscherm of oude versielagen meer.
+- Ongeldige kamer maakt geen spookkamer.
+- Offline spelers blokkeren Ready niet.
+- Automatische rondestart herstelt na een muziekfout.
+- Antwoorden worden pas na de timer gepubliceerd.
+- Jury, punten en overrule.
+- Gecorrigeerde 5-vaks bingolijnen.
+- Bingo: host kiest of meerderheid kiest; hoststem telt dubbel.
+- Speler kan altijd verlaten; Host speelt mee kan terug naar host.
+- Responsive telefoon-, Android-, tablet- en landschapsregels.
+- Nieuwe cacheversie en PWA-serviceworker.
+
+Versie: V173

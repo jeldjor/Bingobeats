@@ -1,4 +1,4 @@
-/* Bingo Beats V174 - functionele stabilisatie met behoud van het V172-ontwerp */
+/* Bingo Beats V175 - mobiele hostwizard met behoud van de V174-spellogica */
 const CLIENT_ID="4765b89201b44558a7d5141f9b93c178",REDIRECT_URI=location.origin+location.pathname,SCOPES=["streaming","user-read-email","user-read-private","user-read-playback-state","user-modify-playback-state","playlist-read-private","playlist-read-collaborative"].join(" ");
 const firebaseConfig={apiKey:"AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY",authDomain:"hitster-bingo-cb792.firebaseapp.com",databaseURL:"https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app",projectId:"hitster-bingo-cb792",storageBucket:"hitster-bingo-cb792.firebasestorage.app",messagingSenderId:"98696776977",appId:"1:98696776977:web:e797e555e2d9b38bcc99b0"};
 const COLORS=[{key:"yellow",name:"GOUD",emoji:"🟡",input:"cat-yellow",hex:"#FFCC33"},{key:"pink",name:"AQUA",emoji:"🩵",input:"cat-pink",hex:"#00D4C7"},{key:"purple",name:"ORANJE",emoji:"🟠",input:"cat-purple",hex:"#FF8A1F"},{key:"blue",name:"LIME",emoji:"🟢",input:"cat-blue",hex:"#7ED957"},{key:"green",name:"KORAAL",emoji:"🔴",input:"cat-green",hex:"#FF5A5F"}];
@@ -25,7 +25,7 @@ async function getToken(){if(accessToken&&Date.now()<expiresAt)return accessToke
 async function api(u,o={}){let t=await getToken();if(!t)throw Error("Niet ingelogd.");let headers={...(o.headers||{}),Authorization:"Bearer "+t};if(o.body)headers["Content-Type"]="application/json";let r=await fetch(u,{...o,headers});if(r.status===204)return{};let d=await r.json().catch(()=>({}));if(!r.ok){let m=d.error?.message||d.error_description||"Spotify fout";let shortUrl=String(u).replace(/^https:\/\/api\.spotify\.com\/v1\//,'');throw Error(`${r.status} ${r.statusText||""} — ${m} [${shortUrl}]`.trim())}return d}
 function logout(){["spotify_access_token","spotify_refresh_token","spotify_expires_at"].forEach(k=>localStorage.removeItem(k));accessToken=refreshToken="";expiresAt=0;updateStatus()}window.onSpotifyWebPlaybackSDKReady=()=>{};
 async function activatePlayer(){let t=await getToken();if(!t)return alert("Login eerst met Spotify.");if(!window.Spotify)return alert("Spotify speler nog niet geladen.");if(player){await player.connect();return}player=new Spotify.Player({name:"Bingo Beats",getOAuthToken:async cb=>cb(await getToken()),volume:.8});player.addListener("ready",({device_id})=>{deviceId=device_id;if($("loginStatus"))$("loginStatus").textContent+=" — speler actief."});await player.connect()}
-async function updateStatus(){if($("csvStatus"))$("csvStatus").textContent=tracks.length?`${tracks.length} nummers geladen.`:"Nog geen CSV geladen.";if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v174";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
+async function updateStatus(){if($("csvStatus"))$("csvStatus").textContent=tracks.length?`${tracks.length} nummers geladen.`:"Nog geen CSV geladen.";if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v175";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
 function parseCSV(t){let rows=[],r=[],c="",q=false;for(let i=0;i<t.length;i++){let ch=t[i],n=t[i+1];if(ch=='"'&&q&&n=='"'){c+='"';i++}else if(ch=='"')q=!q;else if(ch==","&&!q){r.push(c);c=""}else if((ch=="\n"||ch=="\r")&&!q){if(ch=="\r"&&n=="\n")i++;r.push(c);c="";if(r.some(v=>v.trim()))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(v=>v.trim()))rows.push(r);return rows}function norm(h){return String(h||"").toLowerCase().replace(/[^a-z0-9]/g,"")}function findI(h,n){let a=h.map(norm);for(let x of n){let i=a.indexOf(norm(x));if(i>=0)return i}return-1}function tid(u){let s=String(u||"").trim(),m=s.match(/spotify:track:([a-zA-Z0-9]+)/)||s.match(/track\/([a-zA-Z0-9]+)/);return m?m[1]:(/^[a-zA-Z0-9]{15,}$/.test(s)?s:"")}
 function handleCsv(e){let f=e.target.files?.[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{loadCsv(r.result)}catch(err){alert(err.message)}};r.readAsText(f)}
 function loadCsv(text){let rows=parseCSV(text),h=rows[0]||[],ui=findI(h,["Track URI","Spotify URI","URI"]),ti=findI(h,["Track Name","Name","Title"]),ai=findI(h,["Artist Name(s)","Artist Names","Artists","Artist"]),al=findI(h,["Album Name","Album"]),ri=findI(h,["Release Date","Release"]),di=findI(h,["Duration (ms)","Duration"]);if(ui<0||ti<0||ai<0)throw Error("CSV mist Track URI, Track Name of Artist Name(s).");let out=[],seen=new Set();for(let i=1;i<rows.length;i++){let row=rows[i],id=tid(row[ui]);if(!id||seen.has(id))continue;seen.add(id);out.push({id,uri:"spotify:track:"+id,name:row[ti]||"Onbekend",artists:row[ai]||"Onbekend",album:al>=0?row[al]||"":"",release_date:ri>=0?row[ri]||"":"",duration_ms:Number(row[di])||180000})}tracks=out;localStorage.hb_csv_tracks=JSON.stringify(tracks);updateStatus()}
@@ -146,6 +146,100 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
 
   document.addEventListener("DOMContentLoaded", () => setTimeout(forceNameFirstV84, 500));
+})();
+
+/* V175 - Mobiele hostwizard. Bestaande spel- en Firebasefuncties blijven leidend. */
+(function(){
+  const q=(s,r=document)=>r.querySelector(s);
+  const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  let activeStep=Number(sessionStorage.getItem('bb_host_wizard_step')||1);
+  if(activeStep<1||activeStep>4) activeStep=1;
+
+  function setStep(step,scroll=true){
+    step=Math.max(1,Math.min(4,Number(step)||1));
+    activeStep=step;
+    sessionStorage.setItem('bb_host_wizard_step',String(step));
+    qa('[data-host-step-panel]').forEach(panel=>panel.classList.toggle('active',Number(panel.dataset.hostStepPanel)===step));
+    qa('[data-host-step]').forEach(tab=>{
+      const n=Number(tab.dataset.hostStep);
+      tab.classList.toggle('active',n===step);
+      tab.classList.toggle('done',n<step);
+      tab.setAttribute('aria-current',n===step?'step':'false');
+    });
+    if(scroll) window.scrollTo({top:0,behavior:'smooth'});
+    updateSummary();
+  }
+
+  function updateSummary(room){
+    const summary=q('.bbReadySummary');
+    if(!summary) return;
+    const spotify=!!localStorage.getItem('spotify_access_token')||!!localStorage.getItem('hb_access_token');
+    const playlist=(typeof tracks!=='undefined'&&tracks.length>0);
+    const playerCount=room?Object.keys(room.players||{}).length:qa('#hostPlayers .bbV160HostChip,#hostPlayers .playerRow').length;
+    const roomReady=!!currentRoomCode;
+    const headerCount=document.getElementById('bbHostHeaderPlayers');
+    if(headerCount) headerCount.textContent=`👥 ${playerCount}/50`;
+    summary.innerHTML=`
+      <span>${spotify?'✓':'○'} Spotify <b>${spotify?'Verbonden':'Controleren'}</b></span>
+      <span>${playlist?'✓':'○'} Playlist <b>${playlist?tracks.length+' nummers':'Nog laden'}</b></span>
+      <span>${roomReady?'✓':'○'} Kamer <b>${roomReady?currentRoomCode:'Nog maken'}</b></span>
+      <span>${playerCount?'✓':'○'} Spelers <b>${playerCount} verbonden</b></span>
+      <span>✓ Instellingen <b>${document.getElementById('duration')?.value||20} sec</b></span>`;
+  }
+
+  function wireWizard(){
+    qa('[data-host-step]').forEach(tab=>tab.addEventListener('click',()=>setStep(tab.dataset.hostStep)));
+    qa('[data-host-go]').forEach(btn=>btn.addEventListener('click',()=>setStep(btn.dataset.hostGo)));
+    document.getElementById('newRoomBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2,false),350));
+    document.getElementById('hbNewRoomModalBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2),350));
+    document.getElementById('duration')?.addEventListener('change',()=>updateSummary());
+    qa('[data-duration]').forEach(btn=>btn.addEventListener('click',()=>{
+      const select=document.getElementById('duration');
+      if(select){ select.value=btn.dataset.duration; select.dispatchEvent(new Event('change',{bubbles:true})); }
+      qa('[data-duration]').forEach(choice=>choice.classList.toggle('active',choice===btn));
+    }));
+    ['randomStart','noRepeat'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>updateSummary()));
+
+    // Browsers staan audio pas toe na een gebruikersgebaar. De eerste aanraking
+    // activeert dit automatisch; er is bewust geen zichtbare geluidsschakelaar.
+    const enableAudio=()=>{
+      try{ if(typeof activateSound==='function') activateSound(); }catch(e){}
+      document.removeEventListener('pointerdown',enableAudio,true);
+      document.removeEventListener('touchstart',enableAudio,true);
+    };
+    document.addEventListener('pointerdown',enableAudio,true);
+    document.addEventListener('touchstart',enableAudio,{capture:true,passive:true});
+    const mode=document.getElementById('modeText');
+    const keepHostVersion=()=>{
+      if(mode&&!document.body.classList.contains('playerMode')&&mode.textContent!=='HOST V175') mode.textContent='HOST V175';
+    };
+    keepHostVersion();
+    if(mode) new MutationObserver(keepHostVersion).observe(mode,{childList:true,subtree:true,characterData:true});
+    const playerBox=document.getElementById('hostPlayers');
+    if(playerBox) new MutationObserver(()=>updateSummary()).observe(playerBox,{childList:true,subtree:true});
+    setStep(activeStep,false);
+  }
+
+  if(typeof renderHostPlayers==='function'){
+    const previousRenderHostPlayers=renderHostPlayers;
+    renderHostPlayers=function(room){
+      const result=previousRenderHostPlayers.apply(this,arguments);
+      updateSummary(room);
+      return result;
+    };
+  }
+  if(typeof updateStatus==='function'){
+    const previousUpdateStatus=updateStatus;
+    updateStatus=async function(){
+      const result=await previousUpdateStatus.apply(this,arguments);
+      updateSummary();
+      return result;
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(wireWizard,80));
+  window.bbHostWizardSetStep=setStep;
+  window.bbHostWizardRefreshSummary=updateSummary;
 })();
 
 /* =========================
@@ -4520,7 +4614,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       try{ renderRoomBox(currentRoomCode); listenBingo(currentRoomCode); }catch(e){}
       return currentRoomCode;
     }
-    alert('Maak eerst een kamer bij stap 4.');
+    alert('Maak eerst een kamer bij stap 2.');
     return '';
   }
 
@@ -5142,5 +5236,17 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   if(typeof renderCompactDashboard==='function'){
     const previous=renderCompactDashboard;
     renderCompactDashboard=function(room,r){const result=previous.apply(this,arguments);decorateLast(room);return result};
+  }
+})();
+
+/* V175 slotkoppeling: na alle oudere renderlagen de mobiele samenvatting verversen. */
+(function(){
+  if(typeof renderHostPlayers==='function'){
+    const previous=renderHostPlayers;
+    renderHostPlayers=function(room){
+      const result=previous.apply(this,arguments);
+      window.bbHostWizardRefreshSummary?.(room);
+      return result;
+    };
   }
 })();

@@ -3,7 +3,7 @@
   "short_name": "Bingo Beats",
   "start_url": "./",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "background_color": "#07120f",
   "theme_color": "#07120f",
   "icons": [],

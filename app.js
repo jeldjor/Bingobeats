@@ -187,8 +187,8 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   function wireWizard(){
     qa('[data-host-step]').forEach(tab=>tab.addEventListener('click',()=>setStep(tab.dataset.hostStep)));
     qa('[data-host-go]').forEach(btn=>btn.addEventListener('click',()=>setStep(btn.dataset.hostGo)));
-    document.getElementById('newRoomBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2,false),350));
-    document.getElementById('hbNewRoomModalBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2),350));
+    document.getElementById('newRoomBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(3,false),350));
+    document.getElementById('hbNewRoomModalBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(3),350));
     document.getElementById('duration')?.addEventListener('change',()=>updateSummary());
     qa('[data-duration]').forEach(btn=>btn.addEventListener('click',()=>{
       const select=document.getElementById('duration');

@@ -83,6 +83,9 @@
     <section class="bbHostStep" data-host-step-panel="3">
       <section class="panel bbHostCard bbRoomCard">
         <h2 class="srOnly">4. Kamer</h2>
+        <label class="bbHostNameField">NAAM HOST
+          <input id="bbHostNameInput" type="text" maxlength="24" placeholder="Bijv. Georgio" autocomplete="nickname">
+        </label>
         <div class="bbRoomActions">
           <button id="newRoomBtn">＋ Nieuwe kamer maken</button>
           <button id="newGameBtn" class="secondary">▶ Nieuw spel starten</button>
@@ -119,11 +122,6 @@
         <label class="check bbSwitchRow"><span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span><input type="checkbox" id="randomStart" checked></label>
         <label class="check bbSwitchRow"><span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span><input type="checkbox" id="noRepeat" checked></label>
 
-        <div id="bbHostPlayBlock" class="bbHostPlayBlock">
-          <h3>HOST SPEELT MEE</h3>
-          <button type="button" id="bbHostPlayBtn" class="bbHostPlayBtn">Host speelt mee</button>
-          <p class="small bbHostPlayText">De host doet als normale speler mee.</p>
-        </div>
       </section>
 
       <section class="panel bbHostCard bbFixedCategories">

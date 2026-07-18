@@ -15,7 +15,7 @@ function checkLicenseGate(){let l=JSON.parse(localStorage.getItem("bb_license")|
 function activateLicense(){let c=($("licenseInput")?.value||"").trim().toUpperCase();if(c!==TEST_LICENSE_CODE)return showLicenseScreen("Ongeldige licentiecode.");localStorage.setItem("bb_license",JSON.stringify({code:TEST_LICENSE_CODE,active:true,type:"test",activatedAt:new Date().toISOString()}));if($("licenseStatus")){$("licenseStatus").textContent="Licentie geactiveerd.";$("licenseStatus").className="small licenseSuccess"}setTimeout(unlockApp,350)}
 function showLicenseScreen(m){$("licenseScreen")?.classList.remove("hidden");$("mainHeader")?.classList.add("hidden");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.add("hidden");if($("licenseStatus")){$("licenseStatus").textContent=m||"";$("licenseStatus").className="small licenseError"}}
 function unlockApp(){$("licenseScreen")?.classList.add("hidden");$("mainHeader")?.classList.remove("hidden");if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();wireApp();handleRedirect().then(updateStatus).catch(console.error);isPlayerPage()?setupPlayerMode():setupHostMode()}
-function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["newRoomBtn",createRoom],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
+function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("newRoomBtn")?.addEventListener("click",async()=>{const code=await createRoom(),room=code||currentRoomCode||localStorage.hb_host_room||"";if(room&&typeof window.bbEnsureHostPlayer==="function")try{await window.bbEnsureHostPlayer(room)}catch(e){alert("Host toevoegen aan de kamer lukt niet: "+(e.message||e))}});$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
 function setModeLabel(t){if($("modeText"))$("modeText").textContent=t}
 async function login(){let v=rand(96);localStorage.spotify_code_verifier=v;location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({response_type:"code",client_id:CLIENT_ID,scope:SCOPES,code_challenge_method:"S256",code_challenge:b64(await sha(v)),redirect_uri:REDIRECT_URI})}
 function rand(l){let c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",o="",b=new Uint8Array(l);crypto.getRandomValues(b);b.forEach(x=>o+=c[x%c.length]);return o}async function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))}function b64(b){return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_")}
@@ -185,8 +185,17 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
 
   function wireWizard(){
-    qa('[data-host-step]').forEach(tab=>tab.addEventListener('click',()=>setStep(tab.dataset.hostStep)));
-    qa('[data-host-go]').forEach(btn=>btn.addEventListener('click',()=>setStep(btn.dataset.hostGo)));
+    const openStep=async step=>{
+      const target=Number(step)||1;
+      if(target===4){
+        if(!currentRoomCode){ setStep(3); alert('Maak eerst een kamer.'); return; }
+        if(typeof window.bbEnterHostPlayerMode==='function') await window.bbEnterHostPlayerMode();
+        return;
+      }
+      setStep(target);
+    };
+    qa('[data-host-step]').forEach(tab=>tab.addEventListener('click',()=>openStep(tab.dataset.hostStep)));
+    qa('[data-host-go]').forEach(btn=>btn.addEventListener('click',()=>openStep(btn.dataset.hostGo)));
     document.getElementById('newRoomBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(3,false),350));
     document.getElementById('hbNewRoomModalBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(3),350));
     document.getElementById('duration')?.addEventListener('change',()=>updateSummary());
@@ -248,7 +257,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   const E=value=>(typeof esc==='function'?esc(String(value??'')):String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])));
   const now=()=>Date.now()+serverOffset;
   let serverOffset=0,heartbeatTimer=null,cleanupTimer=null,hostAutoBusy=false,hostPlayPoll=null,juryBusy=false,hostListenedRoom='';
-  let savedPlayerIdentity=null,decisionRoomRef=null,decisionRoom='',lastDecisionSignature='';
+  let decisionRoomRef=null,decisionRoom='',lastDecisionSignature='';
 
   function activeEntries(room){
     return Object.entries(room?.players||{}).filter(([,p])=>p&&p.online!==false);
@@ -636,19 +645,6 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     }
     await db.ref('rooms/'+currentRoomCode).update(updates);q('bingoFullOverlay')?.classList.add('hidden');
   }
-
-  // Host-identiteit herstellen wanneer Host-doet-mee wordt verlaten.
-  document.addEventListener('click',e=>{
-    if(e.target?.id==='bbHostPlayBtn'&&!document.body.classList.contains('bbHostPlayerMode'))savedPlayerIdentity={id:currentPlayerId,name:currentPlayerName,lsId:localStorage.hb_player_id||'',lsName:localStorage.hb_player_name||'',lsRoom:localStorage.hb_player_room||''};
-  },true);
-  const previousHostExit=window.bbHostPlayerExit;
-  if(previousHostExit)window.bbHostPlayerExit=async function(){
-    const hostPid=currentPlayerId,room=currentRoomCode;clearInterval(heartbeatTimer);
-    try{const ref=db.ref(`rooms/${room}/players/${hostPid}`);await ref.onDisconnect().cancel();await ref.remove();}catch(e){}
-    const result=previousHostExit.apply(this,arguments);
-    if(savedPlayerIdentity){currentPlayerId=savedPlayerIdentity.id;currentPlayerName=savedPlayerIdentity.name;if(savedPlayerIdentity.lsId)localStorage.hb_player_id=savedPlayerIdentity.lsId;else localStorage.removeItem('hb_player_id');if(savedPlayerIdentity.lsName)localStorage.hb_player_name=savedPlayerIdentity.lsName;else localStorage.removeItem('hb_player_name');if(savedPlayerIdentity.lsRoom)localStorage.hb_player_room=savedPlayerIdentity.lsRoom;else localStorage.removeItem('hb_player_room');}
-    return result;
-  };
 
   // Ruim langdurig offline spelers op; zij blokkeren ondertussen nooit het spel.
   function startCleanup(){
@@ -4563,7 +4559,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 })();
 
 /* =========================
-   V148 - Host speelt mee lobby
+   V148 - Gezamenlijke host-/spelerslobby
    ========================= */
 (function(){
   const q = id => document.getElementById(id);
@@ -4585,20 +4581,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   function hostDisplayName(){ return '🎤 ' + cleanHostName(localStorage.bb_host_player_name || 'Host'); }
 
   function injectSettings(){
-    const staticBtn = q('bbHostPlayBtn');
-    if(staticBtn && !staticBtn.dataset.bbWired){ staticBtn.dataset.bbWired = '1'; staticBtn.addEventListener('click', enterHostPlayerMode); }
-    const settings = Array.from(document.querySelectorAll('#hostApp .panel')).find(p => (p.querySelector('h2')?.textContent||'').includes('5.'));
-    if(!settings || q('bbHostPlayBlock')) return;
-    const block = document.createElement('div');
-    block.id = 'bbHostPlayBlock';
-    block.className = 'bbHostPlayBlock';
-    block.innerHTML = `
-      <h3>🎤 Hostinstellingen</h3>
-      <button type="button" id="bbHostPlayBtn" class="bbHostPlayBtn">🎤 Host speelt mee</button>
-      <p class="small bbHostPlayText">Speel je als host gezellig mee? Klik dan hier.</p>
-    `;
-    settings.appendChild(block);
-    q('bbHostPlayBtn')?.addEventListener('click',enterHostPlayerMode);
+    q('bbHostPlayBlock')?.remove();
   }
 
   async function ensureRoom(){
@@ -4609,20 +4592,15 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       try{ renderRoomBox(currentRoomCode); listenBingo(currentRoomCode); }catch(e){}
       return currentRoomCode;
     }
-    alert('Maak eerst een kamer bij stap 2.');
+    alert('Maak eerst een kamer bij stap 3.');
     return '';
   }
 
-  async function enterHostPlayerMode(){
-    const room = await ensureRoom();
-    if(!room) return;
-    let name = cleanHostName(localStorage.bb_host_player_name || '');
-    if(!name || name === 'Host'){
-      const n = prompt('Naam van de host/speler:', name || 'Georgio');
-      if(n === null) return;
-      name = cleanHostName(n);
-      localStorage.bb_host_player_name = name;
-    }
+  async function registerHostPlayer(room){
+    if(!room) return '';
+    const inputName = cleanHostName(q('bbHostNameInput')?.value || localStorage.bb_host_player_name || 'Host');
+    localStorage.bb_host_player_name = inputName;
+    if(q('bbHostNameInput')) q('bbHostNameInput').value = inputName;
     currentPlayerId = hostPid();
     currentPlayerName = hostDisplayName();
     localStorage.hb_player_id = currentPlayerId;
@@ -4645,9 +4623,35 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       bingo: !!ex.bingo
     });
     try{ ref.child('online').onDisconnect().set(false); }catch(e){}
+    return currentPlayerId;
+  }
+  window.bbEnsureHostPlayer = registerHostPlayer;
+
+  async function saveHostName(){
+    const input=q('bbHostNameInput');
+    if(!input) return;
+    const name=cleanHostName(input.value || 'Host');
+    input.value=name;
+    localStorage.bb_host_player_name=name;
+    if(currentRoomCode) await registerHostPlayer(currentRoomCode);
+  }
+  function wireHostName(){
+    const input=q('bbHostNameInput');
+    if(!input||input.dataset.bbWired) return;
+    input.dataset.bbWired='1';
+    input.value=cleanHostName(localStorage.bb_host_player_name || 'Host');
+    input.addEventListener('change',()=>saveHostName().catch(e=>alert('Hostnaam opslaan lukt niet: '+(e.message||e))));
+    input.addEventListener('blur',()=>saveHostName().catch(()=>{}));
+  }
+  window.bbSaveHostName=saveHostName;
+
+  async function enterHostPlayerMode(){
+    const room = await ensureRoom();
+    if(!room) return;
+    await registerHostPlayer(room);
     hostPlayerMode = true;
     document.body.classList.add('playerMode','bbHostPlayerMode');
-    setModeLabel('🎤 Host speelt mee');
+    setModeLabel('HOST V175');
     q('hostApp')?.classList.add('hidden');
     q('playerApp')?.classList.remove('hidden');
     q('screenJoin')?.classList.add('hidden');
@@ -4812,7 +4816,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       return result;
     };
   }
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(injectSettings,800));
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(injectSettings,800);setTimeout(wireHostName,300);});
 })();
 
 /* =========================
@@ -5236,6 +5240,31 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 
 /* V175 slotkoppeling: na alle oudere renderlagen de mobiele samenvatting verversen. */
 (function(){
+  // De host is vanaf nu altijd een speler. Kamer maken of herstellen voegt
+  // dezelfde vaste host automatisch toe; er bestaat geen aparte keuze meer.
+  if(typeof restoreHost==='function'){
+    const previousRestoreHost=restoreHost;
+    restoreHost=function(){
+      const result=previousRestoreHost.apply(this,arguments);
+      setTimeout(async()=>{
+        if(currentRoomCode&&typeof window.bbEnsureHostPlayer==='function'){
+          try{ await window.bbEnsureHostPlayer(currentRoomCode); }catch(e){ console.error(e); }
+        }
+      },100);
+      return result;
+    };
+  }
+  if(typeof window.bbHostPlayerExit==='function'){
+    const previousExit=window.bbHostPlayerExit;
+    window.bbHostPlayerExit=async function(){
+      const room=currentRoomCode,id=currentPlayerId;
+      const result=previousExit.apply(this,arguments);
+      if(room&&id){
+        try{ await db.ref(`rooms/${room}/players/${id}`).update({online:true,isHost:true,isPlayer:true,lastSeen:firebase.database.ServerValue.TIMESTAMP}); }catch(e){}
+      }
+      return result;
+    };
+  }
   if(typeof renderHostPlayers==='function'){
     const previous=renderHostPlayers;
     renderHostPlayers=function(room){

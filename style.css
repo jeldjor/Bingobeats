@@ -5806,6 +5806,25 @@ body:not(.playerMode) #hostApp .bbHostNext{
 }
 
 .bbRoomActions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.bbHostNameField{
+  display:block;
+  margin:0 0 7px;
+  color:#fff2a7;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.25px;
+}
+body:not(.playerMode) #hostApp .bbHostNameField input{
+  width:100%;
+  min-height:40px;
+  margin:5px 0 0!important;
+  padding:8px 10px!important;
+  border:1px solid #72610e!important;
+  border-radius:8px!important;
+  color:#f8f7e9!important;
+  background:#041f14!important;
+  font-size:15px!important;
+}
 .bbRoomActions button{min-height:47px!important}
 .bbRoomCard #roomBox{
   margin:8px 0!important;
@@ -5905,16 +5924,6 @@ body:not(.playerMode) #hostApp .bbDurationChoices button.active{color:#071008!im
 }
 .bbSwitchRow input[type="checkbox"]:checked{background:#6bd22e}
 .bbSwitchRow input[type="checkbox"]:checked::after{transform:translateX(20px)}
-.bbHostPlayBlock{
-  margin:7px 0 0!important;
-  padding:9px!important;
-  border:1px solid #526119!important;
-  border-radius:8px!important;
-  background:#082d1d!important;
-}
-.bbHostPlayText{text-align:left!important;margin:5px 0 0!important}
-body:not(.playerMode) #hostApp .bbHostPlayBtn{display:flex;align-items:center;justify-content:space-between;text-align:left}
-body:not(.playerMode) #hostApp .bbHostPlayBtn::after{content:"";width:42px;height:24px;flex:0 0 42px;border-radius:999px;background:#6bd22e;box-shadow:inset 0 0 0 1px #a9ed66}
 .bbFixedCategories h2{margin-bottom:6px!important}
 .bbCategoryRow{
   min-height:38px;
@@ -7598,9 +7607,7 @@ body:not(.playerMode) #hostPickerArea .bbDjInlineResultCatV137{
   .bingoFullBtn{padding:14px 10px;border-radius:18px}
 }
 
-/* V148 - Host speelt mee */
-.bbHostPlayBlock{margin-top:18px;padding:14px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
-.bbHostPlayBlock h3{margin:0 0 6px}.bbHostPlayBtn,.bbHostPlayBlock .bbPreGameTestBtn{width:100%;margin-top:10px}.bbHostPlayBlock .bbPreGameTestBtn{margin-bottom:8px}.bbHostPlayText{margin:10px 4px 0!important;text-align:center;opacity:.86}
+/* Gezamenlijke host-/spelerslobby */
 .bbHostPlayerMode #screenDashboard{padding-bottom:0;position:relative}.bbHostPlayerDock{display:none!important}
 .bbHostTopBtn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:4200;width:46px;height:46px;border-radius:50%;padding:0;font-size:24px;line-height:1;background:transparent!important;border:0!important;box-shadow:none!important;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.65);backdrop-filter:none!important}
 .bbHostTopExit{left:12px}.bbHostTopJury{right:12px}.bbHostStartFloat{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:4100;border-radius:999px;padding:10px 18px;min-height:42px;font-size:15px;font-weight:900;background:rgba(255,204,51,.88)!important;color:#1d1230!important;border:1px solid rgba(255,255,255,.25)!important;box-shadow:0 8px 22px rgba(0,0,0,.28)!important}

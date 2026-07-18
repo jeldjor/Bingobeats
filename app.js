@@ -1,11 +1,11 @@
-/* Bingo Beats V176 - groen thema, vaste schermen en 6x6-bingokaart */
+/* Bingo Beats V175 - mobiele hostwizard met behoud van de V174-spellogica */
 const CLIENT_ID="4765b89201b44558a7d5141f9b93c178",REDIRECT_URI=location.origin+location.pathname,SCOPES=["streaming","user-read-email","user-read-private","user-read-playback-state","user-modify-playback-state","playlist-read-private","playlist-read-collaborative"].join(" ");
 const firebaseConfig={apiKey:"AIzaSyCcquz1mpz3FsmFFBKgJLgpbkHCajTUpzY",authDomain:"hitster-bingo-cb792.firebaseapp.com",databaseURL:"https://hitster-bingo-cb792-default-rtdb.europe-west1.firebasedatabase.app",projectId:"hitster-bingo-cb792",storageBucket:"hitster-bingo-cb792.firebasestorage.app",messagingSenderId:"98696776977",appId:"1:98696776977:web:e797e555e2d9b38bcc99b0"};
 const COLORS=[{key:"yellow",name:"GOUD",emoji:"🟡",input:"cat-yellow",hex:"#FFCC33"},{key:"pink",name:"AQUA",emoji:"🩵",input:"cat-pink",hex:"#00D4C7"},{key:"purple",name:"ORANJE",emoji:"🟠",input:"cat-purple",hex:"#FF8A1F"},{key:"blue",name:"LIME",emoji:"🟢",input:"cat-blue",hex:"#7ED957"},{key:"green",name:"KORAAL",emoji:"🔴",input:"cat-green",hex:"#FF5A5F"}];
 const BB_PLAYER_ANIMALS=["🦁","🐯","🐼","🦊","🐨","🐸","🐵","🦄","🐙","🦋","🐧","🦉","🐬","🦖","🐝","🐢","🦜","🐺","🦩","🐳","🦔","🐿️","🦦","🐮","🐷","🐰","🐱","🐶","🐹","🐻"];
 function bbAnimalFor(id,p){if(p?.emoji)return p.emoji;let h=2166136261;for(const c of String(id||"speler")){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return BB_PLAYER_ANIMALS[(h>>>0)%BB_PLAYER_ANIMALS.length]}
 const TEST_LICENSE_CODE="TEST-2026",$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])),pick=a=>a[Math.floor(Math.random()*a.length)];
-let db,player,deviceId="",accessToken=localStorage.spotify_access_token||"",refreshToken=localStorage.spotify_refresh_token||"",expiresAt=Number(localStorage.spotify_expires_at||0),tracks=JSON.parse(localStorage.hb_playlist_tracks||localStorage.hb_csv_tracks||"[]"),currentTrack=null,currentRoomCode="",currentRoundId="",currentPlayerId=localStorage.hb_player_id||"",currentPlayerName=localStorage.hb_player_name||"",activeRound=null,stopTimer=null,lockTimer=null,dashTimer=null,audioCtx=null,bingoSeenKey=localStorage.hb_last_bingo_key||"";
+let db,player,deviceId="",accessToken=localStorage.spotify_access_token||"",refreshToken=localStorage.spotify_refresh_token||"",expiresAt=Number(localStorage.spotify_expires_at||0),tracks=JSON.parse(localStorage.hb_playlist_tracks||"[]"),currentTrack=null,currentRoomCode="",currentRoundId="",currentPlayerId=localStorage.hb_player_id||"",currentPlayerName=localStorage.hb_player_name||"",activeRound=null,stopTimer=null,lockTimer=null,dashTimer=null,audioCtx=null,bingoSeenKey=localStorage.hb_last_bingo_key||"";
 const feedbackSeen={};
 function isPlayerPage(){return !!new URLSearchParams(location.search).get("room")}
 document.addEventListener("DOMContentLoaded",init);
@@ -15,7 +15,7 @@ function checkLicenseGate(){let l=JSON.parse(localStorage.getItem("bb_license")|
 function activateLicense(){let c=($("licenseInput")?.value||"").trim().toUpperCase();if(c!==TEST_LICENSE_CODE)return showLicenseScreen("Ongeldige licentiecode.");localStorage.setItem("bb_license",JSON.stringify({code:TEST_LICENSE_CODE,active:true,type:"test",activatedAt:new Date().toISOString()}));if($("licenseStatus")){$("licenseStatus").textContent="Licentie geactiveerd.";$("licenseStatus").className="small licenseSuccess"}setTimeout(unlockApp,350)}
 function showLicenseScreen(m){$("licenseScreen")?.classList.remove("hidden");$("mainHeader")?.classList.add("hidden");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.add("hidden");if($("licenseStatus")){$("licenseStatus").textContent=m||"";$("licenseStatus").className="small licenseError"}}
 function unlockApp(){$("licenseScreen")?.classList.add("hidden");$("mainHeader")?.classList.remove("hidden");if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();wireApp();handleRedirect().then(updateStatus).catch(console.error);isPlayerPage()?setupPlayerMode():setupHostMode()}
-function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["newRoomBtn",createRoom],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
+function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["newRoomBtn",createRoom],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
 function setModeLabel(t){if($("modeText"))$("modeText").textContent=t}
 async function login(){let v=rand(96);localStorage.spotify_code_verifier=v;location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({response_type:"code",client_id:CLIENT_ID,scope:SCOPES,code_challenge_method:"S256",code_challenge:b64(await sha(v)),redirect_uri:REDIRECT_URI})}
 function rand(l){let c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",o="",b=new Uint8Array(l);crypto.getRandomValues(b);b.forEach(x=>o+=c[x%c.length]);return o}async function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))}function b64(b){return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_")}
@@ -25,9 +25,9 @@ async function getToken(){if(accessToken&&Date.now()<expiresAt)return accessToke
 async function api(u,o={}){let t=await getToken();if(!t)throw Error("Niet ingelogd.");let headers={...(o.headers||{}),Authorization:"Bearer "+t};if(o.body)headers["Content-Type"]="application/json";let r=await fetch(u,{...o,headers});if(r.status===204)return{};let d=await r.json().catch(()=>({}));if(!r.ok){let m=d.error?.message||d.error_description||"Spotify fout";let shortUrl=String(u).replace(/^https:\/\/api\.spotify\.com\/v1\//,'');throw Error(`${r.status} ${r.statusText||""} — ${m} [${shortUrl}]`.trim())}return d}
 function logout(){["spotify_access_token","spotify_refresh_token","spotify_expires_at"].forEach(k=>localStorage.removeItem(k));accessToken=refreshToken="";expiresAt=0;updateStatus()}window.onSpotifyWebPlaybackSDKReady=()=>{};
 async function activatePlayer(){let t=await getToken();if(!t)return alert("Login eerst met Spotify.");if(!window.Spotify)return alert("Spotify speler nog niet geladen.");if(player){await player.connect();return}player=new Spotify.Player({name:"Bingo Beats",getOAuthToken:async cb=>cb(await getToken()),volume:.8});player.addListener("ready",({device_id})=>{deviceId=device_id;if($("loginStatus"))$("loginStatus").textContent+=" — speler actief."});await player.connect()}
-async function updateStatus(){if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v176";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
+async function updateStatus(){if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v175";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
 function chooseTrack(){if(!tracks.length)return null;let u=new Set(JSON.parse(localStorage.hb_used||"[]")),a=$("noRepeat")?.checked?tracks.filter(t=>!u.has(t.id)):tracks;if(!a.length){u=new Set();a=tracks}let t=pick(a);u.add(t.id);localStorage.hb_used=JSON.stringify([...u]);updateStatus();return t}
-function setupHostMode(){setModeLabel("HOST V176");document.body.classList.remove("playerMode");$("hostApp")?.classList.remove("hidden");$("playerApp")?.classList.add("hidden");restoreHost();showStartPopup()}
+function setupHostMode(){setModeLabel("🎤 Host");document.body.classList.remove("playerMode");$("hostApp")?.classList.remove("hidden");$("playerApp")?.classList.add("hidden");restoreHost();showStartPopup()}
 function getCats(){return{yellow:$("cat-yellow")?.value||"Voor of na 2001",pink:$("cat-pink")?.value||"Naam van artiest",purple:$("cat-purple")?.value||"Decennium",blue:$("cat-blue")?.value||"Jaartal +/- 2",green:$("cat-green")?.value||"Titel van track"}}function roomCode(){let c="",ch="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";for(let i=0;i<4;i++)c+=ch[Math.floor(Math.random()*ch.length)];return c}
 function createRoom(){currentRoomCode=roomCode();db.ref("rooms/"+currentRoomCode).set({createdAt:firebase.database.ServerValue.TIMESTAMP,categories:getCats()}).then(()=>{localStorage.hb_host_room=currentRoomCode;localStorage.hb_last_stable_room=currentRoomCode;renderRoomBox(currentRoomCode);listenHost(currentRoomCode);listenBingo(currentRoomCode)})}
 function restoreHost(){let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s&&!isPlayerPage()){currentRoomCode=s;renderRoomBox(s);listenHost(s);listenBingo(s)}}
@@ -36,7 +36,7 @@ function copyRoomLink(){let input=$("joinLink"),btn=$("copyRoomLinkBtn"),code=cu
 function listenHost(room){db.ref("rooms/"+room).off();db.ref("rooms/"+room).on("value",s=>{let d=s.val()||{};renderHostPlayers(d);renderHostScore(d);hostReadyState(d)})}
 function renderHostPlayers(room){let ps=room.players||{},list=Object.values(ps);if(!$("hostPlayers"))return;$("hostPlayers").innerHTML=list.length?list.map(p=>`<div class="playerRow ${p.ready?"ready":""}"><strong>${esc(p.name||"Speler")}</strong><span>${p.ready?"🐵 READY":"⏳ wacht"}</span></div>`).join(""):"Nog geen spelers."}function allReady(room){let ps=Object.values(room.players||{});return ps.length>0&&ps.every(p=>p.ready)}
 function hostReadyState(room){let r=room.currentRound||{},b=$("startRoundBtn");if(!b)return;if(["picking","ready","answering","locked"].includes(r.status))return;if(allReady(room)){b.disabled=false;b.textContent="🎲 START RONDE";if($("hostStatus"))$("hostStatus").textContent="Iedereen is READY."}else{b.disabled=true;b.textContent="⏳ Wachten op READY";let n=Object.values(room.players||{}).filter(p=>!p.ready).map(p=>p.name).join(", ");if($("hostStatus"))$("hostStatus").textContent=n?"Nog niet ready: "+n:"Wachten op spelers."}}
-function pickerHTML(){return`<div class="bbPickerClean"><img src="bb_logo_lime.png" class="bbPickerLogoClean" alt="Bingo Beats"><div class="bbPickerTitleClean">🐵 BB-aap kiest een kleur...</div><div class="bbPickerDotsClean"><span style="--c:#FFCC33"></span><span style="--c:#00D4C7"></span><span style="--c:#FF8A1F"></span><span style="--c:#7ED957"></span><span style="--c:#FF5A5F"></span></div><div class="bbPickerSmallClean">Nog even spannend...</div></div>`}
+function pickerHTML(){return`<div class="bbPickerClean"><img src="bb_logo_purple.png" class="bbPickerLogoClean" alt="Bingo Beats"><div class="bbPickerTitleClean">🐵 BB-aap kiest een kleur...</div><div class="bbPickerDotsClean"><span style="--c:#FFCC33"></span><span style="--c:#00D4C7"></span><span style="--c:#FF8A1F"></span><span style="--c:#7ED957"></span><span style="--c:#FF5A5F"></span></div><div class="bbPickerSmallClean">Nog even spannend...</div></div>`}
 function startRound(){if(!currentRoomCode)return alert("Maak eerst een kamer.");db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{};if(!allReady(room))return alert("Nog niet iedereen is READY.");currentTrack=chooseTrack();if(!currentTrack)return alert("Laad eerst een Spotify-playlist.");let up={};Object.keys(room.players||{}).forEach(pid=>up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false);return db.ref().update(up).then(()=>startRoundVisual(currentRoomCode))})}
 function startRoundVisual(room){if($("hostAnswerArea"))$("hostAnswerArea").innerHTML="";if($("playBtn")){$("playBtn").disabled=true;$("playBtn").textContent="🎵 Speel verborgen nummer"}if($("showAnswerBtn"))$("showAnswerBtn").disabled=true;if($("hostPickerArea"))$("hostPickerArea").innerHTML=pickerHTML();currentRoundId="r_"+Date.now();db.ref("rooms/"+room+"/currentRound").set({id:currentRoundId,status:"picking",pickerMode:"bb",pickerMarkup:pickerHTML(),pickerStartedAt:firebase.database.ServerValue.TIMESTAMP,seconds:Number($("duration")?.value)||20});setTimeout(()=>{flash();let color=pick(COLORS),cat=$(color.input)?.value||"Geen categorie";if($("hostPickerArea"))$("hostPickerArea").innerHTML=`<div class="colorDisplay">${color.emoji}<br>${color.name}</div><div class="categoryDisplay">${esc(cat)}</div>`;db.ref("rooms/"+room+"/currentRound").set({id:currentRoundId,status:"ready",pickerMode:"bb",pickerMarkup:pickerHTML(),colorKey:color.key,colorName:color.name,colorEmoji:color.emoji,category:cat,seconds:Number($("duration")?.value)||20});if($("playBtn"))$("playBtn").disabled=false;if($("showAnswerBtn"))$("showAnswerBtn").disabled=false;$("hostScorePanel")?.classList.remove("hidden");if($("hostStatus"))$("hostStatus").textContent="Kleur bekend. Klik nu op Speel verborgen nummer."},3000)}
 async function playHidden(){try{if(!currentTrack)return alert("Geen nummer gekozen. Druk eerst op START RONDE.");if($("playBtn")){$("playBtn").disabled=true;$("playBtn").textContent="🎵 Nummer speelt..."}if(!deviceId){await activatePlayer();await new Promise(r=>setTimeout(r,1200))}if(!deviceId){alert("Geen Spotify-speler actief. Klik eerst op Activeer Spotify-speler.");if($("playBtn")){$("playBtn").disabled=false;$("playBtn").textContent="🎵 Speel verborgen nummer"}return}let dur=(Number($("duration")?.value)||20)*1000,pos=0;if($("randomStart")?.checked&&currentTrack.duration_ms>dur+40000){let max=Math.max(0,currentTrack.duration_ms-dur-5000);pos=Math.floor(20000+Math.random()*Math.max(1,max-20000))}await api(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,{method:"PUT",body:JSON.stringify({uris:[currentTrack.uri],position_ms:pos})});let deadline=Date.now()+dur;await db.ref("rooms/"+currentRoomCode+"/currentRound").update({status:"answering",deadlineMs:deadline,musicStartedAt:firebase.database.ServerValue.TIMESTAMP});if($("stopBtn"))$("stopBtn").disabled=false;clearTimeout(lockTimer);lockTimer=setTimeout(lockRound,dur);clearTimeout(stopTimer);stopTimer=setTimeout(stopPlayback,dur);if($("hostStatus"))$("hostStatus").textContent="Muziek speelt. Spelers kunnen nu antwoorden."}catch(e){alert("Afspelen mislukt: "+e.message);if($("playBtn")){$("playBtn").disabled=false;$("playBtn").textContent="🎵 Speel verborgen nummer"}}}
@@ -47,9 +47,8 @@ function publishResults(){db.ref("rooms/"+currentRoomCode).once("value").then(s=
 function openNewGameModal(){if(!currentRoomCode)return alert("Maak eerst een kamer.");let m=$("newGameModal");if(m){m.classList.remove("hidden");m.style.display="flex"}}function closeNewGameModal(){let m=$("newGameModal");if(m){m.classList.add("hidden");m.style.display="none"}}function bbStartNewGameSameRoom(){if(!currentRoomCode){closeNewGameModal();return}db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},up={};Object.keys(room.players||{}).forEach(pid=>{up[`rooms/${currentRoomCode}/players/${pid}/card`]=genCard();up[`rooms/${currentRoomCode}/players/${pid}/marked`]={};up[`rooms/${currentRoomCode}/players/${pid}/bingo`]=false;up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false;up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null});up[`rooms/${currentRoomCode}/currentRound`]=null;up[`rooms/${currentRoomCode}/answers`]=null;up[`rooms/${currentRoomCode}/correct`]=null;up[`rooms/${currentRoomCode}/bingos`]=null;return db.ref().update(up)}).then(()=>{closeNewGameModal();$("hostBingoPanel")?.classList.add("hidden");if($("hostStatus"))$("hostStatus").textContent="Nieuw spel gestart in dezelfde kamer."})}
 function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoom()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
 function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName)listenPlayer()}
-function isValidCard(card){return Array.isArray(card)&&card.length===36&&!card.includes("free")}
-function genCard(){let colors=["yellow","pink","purple","blue","green"],card=[];for(let i=0;i<36;i++)card.push(colors[i%colors.length]);for(let i=card.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[card[i],card[j]]=[card[j],card[i]]}return card}
-function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{},keep=isValidCard(ex.card);return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:keep?ex.card:genCard(),marked:keep?(ex.marked||{}):{},bingo:keep?!!ex.bingo:false})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer()})}
+function genCard(){let colors=["yellow","pink","purple","blue","green"],pool=[];for(let i=0;i<24;i++)pool.push(colors[i%5]);for(let i=pool.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}let card=[],k=0;for(let i=0;i<25;i++)card.push(i===12?"free":pool[k++]);return card}
+function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer()})}
 function showDashboard(){$("screenJoin")?.classList.add("hidden");$("screenDashboard")?.classList.remove("hidden")}function listenPlayer(){db.ref("rooms/"+currentRoomCode).off();db.ref("rooms/"+currentRoomCode).on("value",s=>{let room=s.val()||{},r=room.currentRound||{};activeRound=r;renderCompactDashboard(room,r);showDashboard()});listenBingo(currentRoomCode)}
 function colorHex(k){return{yellow:"#FFCC33",pink:"#00D4C7",purple:"#FF8A1F",blue:"#7ED957",green:"#FF5A5F",free:"#FFCC33"}[k]||"rgba(255,255,255,.18)"}function colorEmoji(k){return{yellow:"🟡",pink:"🩵",purple:"🟠",blue:"🟢",green:"🔴",free:"🐵"}[k]||""}
 function renderCompactDashboard(room,r){renderCompactTop(room,r);renderCompactAnswer(room,r);renderCompactScore(room,r);renderCompactCard(room,r);renderCompactPicker(room,r)}
@@ -57,12 +56,12 @@ function renderCompactTop(room,r){if($("dashRoundNo"))$("dashRoundNo").textConte
 function renderCompactAnswer(room,r){let b=$("dashAnswerBlock");if(!b)return;if(!r?.id){b.innerHTML=`<h3>🎮 Wachten</h3><p class="small">Wachten op de host...</p>`;return}let own=room.answers?.[r.id]?.[currentPlayerId],ans=r.correctAnswer;if((r.status==="locked"||r.status==="judged")&&ans){b.innerHTML=`<h3>🐵 Juiste antwoord</h3><p>🎵 <strong>${esc(ans.track||"-")}</strong></p><p>🎤 ${esc(ans.artist||"-")}</p><p>📅 ${esc(ans.year||"-")}</p>`;return}if(r.status==="answering"){if(own){b.innerHTML=`<h3>🔒 Antwoord ingeleverd</h3><p>${esc(own.answer||"Leeg antwoord")}</p><p class="small">Wachten tot de tijd voorbij is...</p>`;return}b.innerHTML=`<h3>✍️ Vul je antwoord in</h3><p class="small">${esc(r.colorEmoji||"")} ${esc(r.colorName||"")} — ${esc(r.category||"")}</p><div class="compactInputRow"><input id="scoreAnswerInput" placeholder="Typ je antwoord"><button id="scoreSubmitAnswerBtn">Verstuur</button></div>`;$("scoreSubmitAnswerBtn")?.addEventListener("click",()=>submitAnswerValue($("scoreAnswerInput")?.value||""));return}if(r.status==="picking"){b.innerHTML=`<h3>🐵 Kleurkiezer</h3><p class="small">De BB-aap kiest een kleur...</p>`;return}if(r.status==="ready"){b.innerHTML=`<h3>🎵 Klaar voor muziek</h3><p class="small">${esc(r.colorEmoji||"")} ${esc(r.colorName||"")} — ${esc(r.category||"")}</p>`;return}b.innerHTML=`<h3>🎮 Wachten</h3><p class="small">Wachten op beoordeling...</p>`}
 function submitAnswerValue(v){if(!activeRound?.id)return;db.ref("rooms/"+currentRoomCode+"/answers/"+activeRound.id+"/"+currentPlayerId).set({answer:v||"",submittedAt:firebase.database.ServerValue.TIMESTAMP})}
 function renderCompactScore(room,r){let el=$("dashScoreboard");if(!el)return;let ps=room.players||{},ans=r?.id?room.answers?.[r.id]||{}:{},cor=r?.id?room.correct?.[r.id]||{}:{};el.innerHTML=Object.entries(ps).map(([pid,p])=>{let has=ans[pid]&&typeof ans[pid].answer!=="undefined",a=has?(String(ans[pid].answer).trim()||"Leeg antwoord"):"Nog niet ingevuld",st=r?.status==="judged"?cor[pid]:undefined,cls=st===true?"scoreGood":st===false?"scoreBad":"scorePending",ic=st===true?"🐵":st===false?"❌":has?"📝":"⏳";return`<div class="scoreCard ${cls}"><div class="scoreName">${esc(p.name||"Speler")}${pid===currentPlayerId?" (jij)":""}</div><div>${esc(a)}</div><div>${ic}</div></div>`}).join("")||"Nog geen spelers."}
-function renderCompactCard(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},box=$("dashOwnCard");if(!box)return;let goodValue=r?.id&&room.correct?.[r.id]?room.correct[r.id][currentPlayerId]:undefined,good=goodValue===true,bad=goodValue===false,picked=r?.id&&me.lastPickedRound===r.id,canPick=r?.status==="judged"&&good&&!picked;if(r?.status==="judged")maybeShowFeedback(room,r,goodValue,picked);if($("dashCardHint"))$("dashCardHint").textContent=canPick?`Kies een ${r.colorEmoji||""} ${r.colorName||""} vakje`:picked?"🐵 Vakje gekozen":bad?"Helaas, geen vakje deze ronde":"Jouw bingokaart";if($("dashCardStatus"))$("dashCardStatus").textContent=canPick?"Tik op een geldig kleurvakje":me.ready?"🐵 READY voor volgende ronde":"Wachten op ronde";box.innerHTML=card.map((c,i)=>{let isMarked=!!marked[i],pickable=canPick&&c===r.colorKey&&!marked[i];return`<div class="compactCell ${isMarked?"marked":""} ${pickable?"pickable":""}" data-i="${i}" style="background:${colorHex(c)}">${isMarked?"🐵":""}</div>`}).join("");box.querySelectorAll(".pickable").forEach(cell=>cell.addEventListener("click",()=>pickCell(Number(cell.dataset.i))))}
+function renderCompactCard(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},box=$("dashOwnCard");if(!box)return;let goodValue=r?.id&&room.correct?.[r.id]?room.correct[r.id][currentPlayerId]:undefined,good=goodValue===true,bad=goodValue===false,picked=r?.id&&me.lastPickedRound===r.id,canPick=r?.status==="judged"&&good&&!picked;if(r?.status==="judged")maybeShowFeedback(room,r,goodValue,picked);if($("dashCardHint"))$("dashCardHint").textContent=canPick?`Kies een ${r.colorEmoji||""} ${r.colorName||""} vakje`:picked?"🐵 Vakje gekozen":bad?"Helaas, geen vakje deze ronde":"Jouw bingokaart";if($("dashCardStatus"))$("dashCardStatus").textContent=canPick?"Tik op een geldig kleurvakje":me.ready?"🐵 READY voor volgende ronde":"Wachten op ronde";box.innerHTML=card.map((c,i)=>{let isMarked=!!marked[i]||i===12,pickable=canPick&&c===r.colorKey&&c!=="free"&&!marked[i];return`<div class="compactCell ${c==="free"?"free":""} ${isMarked?"marked":""} ${pickable?"pickable":""}" data-i="${i}" style="background:${colorHex(c)}">${isMarked?"🐵":""}</div>`}).join("");box.querySelectorAll(".pickable").forEach(cell=>cell.addEventListener("click",()=>pickCell(Number(cell.dataset.i))))}
 function renderCompactPicker(room,r){let area=$("dashPickerArea");if(!area)return;if(!r?.id){area.innerHTML=`<div class="dashCatText">Wachten op host</div>`;return}if(r.status==="picking"){area.innerHTML=pickerHTML();return}area.innerHTML=`<div class="dashColorBig">${esc(r.colorEmoji||"🎮")}</div><div class="dashColorText">${esc(r.colorName||"KLEUR")}</div><div class="dashCatText">${esc(r.category||"Wachten...")}</div>`}
 function overlay(){let o=$("bbFeedbackOverlay");if(!o){o=document.createElement("div");o.id="bbFeedbackOverlay";o.className="bbFeedbackOverlay";document.body.appendChild(o)}return o}function closeOverlay(){$("bbFeedbackOverlay")?.classList.remove("show")}function maybeShowFeedback(room,r,good,picked){if(!r?.id||r.status!=="judged")return;if(good===true&&!picked){let k=`${r.id}_good_${currentPlayerId}`;if(feedbackSeen[k])return;feedbackSeen[k]=true;setTimeout(()=>showGoodOverlay(room,r),80)}if(good===false){let k=`${r.id}_bad_${currentPlayerId}`;if(feedbackSeen[k])return;feedbackSeen[k]=true;setTimeout(()=>showBadOverlay(room,r),80)}}
-function showGoodOverlay(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},cells=card.map((c,i)=>{let isMarked=!!marked[i],pickable=c===r.colorKey&&!marked[i];return`<button type="button" class="bbOverlayCell ${isMarked?"marked":""} ${pickable?"pickable":"blocked"}" data-i="${i}" style="background:${colorHex(c)}" ${pickable?"":"disabled"}>${isMarked?"🐵":colorEmoji(c)}</button>`}).join(""),o=overlay();o.innerHTML=`<div class="bbOverlayCard good"><div class="bbMonkeyFace">🐵😎</div><img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap"><div class="bbOverlayTitle">😎 GOED ANTWOORD!</div><div class="bbOverlayText">Kies één ${r.colorEmoji||""} ${r.colorName||""} vakje</div><div class="bbOverlayBingo">${cells}</div><div class="bbOverlayHint">Tik op een opgelicht vakje</div></div>`;o.classList.add("show");o.querySelectorAll(".bbOverlayCell.pickable").forEach(btn=>btn.addEventListener("click",()=>{let i=Number(btn.dataset.i);btn.textContent="🐵";btn.classList.add("chosen");pickCell(i);setTimeout(closeOverlay,650)}))}
+function showGoodOverlay(room,r){let me=room.players?.[currentPlayerId]||{},card=me.card||[],marked=me.marked||{},cells=card.map((c,i)=>{let isMarked=!!marked[i]||i===12,pickable=c===r.colorKey&&c!=="free"&&!marked[i];return`<button type="button" class="bbOverlayCell ${isMarked?"marked":""} ${pickable?"pickable":"blocked"}" data-i="${i}" style="background:${colorHex(c)}" ${pickable?"":"disabled"}>${isMarked?"🐵":colorEmoji(c)}</button>`}).join(""),o=overlay();o.innerHTML=`<div class="bbOverlayCard good"><div class="bbMonkeyFace">🐵😎</div><img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap"><div class="bbOverlayTitle">😎 GOED ANTWOORD!</div><div class="bbOverlayText">Kies één ${r.colorEmoji||""} ${r.colorName||""} vakje</div><div class="bbOverlayBingo">${cells}</div><div class="bbOverlayHint">Tik op een opgelicht vakje</div></div>`;o.classList.add("show");o.querySelectorAll(".bbOverlayCell.pickable").forEach(btn=>btn.addEventListener("click",()=>{let i=Number(btn.dataset.i);btn.textContent="🐵";btn.classList.add("chosen");pickCell(i);setTimeout(closeOverlay,650)}))}
 function showBadOverlay(room,r){let ans=r.correctAnswer||{},answer=ans.track?`🎵 ${esc(ans.track||"-")}<br>🎤 ${esc(ans.artist||"-")}`:"Volgende ronde beter!",o=overlay();o.innerHTML=`<div class="bbOverlayCard bad"><div class="bbMonkeyFace">🐵🙈</div><img src="bb_mascot_dj.png" class="bbOverlayLogo bbMascotVisible" alt="BB-aap"><div class="bbOverlayTitle">🙈 HELAAS!</div><div class="bbOverlayText">Deze was lastig...</div><div class="bbOverlayAnswer">${answer}</div><button type="button" class="bbOverlayContinue">Verder</button></div>`;o.classList.add("show");o.querySelector(".bbOverlayContinue")?.addEventListener("click",closeOverlay);db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId+"/ready").set(true);setTimeout(closeOverlay,4500)}
-function checkBingo(marked){let lines=[];for(let row=0;row<6;row++)lines.push(Array.from({length:6},(_,col)=>row*6+col));for(let col=0;col<6;col++)lines.push(Array.from({length:6},(_,row)=>row*6+col));lines.push(Array.from({length:6},(_,i)=>i*7),Array.from({length:6},(_,i)=>(i+1)*5));return lines.some(line=>line.every(i=>!!marked?.[i]))}
+function checkBingo(marked){let lines=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];return lines.some(line=>line.every(i=>i===12||marked?.[i]))}
 function pickCell(i){db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId).once("value").then(s=>{let p=s.val()||{},marked=p.marked||{},card=p.card||[];if(!activeRound?.id)return;if(card[i]!==activeRound.colorKey||marked[i])return;marked[i]=true;let bingo=checkBingo(marked);return db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId).update({marked,bingo,lastPickedRound:activeRound.id,ready:true}).then(()=>{if(bingo)return db.ref("rooms/"+currentRoomCode+"/bingos").push({name:currentPlayerName,roundId:activeRound.id,at:firebase.database.ServerValue.TIMESTAMP})})})}
 function activateSound(){try{let C=window.AudioContext||window.webkitAudioContext;if(C&&!audioCtx)audioCtx=new C();if(audioCtx?.state==="suspended")audioCtx.resume();if($("soundStatus"))$("soundStatus").textContent="🐵 actief."}catch(e){}}function flash(){let f=document.createElement("div");f.className="flash";document.body.appendChild(f);setTimeout(()=>f.remove(),700)}function tune(){try{let C=window.AudioContext||window.webkitAudioContext;if(!audioCtx&&C)audioCtx=new C();if(!audioCtx)return;[523,659,784,1046].forEach((freq,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.connect(g);g.connect(audioCtx.destination);let t=audioCtx.currentTime+i*.18;g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.3,t+.03);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.start(t);o.stop(t+.18)})}catch(e){}}function confetti(){let cs=["#FFCC33","#00D4C7","#FF8A1F","#7ED957","#FF5A5F","#fff"];for(let i=0;i<90;i++){let p=document.createElement("div");p.className="confetti";p.style.left=Math.random()*100+"vw";p.style.background=pick(cs);document.body.appendChild(p);setTimeout(()=>p.remove(),3500)}}function showWinner(name){if($("winnerPanel")){$("winnerPanel").classList.remove("hidden");$("winnerMessage").innerHTML="🏆 BINGO!<br>Speler "+esc(name)+" heeft gewonnen!"}if($("hostBingoPanel")){$("hostBingoPanel").classList.remove("hidden");$("hostBingoMessage").innerHTML="🏆 BINGO!<br>Speler "+esc(name)+" heeft gewonnen!"}if($("bingoFullOverlay")){$("bingoFullOverlay").classList.remove("hidden");if($("bingoFullName"))$("bingoFullName").textContent=name||"Speler";setTimeout(()=>$("bingoFullOverlay")?.classList.add("hidden"),5500)}confetti();tune()}
 function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off();db.ref("rooms/"+room+"/bingos").on("child_added",s=>{let b=s.val()||{},key=s.key+"_"+(b.roundId||"");if(key===bingoSeenKey)return;bingoSeenKey=key;localStorage.hb_last_bingo_key=key;showWinner(b.name||"onbekend")})}
@@ -146,15 +145,15 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   document.addEventListener("DOMContentLoaded", () => setTimeout(forceNameFirstV84, 500));
 })();
 
-/* V176 - Mobiele hostflow. Bestaande spel- en Firebasefuncties blijven leidend. */
+/* V175 - Mobiele hostwizard. Bestaande spel- en Firebasefuncties blijven leidend. */
 (function(){
   const q=(s,r=document)=>r.querySelector(s);
   const qa=(s,r=document)=>Array.from(r.querySelectorAll(s));
   let activeStep=Number(sessionStorage.getItem('bb_host_wizard_step')||1);
-  if(activeStep<1||activeStep>3) activeStep=1;
+  if(activeStep<1||activeStep>4) activeStep=1;
 
   function setStep(step,scroll=true){
-    step=Math.max(1,Math.min(3,Number(step)||1));
+    step=Math.max(1,Math.min(4,Number(step)||1));
     activeStep=step;
     sessionStorage.setItem('bb_host_wizard_step',String(step));
     qa('[data-host-step-panel]').forEach(panel=>panel.classList.toggle('active',Number(panel.dataset.hostStepPanel)===step));
@@ -188,9 +187,6 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   function wireWizard(){
     qa('[data-host-step]').forEach(tab=>tab.addEventListener('click',()=>setStep(tab.dataset.hostStep)));
     qa('[data-host-go]').forEach(btn=>btn.addEventListener('click',()=>setStep(btn.dataset.hostGo)));
-    document.getElementById('bbOpenLobbyBtn')?.addEventListener('click',()=>{
-      if(typeof window.bbEnterHostPlayerMode==='function') window.bbEnterHostPlayerMode();
-    });
     document.getElementById('newRoomBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2,false),350));
     document.getElementById('hbNewRoomModalBtn')?.addEventListener('click',()=>setTimeout(()=>setStep(2),350));
     document.getElementById('duration')?.addEventListener('change',()=>updateSummary());
@@ -212,7 +208,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     document.addEventListener('touchstart',enableAudio,{capture:true,passive:true});
     const mode=document.getElementById('modeText');
     const keepHostVersion=()=>{
-      if(mode&&!document.body.classList.contains('playerMode')&&mode.textContent!=='HOST V176') mode.textContent='HOST V176';
+      if(mode&&!document.body.classList.contains('playerMode')&&mode.textContent!=='HOST V175') mode.textContent='HOST V175';
     };
     keepHostVersion();
     if(mode) new MutationObserver(keepHostVersion).observe(mode,{childList:true,subtree:true,characterData:true});
@@ -278,21 +274,18 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   allReady=function(room){const ps=activeEntries(room);return ps.length>0&&ps.every(([,p])=>p.ready===true);};
   window.bbV174ActivePlayers=activeEntries;
 
-  // V176: zes rijen, zes kolommen en twee diagonalen; geen vrij middenvak.
+  // Echte 5-vaks bingolijnen. In V172 ontbrak vak 18 in de vierde kolom.
   checkBingo=function(marked){
-    const lines=[];
-    for(let row=0;row<6;row++) lines.push(Array.from({length:6},(_,col)=>row*6+col));
-    for(let col=0;col<6;col++) lines.push(Array.from({length:6},(_,row)=>row*6+col));
-    lines.push(Array.from({length:6},(_,i)=>i*7),Array.from({length:6},(_,i)=>(i+1)*5));
-    return lines.some(line=>line.every(i=>!!marked?.[i]));
+    const lines=[[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+    return lines.some(line=>line.every(i=>i===12||marked?.[i]));
   };
 
-  // Iedere kaart heeft 36 normale kleurvakken.
+  // Iedere kaart heeft 24 kleurvakken; de kleur met vier vakken wisselt per kaart.
   genCard=function(){
-    const colors=['yellow','pink','purple','blue','green'],card=[];
-    for(let i=0;i<36;i++) card.push(colors[i%colors.length]);
-    for(let i=card.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[card[i],card[j]]=[card[j],card[i]];}
-    return card;
+    const colors=['yellow','pink','purple','blue','green'],missing=Math.floor(Math.random()*colors.length),pool=[];
+    colors.forEach((color,index)=>{for(let i=0;i<(index===missing?4:5);i++)pool.push(color);});
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const card=[];for(let i=0;i<25;i++)card.push(i===12?'free':pool.shift());return card;
   };
 
   // Een vak kan maar één keer gekozen worden en een bestaande winnaar wordt niet iedere ronde opnieuw gemeld.
@@ -374,8 +367,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       if(duplicate)throw Error('Deze naam is al in gebruik. Kies een andere naam.');
       const ref=db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`),existing=(await ref.once('value')).val()||{};
       currentPlayerName=name;
-      const keepCard=isValidCard(existing.card);
-      await ref.update({name,emoji:uniqueAnimal(room,currentPlayerId,existing),online:true,ready:true,joinedAt:existing.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:keepCard?existing.card:genCard(),marked:keepCard?(existing.marked||{}):{},bingo:keepCard?!!existing.bingo:false});
+      await ref.update({name,emoji:uniqueAnimal(room,currentPlayerId,existing),online:true,ready:true,joinedAt:existing.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:existing.card||genCard(),marked:existing.marked||{},bingo:!!existing.bingo});
       localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=name;localStorage.hb_player_room=currentRoomCode;
       try{await ref.onDisconnect().update({online:false,lastSeen:firebase.database.ServerValue.TIMESTAMP});}catch(e){try{ref.child('online').onDisconnect().set(false);}catch(_e){}}
       startHeartbeat();listenPlayer();
@@ -851,8 +843,8 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     showGoodOverlay = function(room,r){
       const me = room.players?.[currentPlayerId] || {}, card = me.card || [], marked = me.marked || {};
       const cells = card.map((c,i)=>{
-        const isMarked = !!marked[i];
-        const pickable = c === r.colorKey && !marked[i];
+        const isMarked = !!marked[i] || i === 12;
+        const pickable = c === r.colorKey && c !== "free" && !marked[i];
         const label = isMarked ? "✓" : "";
         return `<button type="button" class="bbOverlayCell ${isMarked?"marked":""} ${pickable?"pickable":"blocked"}" data-i="${i}" style="background:${colorHex(c)}" ${pickable?"":"disabled"}>${label}</button>`;
       }).join("");
@@ -965,8 +957,8 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     showGoodOverlay = function(room,r){
       const me = room.players?.[currentPlayerId] || {}, card = me.card || [], marked = me.marked || {};
       const cells = card.map((c,i)=>{
-        const isMarked = !!marked[i];
-        const pickable = c === r.colorKey && !marked[i];
+        const isMarked = !!marked[i] || i === 12;
+        const pickable = c === r.colorKey && c !== 'free' && !marked[i];
         const cls = colorClassV90(c);
         return `<button type="button" class="bbOverlayCell ${cls} ${isMarked?'marked':''} ${pickable?'pickable':'blocked'}" data-i="${i}" style="--cellColor:${COLOR_HEX_V90[c]||'rgba(255,255,255,.18)'}" ${pickable?'':'disabled'}></button>`;
       }).join('');
@@ -1049,12 +1041,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     const me = room.players?.[currentPlayerId] || {};
     const card = me.card || [];
     const marked = me.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const key = card[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = pick && key===r?.colorKey && !isMarked;
-      const cls = ['bbStageCell', 'cell-'+key, isMarked?'marked':'', canPick?'pickable':''].filter(Boolean).join(' ');
-      const content = marked[i] ? '🐵' : '';
+    const cells = Array.from({length:25},(_,i)=>{
+      const rawKey = card[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || rawKey==='free') ? 'free' : rawKey;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const canPick = pick && key===r?.colorKey && !isMarked && !isFree;
+      const cls = ['bbStageCell', 'cell-'+key, isFree?'free':'', isMarked?'marked':'', canPick?'pickable':''].filter(Boolean).join(' ');
+      const content = isFree ? '🐵' : (marked[i] ? '✓' : '');
       return `<button class="${cls}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'tabindex="-1"'}>${content}</button>`;
     }).join('');
     return `<div class="bbStageBingo ${large?'large':''}">${cells}</div>`;
@@ -1403,7 +1397,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 
 /* =========================
    V99 - TEST VOOR JE BEGINT KNOP
-   - Host kan vóór spelstart Spotify, playlist, apparaat en echt afspelen testen
+   - Host kan vóór spelstart Spotify + playlist + device + echt afspelen testen
    - Speelt 5 seconden een testliedje uit de Spotify-playlist af
    - Spelers zien tijdens de test een popup: "Testlied speelt..."
    ========================= */
@@ -1421,18 +1415,30 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       btn.textContent = '🔊 TEST VOOR JE BEGINT';
     }
     if(!btn.dataset.bbTestWired){
-      btn.dataset.bbTestWired='1';
       btn.addEventListener('click', runSpotifyPreGameTestV99);
+      btn.dataset.bbTestWired = '1';
+    }
+
+    // De test hoort op het scherm Muziek, in het vrijgekomen vak van de verwijderde importoptie.
+    const testBlock = q('bbPreGameTestBlock');
+    if(testBlock){
+      if(btn.parentNode !== testBlock) testBlock.appendChild(btn);
+      return;
+    }
+
+    // Fallback voor als de host-instellingen nog niet zijn opgebouwd.
+    const startBtn = q('startRoundBtn');
+    if(startBtn && btn.parentNode !== startBtn.parentNode){
+      startBtn.parentNode.insertBefore(btn, startBtn);
     }
   }
 
   function setTestStatus(msg, ok){
-    const el = q('bbPreGameTestStatus') || q('hostStatus');
-    if(el){
+    [q('bbPreGameTestStatus'), q('hostStatus')].filter(Boolean).forEach(el => {
       el.textContent = msg || '';
       el.classList.toggle('statusOk', ok === true);
       el.classList.toggle('statusBad', ok === false);
-    }
+    });
   }
 
   async function waitForDeviceV99(timeoutMs = 7000){
@@ -1487,6 +1493,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   async function runSpotifyPreGameTestV99(){
     const btn = q('bbPreGameTestBtn');
     try{
+      if(!currentRoomCode) throw new Error('Maak eerst een kamer.');
       const testTrack = getPlaylistTestTrackV99();
       if(!testTrack?.uri) throw new Error('Laad eerst een Spotify-playlist met nummers.');
 
@@ -1498,7 +1505,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       setTestStatus('Stap 2/4: Spotify-apparaat zoeken...', null);
       await waitForDeviceV99();
 
-      setTestStatus('Stap 3/4: playlistnummer controleren...', null);
+      setTestStatus('Stap 3/4: Playlistnummer controleren...', null);
       if(!testTrack.name || !testTrack.artists) throw new Error('Het playlistnummer mist een titel of artiest.');
 
       setTestStatus('Stap 4/4: Testliedje wordt 5 seconden afgespeeld...', null);
@@ -1799,12 +1806,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   function card(room, r, opts={}){
     const p = me(room), c = p.card || [], marked = p.marked || {};
     const large = !!opts.large, pick = !!opts.pick;
-    let cells = Array.from({length:36},(_,i)=>{
-      const key = c[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = pick && r?.id && key === r.colorKey && !isMarked;
-      const content = isMarked ? 'BB' : '';
-      return `<button type="button" class="bbStageCell v108cell cell-${E(key)} ${isMarked?'marked':''} ${canPick?'pickable':''}" data-i="${i}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}" ${canPick?'':'tabindex="-1"'}>${content ? `<span class="bbMiniMark">${content}</span>` : ''}</button>`;
+    let cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || raw === 'free') ? 'free' : raw;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const canPick = pick && r?.id && key === r.colorKey && !isMarked && !isFree;
+      const content = isFree ? 'BB' : (isMarked ? 'BB' : '');
+      return `<button type="button" class="bbStageCell v108cell cell-${E(key)} ${isFree?'free':''} ${isMarked?'marked':''} ${canPick?'pickable':''}" data-i="${i}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}" ${canPick?'':'tabindex="-1"'}>${content ? `<span class="bbMiniMark">${content}</span>` : ''}</button>`;
     }).join('');
     return `<div class="bbStageBingo v108 ${large?'large':''}">${cells}</div>`;
   }
@@ -1822,11 +1831,13 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   let roomCacheV108 = null;
   function otherCardHTML(room, pid){
     const p = room?.players?.[pid] || {}, c = p.card || [], marked = p.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const key = c[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const content = isMarked ? 'BB' : '';
-      return `<div class="bbStageCell v108cell cell-${E(key)} ${isMarked?'marked':''}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}">${content ? `<span class="bbMiniMark">${content}</span>` : ''}</div>`;
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12 ? 'free' : 'yellow');
+      const key = (i===12 || raw === 'free') ? 'free' : raw;
+      const isFree = key === 'free';
+      const isMarked = !!marked[i] || isFree;
+      const content = isFree ? 'BB' : (isMarked ? 'BB' : '');
+      return `<div class="bbStageCell v108cell cell-${E(key)} ${isFree?'free':''} ${isMarked?'marked':''}" style="--cell:${HEX2[key] || '#777'};background:${HEX2[key] || '#777'}">${content ? `<span class="bbMiniMark">${content}</span>` : ''}</div>`;
     }).join('');
     return `<div class="bbStageBingo v108 other">${cells}</div>`;
   }
@@ -3606,9 +3617,10 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function cardHTML(room){
     const p = me(room), c=p.card||[], marked=p.marked||{};
-    const cells = Array.from({length:36},(_,i)=>{
-      const key = c[i] || 'yellow';
-      const mark = !!marked[i];
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = c[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const mark = !!marked[i] || key==='free';
       return `<div class="bbV139Cell ${mark?'marked':''}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}">${mark?'<span>BB</span>':''}</div>`;
     }).join('');
     return `<div class="bbV139MiniCard">${cells}</div>`;
@@ -3804,7 +3816,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
    - Goed: SCOREBOARD -> NAAR BINGOKAART -> kiezen -> LOBBY
    - Fout: SCOREBOARD -> NAAR LOBBY -> LOBBY
    - Lobby als lijst met READY/Wacht + READY knop
-   - Eigen pickscreen met gelijke kleurvakken
+   - Eigen pickscreen en gelijke 5x5 vakjes
    ========================= */
 (function(){
   const q = id => document.getElementById(id);
@@ -3890,10 +3902,11 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function pickCardScreen(root,room,r){
     const p = me(room), card = p.card || [], marked = p.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const k = card[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = k===r.colorKey && !marked[i];
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const k = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || k==='free';
+      const canPick = k===r.colorKey && k!=='free' && !marked[i];
       const content = isMarked ? '<span class="bbV141Mark">BB</span>' : '';
       return `<button type="button" class="bbV141Cell ${k} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[k]||'#777'};background:${HEX[k]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
     }).join('');
@@ -4033,10 +4046,11 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function pickCardScreen(root,room,r){
     const p = me(room), card = p.card || [], marked = p.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const k = card[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = k===r.colorKey && !marked[i];
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const k = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || k==='free';
+      const canPick = k===r.colorKey && k!=='free' && !marked[i];
       const content = isMarked ? '<span class="bbV142Mark">BB</span>' : '';
       return `<button type="button" class="bbV142Cell ${k} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[k]||'#777'};background:${HEX[k]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
     }).join('');
@@ -4206,10 +4220,11 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function pickCardScreen(root,room,r){
     const p = me(room), card = p.card || [], marked = p.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const key = card[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = key===r.colorKey && !marked[i];
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || key==='free';
+      const canPick = key===r.colorKey && key!=='free' && !marked[i];
       const content = isMarked ? '<span class="bbV143Mark">BB</span>' : `<span class="bbV143Emoji">${EMO[key]||''}</span>`;
       return `<button type="button" class="bbV143Cell ${key} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
     }).join('');
@@ -4386,10 +4401,11 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function pickCardScreen(root,room,r){
     const p = me(room), card = p.card || [], marked = p.marked || {};
-    const cells = Array.from({length:36},(_,i)=>{
-      const key = card[i] || 'yellow';
-      const isMarked = !!marked[i];
-      const canPick = key===r.colorKey && !marked[i];
+    const cells = Array.from({length:25},(_,i)=>{
+      const raw = card[i] || (i===12?'free':'yellow');
+      const key = (i===12 || raw==='free') ? 'free' : raw;
+      const isMarked = !!marked[i] || key==='free';
+      const canPick = key===r.colorKey && key!=='free' && !marked[i];
       const content = isMarked ? '<span class="bbV144Mark">BB</span>' : '';
       return `<button type="button" class="bbV144Cell ${key} ${isMarked?'marked':''} ${canPick?'pickable':'blocked'}" data-i="${i}" style="--cell:${HEX[key]||'#777'};background:${HEX[key]||'#777'}" ${canPick?'':'disabled'}>${content}</button>`;
     }).join('');
@@ -4547,7 +4563,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
 })();
 
 /* =========================
-   V148 - maker gebruikt dezelfde spelerslobby
+   V148 - Host speelt mee lobby
    ========================= */
 (function(){
   const q = id => document.getElementById(id);
@@ -4566,10 +4582,23 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     return id;
   }
   function cleanHostName(name){ return String(name||'').replace(/^🎤\s*/,'').trim() || 'Host'; }
-  function hostDisplayName(){ return cleanHostName(localStorage.bb_host_player_name || 'Speler'); }
+  function hostDisplayName(){ return '🎤 ' + cleanHostName(localStorage.bb_host_player_name || 'Host'); }
 
   function injectSettings(){
-    q('bbHostPlayBlock')?.remove();
+    const staticBtn = q('bbHostPlayBtn');
+    if(staticBtn && !staticBtn.dataset.bbWired){ staticBtn.dataset.bbWired = '1'; staticBtn.addEventListener('click', enterHostPlayerMode); }
+    const settings = Array.from(document.querySelectorAll('#hostApp .panel')).find(p => (p.querySelector('h2')?.textContent||'').includes('5.'));
+    if(!settings || q('bbHostPlayBlock')) return;
+    const block = document.createElement('div');
+    block.id = 'bbHostPlayBlock';
+    block.className = 'bbHostPlayBlock';
+    block.innerHTML = `
+      <h3>🎤 Hostinstellingen</h3>
+      <button type="button" id="bbHostPlayBtn" class="bbHostPlayBtn">🎤 Host speelt mee</button>
+      <p class="small bbHostPlayText">Speel je als host gezellig mee? Klik dan hier.</p>
+    `;
+    settings.appendChild(block);
+    q('bbHostPlayBtn')?.addEventListener('click',enterHostPlayerMode);
   }
 
   async function ensureRoom(){
@@ -4611,14 +4640,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       ready: !!ex.ready,
       joinedAt: ex.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen: firebase.database.ServerValue.TIMESTAMP,
-      card: isValidCard(ex.card) ? ex.card : genCard(),
-      marked: isValidCard(ex.card) ? (ex.marked || {}) : {},
-      bingo: isValidCard(ex.card) ? !!ex.bingo : false
+      card: ex.card || genCard(),
+      marked: ex.marked || {},
+      bingo: !!ex.bingo
     });
     try{ ref.child('online').onDisconnect().set(false); }catch(e){}
     hostPlayerMode = true;
     document.body.classList.add('playerMode','bbHostPlayerMode');
-    setModeLabel('🎮 Speler');
+    setModeLabel('🎤 Host speelt mee');
     q('hostApp')?.classList.add('hidden');
     q('playerApp')?.classList.remove('hidden');
     q('screenJoin')?.classList.add('hidden');
@@ -4631,7 +4660,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     hostPlayerMode = false;
     document.body.classList.remove('playerMode','bbHostPlayerMode');
     document.querySelectorAll('.bbHostTopBtn,.bbHostStartFloat,#bbHostPlayerDock').forEach(el=>el.remove());
-    setModeLabel('HOST V176');
+    setModeLabel('🎤 Host');
     q('playerApp')?.classList.add('hidden');
     q('hostApp')?.classList.remove('hidden');
     if(hostPlayerRoomRef && hostPlayerListenerActive){ try{ hostPlayerRoomRef.off('value'); }catch(e){} }
@@ -4814,14 +4843,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
   function miniCard(card, marked){
     const arr = Array.isArray(card) ? card : [];
-    return `<div class="bbV160OwnMiniCard">${arr.map((c,i)=>`<div class="bbV160MiniCell ${marked?.[i]?'marked':''}" style="background:${hex(c)}">${marked?.[i]?'🐵':''}</div>`).join('')}</div>`;
+    return `<div class="bbV160OwnMiniCard">${arr.map((c,i)=>`<div class="bbV160MiniCell ${i===12||marked?.[i]?'marked':''}" style="background:${hex(c)}">${i===12||marked?.[i]?'🐵':''}</div>`).join('')}</div>`;
   }
   function playerGrid(room){
     const rc = readyCount(room);
-    const rows = allPlayers(room).slice(0,8).map(([pid,p])=>{
+    const rows = allPlayers(room).map(([pid,p])=>{
       const own = pid === currentPlayerId;
       return `<button type="button" class="bbV160PlayerChip ${p.ready?'ready':'wait'} ${own?'own':''}" data-view-card="${E(pid)}" onclick="bbV160ShowCard('${E(pid)}')">
-        <span class="bbV160PlayerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${own?' <em>jij</em>':''}</span>
+        <span class="bbV160PlayerName"><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${own?' <em>jij</em>':''}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span>
         <span class="bbV160ReadyIcon">${p.ready?'✅':'⏳'}</span>
       </button>`;
     }).join('');
@@ -4933,7 +4962,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const box = q('hostPlayers');
       if(!box) return;
       const rc = readyCount(room);
-      const rows = allPlayers(room).map(([pid,p])=>`<div class="bbV160HostChip ${p.ready?'ready':'wait'}"><span><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}</span><b>${p.ready?'✅':'⏳'}</b></div>`).join('');
+      const rows = allPlayers(room).map(([pid,p])=>`<div class="bbV160HostChip ${p.ready?'ready':'wait'}"><span><span class="bbAnimalAvatar">${bbAnimalFor(pid,p)}</span> ${E(cleanName(p.name))}${isHost(p)?' <small class="bbHostTag">HOST</small>':''}</span><b>${p.ready?'✅':'⏳'}</b></div>`).join('');
       box.innerHTML = `<div class="bbV160ReadyCount host">👥 ${rc.ready} / ${rc.total} READY</div><div class="bbV160HostGrid">${rows || '<div class="small">Nog geen spelers.</div>'}</div>`;
     };
   }
@@ -4945,7 +4974,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
    - Host is al bovenin ingelogd met Spotify
    - Playlists laden vanuit eigen Spotify-account
    - Gekozen playlist automatisch omzetten naar Bingo Beats tracks
-   - Muziek komt rechtstreeks uit de gekozen Spotify-playlist
+   - De Spotify-playlist is de muziekbron
    ========================= */
 (function(){
   const q = (id) => document.getElementById(id);
@@ -5047,7 +5076,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       const playlistId = select?.value;
       if(!playlistId) return setPlaylistStatus('Kies eerst een playlist.', false);
       const playlist = bbPlaylistsCache.find(p => p.id === playlistId) || {name:'Playlist'};
-      setPlaylistStatus(`Playlist ophalen: ${playlist.name}...`, null);
+      setPlaylistStatus(`Playlist ophalen v115: ${playlist.name}...`, null);
 
       const cleanId = encodeURIComponent(playlistId);
       const fields = encodeURIComponent('total,limit,next,items(is_local,track(id,uri,name,type,duration_ms,album(name,release_date),artists(name)),item(id,uri,name,type,duration_ms,album(name,release_date),artists(name)))');
@@ -5205,7 +5234,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
   }
 })();
 
-/* V176 slotkoppeling: na alle oudere renderlagen de mobiele samenvatting verversen. */
+/* V175 slotkoppeling: na alle oudere renderlagen de mobiele samenvatting verversen. */
 (function(){
   if(typeof renderHostPlayers==='function'){
     const previous=renderHostPlayers;
@@ -5215,45 +5244,4 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       return result;
     };
   }
-})();
-
-/* V176 definitieve veiligheidslaag: 6x6-migratie en vaste mobiele viewport. */
-(function(){
-  let normalizePromise=null;
-
-  function normalizeOwnCard(){
-    if(!db||!currentRoomCode||!currentPlayerId) return Promise.resolve();
-    if(normalizePromise) return normalizePromise;
-    const ref=db.ref(`rooms/${currentRoomCode}/players/${currentPlayerId}`);
-    normalizePromise=ref.once('value').then(snapshot=>{
-      const data=snapshot.val()||{};
-      if(isValidCard(data.card)) return;
-      return ref.update({card:genCard(),marked:{},bingo:false,lastPickedRound:null,lastPickedIndex:null});
-    }).catch(error=>console.warn('6x6-kaartmigratie overgeslagen:',error)).finally(()=>{normalizePromise=null;});
-    return normalizePromise;
-  }
-
-  if(typeof listenPlayer==='function'){
-    const previousListenPlayer=listenPlayer;
-    listenPlayer=function(){
-      const args=arguments;
-      normalizeOwnCard().finally(()=>previousListenPlayer.apply(this,args));
-    };
-  }
-
-  function stopZoom(event){event.preventDefault();}
-  ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,stopZoom,{passive:false}));
-  document.addEventListener('touchmove',event=>{if(event.touches&&event.touches.length>1)event.preventDefault();},{passive:false});
-  document.addEventListener('wheel',event=>{if(event.ctrlKey)event.preventDefault();},{passive:false});
-  let lastTouchEnd=0;
-  document.addEventListener('touchend',event=>{
-    const now=Date.now();
-    if(now-lastTouchEnd<300)event.preventDefault();
-    lastTouchEnd=now;
-  },{passive:false});
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    document.documentElement.classList.add('bbV176');
-    document.getElementById('bbHostPlayBlock')?.remove();
-  });
 })();

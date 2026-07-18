@@ -2,13 +2,13 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=176">
+  <link rel="stylesheet" href="style.css?v=175">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -31,13 +31,25 @@
     <img src="bb_logo_lime.png" class="bbLogoHeader bbLogoLime" alt="Bingo Beats">
     
     <div class="bbHostHeaderMeta">
-      <p id="modeText">HOST V176</p>
+      <p id="modeText">HOST V175</p>
       <span id="bbHostHeaderPlayers">👥 0/50</span>
     </div>
   </header>
 
   <main id="hostApp" class="hidden bbHostWizard">
+    <nav class="bbHostProgress" aria-label="Hoststappen">
+      <button type="button" class="bbHostStepTab active" data-host-step="1"><span>1</span><small>Muziek</small></button>
+      <i></i>
+      <button type="button" class="bbHostStepTab" data-host-step="2"><span>2</span><small>Kamer</small></button>
+      <i></i>
+      <button type="button" class="bbHostStepTab" data-host-step="3"><span>3</span><small>Instellingen</small></button>
+      <i></i>
+      <button type="button" class="bbHostStepTab" data-host-step="4"><span>4</span><small>Spelen</small></button>
+    </nav>
+
     <section class="bbHostStep active" data-host-step-panel="1">
+      <div class="bbHostStepHeading"><strong>1. MUZIEK</strong><span>Verbind Spotify en laad een playlist.</span></div>
+
       <section class="panel bbHostCard">
         <h2>SPOTIFY</h2>
         <p id="loginStatus" class="small">Nog niet ingelogd.</p>
@@ -57,16 +69,24 @@
         </div>
         <div id="playlistPreview" class="playlistPreview hidden"></div>
         <p id="playlistStatus" class="small">Log in met Spotify en laad daarna je playlists.</p>
+        <button id="resetUsedBtn" class="secondary">Gespeelde nummers resetten</button>
+      </section>
+
+      <section id="bbPreGameTestBlock" class="panel bbHostCard bbPreGameTestBlock">
+        <h2>TEST VOOR JE BEGINT</h2>
+        <p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p>
         <button id="bbPreGameTestBtn" type="button" class="secondary bbPreGameTestBtn">🔊 TEST VOOR JE BEGINT</button>
-        <p id="bbPreGameTestStatus" class="small">Test Spotify hier voordat je een kamer maakt.</p>
+        <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
       </section>
 
       <button type="button" class="bbHostNext" data-host-go="2">VOLGENDE: KAMER →</button>
     </section>
 
     <section class="bbHostStep" data-host-step-panel="2">
+      <div class="bbHostStepHeading"><strong>2. KAMER</strong><span>Maak een kamer zodat spelers kunnen deelnemen.</span></div>
+
       <section class="panel bbHostCard bbRoomCard">
-        <h2 class="srOnly">Kamer</h2>
+        <h2 class="srOnly">4. Kamer</h2>
         <div class="bbRoomActions">
           <button id="newRoomBtn">＋ Nieuwe kamer maken</button>
           <button id="newGameBtn" class="secondary">▶ Nieuw spel starten</button>
@@ -81,8 +101,10 @@
     </section>
 
     <section class="bbHostStep" data-host-step-panel="3">
+      <div class="bbHostStepHeading"><strong>3. INSTELLINGEN</strong><span>Stel het spel in voor alle spelers.</span></div>
+
       <section class="panel bbHostCard bbSettingsCard">
-        <h2>INSTELLINGEN</h2>
+        <h2>5. Instellingen</h2>
         <label class="bbDurationLabel">FRAGMENTDUUR
           <select id="duration" class="srOnly" aria-label="Fragmentduur">
             <option value="10">10 seconden</option>
@@ -104,6 +126,11 @@
         <label class="check bbSwitchRow"><span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span><input type="checkbox" id="randomStart" checked></label>
         <label class="check bbSwitchRow"><span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span><input type="checkbox" id="noRepeat" checked></label>
 
+        <div id="bbHostPlayBlock" class="bbHostPlayBlock">
+          <h3>HOST SPEELT MEE</h3>
+          <button type="button" id="bbHostPlayBtn" class="bbHostPlayBtn">Host speelt mee</button>
+          <p class="small bbHostPlayText">De host doet als normale speler mee.</p>
+        </div>
       </section>
 
       <section class="panel bbHostCard bbFixedCategories">
@@ -120,10 +147,11 @@
         <div class="bbCategoryRow coral"><b>♫ Koraal</b><span>Titel van track</span></div>
       </section>
 
-      <button type="button" id="bbOpenLobbyBtn" class="bbHostNext">NAAR DE LOBBY →</button>
+      <button type="button" class="bbHostNext" data-host-go="4">VOLGENDE: SPELEN →</button>
     </section>
 
-    <section class="bbHostStep bbLegacyHostControls" data-host-step-panel="4" aria-hidden="true">
+    <section class="bbHostStep" data-host-step-panel="4">
+      <div class="bbHostStepHeading"><strong>4. SPELEN</strong><span>Start en bedien de ronde.</span></div>
 
       <section class="panel bbHostReadyCard">
         <h2>RONDE KLAAR OM TE STARTEN</h2>
@@ -247,7 +275,7 @@
   </div>
 </div>
 
-<script src="app.js?v=176"></script>
+<script src="app.js?v=175"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -272,4 +300,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V176 - groen thema, vaste schermen en 6x6-bingokaart -->
+<!-- Bingo Beats V175 - mobiele hostwizard op de V174-spellogica -->

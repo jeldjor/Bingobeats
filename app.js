@@ -15,7 +15,8 @@ function checkLicenseGate(){let l=JSON.parse(localStorage.getItem("bb_license")|
 function activateLicense(){let c=($("licenseInput")?.value||"").trim().toUpperCase();if(c!==TEST_LICENSE_CODE)return showLicenseScreen("Ongeldige licentiecode.");localStorage.setItem("bb_license",JSON.stringify({code:TEST_LICENSE_CODE,active:true,type:"test",activatedAt:new Date().toISOString()}));if($("licenseStatus")){$("licenseStatus").textContent="Licentie geactiveerd.";$("licenseStatus").className="small licenseSuccess"}setTimeout(unlockApp,350)}
 function showLicenseScreen(m){$("licenseScreen")?.classList.remove("hidden");$("mainHeader")?.classList.add("hidden");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.add("hidden");if($("licenseStatus")){$("licenseStatus").textContent=m||"";$("licenseStatus").className="small licenseError"}}
 function unlockApp(){$("licenseScreen")?.classList.add("hidden");$("mainHeader")?.classList.remove("hidden");if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();wireApp();handleRedirect().then(updateStatus).catch(console.error);isPlayerPage()?setupPlayerMode():setupHostMode()}
-function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("newRoomBtn")?.addEventListener("click",async()=>{const code=await createRoom(),room=code||currentRoomCode||localStorage.hb_host_room||"";if(room&&typeof window.bbEnsureHostPlayer==="function")try{await window.bbEnsureHostPlayer(room)}catch(e){alert("Host toevoegen aan de kamer lukt niet: "+(e.message||e))}});$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
+async function createRoomWithHost(){const code=await createRoom(),room=code||currentRoomCode||localStorage.hb_host_room||"";if(room&&typeof window.bbEnsureHostPlayer==="function")try{await window.bbEnsureHostPlayer(room)}catch(e){alert("Host toevoegen aan de kamer lukt niet: "+(e.message||e))}return room}window.bbCreateRoomWithHost=createRoomWithHost;
+function wireApp(){[["loginBtn",login],["logoutBtn",logout],["activateBtn",activatePlayer],["soundBtn",activateSound],["startRoundBtn",startRound],["playBtn",playHidden],["stopBtn",stopPlayback],["showAnswerBtn",showAnswer],["lockBtn",lockRound],["publishBtn",publishResults],["joinBtn",joinPlayer],["newGameBtn",openNewGameModal],["cancelNewGameBtn",closeNewGameModal],["confirmNewGameBtn",bbStartNewGameSameRoom]].forEach(([i,f])=>$(i)?.addEventListener("click",f));$("newRoomBtn")?.addEventListener("click",createRoomWithHost);$("resetUsedBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_used");updateStatus()});$("hostScoreboard")?.addEventListener("click",scoreboardClick);document.addEventListener("click",e=>{if(e.target?.id==="copyRoomLinkBtn"){e.preventDefault();copyRoomLink()}})}
 function setModeLabel(t){if($("modeText"))$("modeText").textContent=t}
 async function login(){let v=rand(96);localStorage.spotify_code_verifier=v;location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({response_type:"code",client_id:CLIENT_ID,scope:SCOPES,code_challenge_method:"S256",code_challenge:b64(await sha(v)),redirect_uri:REDIRECT_URI})}
 function rand(l){let c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",o="",b=new Uint8Array(l);crypto.getRandomValues(b);b.forEach(x=>o+=c[x%c.length]);return o}async function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))}function b64(b){return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_")}
@@ -25,7 +26,7 @@ async function getToken(){if(accessToken&&Date.now()<expiresAt)return accessToke
 async function api(u,o={}){let t=await getToken();if(!t)throw Error("Niet ingelogd.");let headers={...(o.headers||{}),Authorization:"Bearer "+t};if(o.body)headers["Content-Type"]="application/json";let r=await fetch(u,{...o,headers});if(r.status===204)return{};let d=await r.json().catch(()=>({}));if(!r.ok){let m=d.error?.message||d.error_description||"Spotify fout";let shortUrl=String(u).replace(/^https:\/\/api\.spotify\.com\/v1\//,'');throw Error(`${r.status} ${r.statusText||""} — ${m} [${shortUrl}]`.trim())}return d}
 function logout(){["spotify_access_token","spotify_refresh_token","spotify_expires_at"].forEach(k=>localStorage.removeItem(k));accessToken=refreshToken="";expiresAt=0;updateStatus()}window.onSpotifyWebPlaybackSDKReady=()=>{};
 async function activatePlayer(){let t=await getToken();if(!t)return alert("Login eerst met Spotify.");if(!window.Spotify)return alert("Spotify speler nog niet geladen.");if(player){await player.connect();return}player=new Spotify.Player({name:"Bingo Beats",getOAuthToken:async cb=>cb(await getToken()),volume:.8});player.addListener("ready",({device_id})=>{deviceId=device_id;if($("loginStatus"))$("loginStatus").textContent+=" — speler actief."});await player.connect()}
-async function updateStatus(){if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker")+" — v175";if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
+async function updateStatus(){if(!$("loginStatus"))return;if(await getToken()){try{let me=await api("https://api.spotify.com/v1/me");$("loginStatus").textContent="Ingelogd als: "+(me.display_name||me.email||"Spotify gebruiker");if($("activateBtn"))$("activateBtn").disabled=false}catch(e){$("loginStatus").textContent="Ingelogd."}}else{$("loginStatus").textContent="Nog niet ingelogd.";if($("activateBtn"))$("activateBtn").disabled=true}}
 function chooseTrack(){if(!tracks.length)return null;let u=new Set(JSON.parse(localStorage.hb_used||"[]")),a=$("noRepeat")?.checked?tracks.filter(t=>!u.has(t.id)):tracks;if(!a.length){u=new Set();a=tracks}let t=pick(a);u.add(t.id);localStorage.hb_used=JSON.stringify([...u]);updateStatus();return t}
 function setupHostMode(){setModeLabel("🎤 Host");document.body.classList.remove("playerMode");$("hostApp")?.classList.remove("hidden");$("playerApp")?.classList.add("hidden");restoreHost();showStartPopup()}
 function getCats(){return{yellow:$("cat-yellow")?.value||"Voor of na 2001",pink:$("cat-pink")?.value||"Naam van artiest",purple:$("cat-purple")?.value||"Decennium",blue:$("cat-blue")?.value||"Jaartal +/- 2",green:$("cat-green")?.value||"Titel van track"}}function roomCode(){let c="",ch="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";for(let i=0;i<4;i++)c+=ch[Math.floor(Math.random()*ch.length)];return c}
@@ -45,7 +46,7 @@ function renderHostScore(room){let r=room.currentRound||{};if(!r.id||!$("hostSco
 function scoreboardClick(e){let btn=e.target.closest("button[data-pid]");if(!btn)return;e.preventDefault();let pid=btn.dataset.pid,good=btn.dataset.good==="true";db.ref("rooms/"+currentRoomCode+"/currentRound").once("value").then(s=>{let r=s.val()||{};if(!r.id)throw Error("Geen actieve ronde.");return db.ref("rooms/"+currentRoomCode+"/correct/"+r.id+"/"+pid).set(good)}).then(()=>{if($("hostStatus"))$("hostStatus").textContent="🐵 Beoordeling opgeslagen."}).catch(e=>alert(e.message))}
 function publishResults(){db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},r=room.currentRound||{},up={};up[`rooms/${currentRoomCode}/currentRound/status`]="judged";Object.entries(room.players||{}).forEach(([pid,p])=>{let good=room.correct?.[r.id]?.[pid]===true;if(!good)up[`rooms/${currentRoomCode}/players/${pid}/ready`]=true});return db.ref().update(up)}).then(()=>{if($("hostStatus"))$("hostStatus").textContent="Resultaten verzonden."})}
 function openNewGameModal(){if(!currentRoomCode)return alert("Maak eerst een kamer.");let m=$("newGameModal");if(m){m.classList.remove("hidden");m.style.display="flex"}}function closeNewGameModal(){let m=$("newGameModal");if(m){m.classList.add("hidden");m.style.display="none"}}function bbStartNewGameSameRoom(){if(!currentRoomCode){closeNewGameModal();return}db.ref("rooms/"+currentRoomCode).once("value").then(s=>{let room=s.val()||{},up={};Object.keys(room.players||{}).forEach(pid=>{up[`rooms/${currentRoomCode}/players/${pid}/card`]=genCard();up[`rooms/${currentRoomCode}/players/${pid}/marked`]={};up[`rooms/${currentRoomCode}/players/${pid}/bingo`]=false;up[`rooms/${currentRoomCode}/players/${pid}/ready`]=false;up[`rooms/${currentRoomCode}/players/${pid}/lastPickedRound`]=null});up[`rooms/${currentRoomCode}/currentRound`]=null;up[`rooms/${currentRoomCode}/answers`]=null;up[`rooms/${currentRoomCode}/correct`]=null;up[`rooms/${currentRoomCode}/bingos`]=null;return db.ref().update(up)}).then(()=>{closeNewGameModal();$("hostBingoPanel")?.classList.add("hidden");if($("hostStatus"))$("hostStatus").textContent="Nieuw spel gestart in dezelfde kamer."})}
-function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoom()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
+function showStartPopup(){let o=$("hbHostStartOverlay");if(!o)return;let s=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(s){$("hbLastRoomLine")?.classList.remove("hidden");if($("hbLastRoomCode"))$("hbLastRoomCode").textContent=s;if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=false;$("hbResumeRoomBtn").textContent="🔄 Hervat "+s}renderRoomBox(s)}else{$("hbLastRoomLine")?.classList.add("hidden");if($("hbResumeRoomBtn")){$("hbResumeRoomBtn").disabled=true;$("hbResumeRoomBtn").textContent="🔄 Hervat kamer"}}o.classList.remove("hidden");$("hbResumeRoomBtn")?.addEventListener("click",()=>{let r=localStorage.hb_host_room||localStorage.hb_last_stable_room||"";if(r){currentRoomCode=r;renderRoomBox(r);listenHost(r);listenBingo(r)}o.classList.add("hidden")},{once:true});$("hbNewRoomModalBtn")?.addEventListener("click",()=>{localStorage.removeItem("hb_host_room");localStorage.removeItem("hb_last_stable_room");currentRoomCode="";o.classList.add("hidden");createRoomWithHost()},{once:true});$("hbCloseModalBtn")?.addEventListener("click",()=>o.classList.add("hidden"),{once:true})}
 function setupPlayerMode(){document.body.classList.add("playerMode");setModeLabel("🎮 Speler");$("hostApp")?.classList.add("hidden");$("playerApp")?.classList.remove("hidden");currentRoomCode=(new URLSearchParams(location.search).get("room")||"").toUpperCase();if($("playerRoomCode"))$("playerRoomCode").textContent=currentRoomCode;if(currentPlayerName&&$("playerNameInput"))$("playerNameInput").value=currentPlayerName;if(currentPlayerId&&currentPlayerName)listenPlayer()}
 function genCard(){let colors=["yellow","pink","purple","blue","green"],pool=[];for(let i=0;i<24;i++)pool.push(colors[i%5]);for(let i=pool.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}let card=[],k=0;for(let i=0;i<25;i++)card.push(i===12?"free":pool[k++]);return card}
 function joinPlayer(){let name=($("playerNameInput")?.value||"").trim();if(!name)return alert("Vul je naam in.");currentPlayerName=name;if(!currentPlayerId)currentPlayerId="p_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.hb_player_id=currentPlayerId;localStorage.hb_player_name=currentPlayerName;localStorage.hb_player_room=currentRoomCode;let ref=db.ref("rooms/"+currentRoomCode+"/players/"+currentPlayerId);ref.once("value").then(s=>{let ex=s.val()||{};return ref.update({name,emoji:ex.emoji||bbAnimalFor(currentPlayerId,ex),online:true,ready:true,joinedAt:ex.joinedAt||firebase.database.ServerValue.TIMESTAMP,lastSeen:firebase.database.ServerValue.TIMESTAMP,card:ex.card||genCard(),marked:ex.marked||{},bingo:!!ex.bingo})}).then(()=>{ref.child("online").onDisconnect().set(false);listenPlayer()})}
@@ -165,6 +166,13 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     });
     if(scroll) window.scrollTo({top:0,behavior:'smooth'});
     updateSummary();
+    if(step===3) setTimeout(()=>ensureRoomForQr(),0);
+  }
+
+  async function ensureRoomForQr(){
+    if(currentRoomCode){ renderRoomBox(currentRoomCode); return currentRoomCode; }
+    if(typeof window.bbCreateRoomWithHost==='function') return window.bbCreateRoomWithHost();
+    return '';
   }
 
   function updateSummary(room){
@@ -172,10 +180,10 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     if(!summary) return;
     const spotify=!!localStorage.getItem('spotify_access_token')||!!localStorage.getItem('hb_access_token');
     const playlist=(typeof tracks!=='undefined'&&tracks.length>0);
-    const playerCount=room?Object.keys(room.players||{}).length:qa('#hostPlayers .bbV160HostChip,#hostPlayers .playerRow').length;
+    const playerCount=room?Object.values(room.players||{}).filter(player=>player&&player.online!==false).length:qa('#hostPlayers .bbV160HostChip,#hostPlayers .playerRow').length;
     const roomReady=!!currentRoomCode;
     const headerCount=document.getElementById('bbHostHeaderPlayers');
-    if(headerCount) headerCount.textContent=`👥 ${playerCount}/50`;
+    if(headerCount) headerCount.textContent=`👥 ${playerCount}`;
     summary.innerHTML=`
       <span>${spotify?'✓':'○'} Spotify <b>${spotify?'Verbonden':'Controleren'}</b></span>
       <span>${playlist?'✓':'○'} Playlist <b>${playlist?tracks.length+' nummers':'Nog laden'}</b></span>
@@ -217,7 +225,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     document.addEventListener('touchstart',enableAudio,{capture:true,passive:true});
     const mode=document.getElementById('modeText');
     const keepHostVersion=()=>{
-      if(mode&&!document.body.classList.contains('playerMode')&&mode.textContent!=='HOST V175') mode.textContent='HOST V175';
+      if(mode&&!document.body.classList.contains('playerMode')&&mode.textContent!=='HOST') mode.textContent='HOST';
     };
     keepHostVersion();
     if(mode) new MutationObserver(keepHostVersion).observe(mode,{childList:true,subtree:true,characterData:true});
@@ -310,17 +318,13 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     if(result.committed&&announce)await db.ref(`rooms/${currentRoomCode}/bingos`).push({name:currentPlayerName,playerId:currentPlayerId,roundId:activeRound.id,at:firebase.database.ServerValue.TIMESTAMP});
   };
 
-  // Nieuwe kamer: dezelfde V172-weergave, maar met collisioncontrole.
+  // Nieuwe kamer: direct schrijven. Een Firebase-transactie vereist ook
+  // leesrechten en veroorzaakte op sommige hosts onterecht permission_denied.
   createRoom=async function(){
     try{
       if(typeof window.bbCleanHostUi117==='function')window.bbCleanHostUi117();
-      let code='',committed=false;
-      for(let attempt=0;attempt<10&&!committed;attempt++){
-        code=roomCode();
-        const result=await db.ref('rooms/'+code).transaction(current=>current===null?{createdAt:firebase.database.ServerValue.TIMESTAMP,categories:getCats(),version:174}:undefined,false);
-        committed=!!result.committed;
-      }
-      if(!committed)throw Error('Er kon geen unieke kamer worden gemaakt. Probeer opnieuw.');
+      const code=roomCode();
+      await db.ref('rooms/'+code).set({createdAt:firebase.database.ServerValue.TIMESTAMP,categories:getCats()});
       currentRoomCode=code;localStorage.hb_host_room=code;localStorage.hb_last_stable_room=code;
       renderRoomBox(code);listenHost(code);listenBingo(code);
       return code;
@@ -4651,7 +4655,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     await registerHostPlayer(room);
     hostPlayerMode = true;
     document.body.classList.add('playerMode','bbHostPlayerMode');
-    setModeLabel('HOST V175');
+    setModeLabel('HOST');
     q('hostApp')?.classList.add('hidden');
     q('playerApp')?.classList.remove('hidden');
     q('screenJoin')?.classList.add('hidden');

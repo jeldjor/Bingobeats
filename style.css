@@ -5646,22 +5646,43 @@ body:not(.playerMode):not(.bbHostPlayerMode) #mainHeader{
   justify-content:space-between;
   border-bottom:1px solid rgba(186,255,53,.12);
 }
+.bbHostBrand{display:flex;align-items:center;min-width:0;gap:4px}
+.bbHostWordmark{display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center}
+.bbHostWordmark strong{
+  color:#f5c934;
+  font-size:clamp(16px,4.9vw,22px);
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:.25px;
+  white-space:nowrap;
+  text-shadow:0 2px 10px rgba(245,201,52,.18);
+}
+.bbHostWordmark #modeText{
+  margin:3px 0 0!important;
+  padding:0!important;
+  border:0!important;
+  color:#00d4c7!important;
+  background:transparent!important;
+  font-size:9px!important;
+  line-height:1!important;
+  letter-spacing:1.1px!important;
+}
 body:not(.playerMode):not(.bbHostPlayerMode) #mainHeader.hidden{display:none!important}
 body:not(.playerMode):not(.bbHostPlayerMode) .bbLogoHeader{
-  width:112px !important;
+  width:92px !important;
   height:62px !important;
   object-fit:contain;
   object-position:left center;
   margin:0 !important;
 }
 body:not(.playerMode):not(.bbHostPlayerMode) #modeText{
-  margin:0 !important;
-  padding:6px 10px;
-  border:1px solid #71851e;
-  border-radius:7px;
-  color:#e7f5bd;
-  background:#0b2a1a;
-  font-size:12px !important;
+  margin:3px 0 0 !important;
+  padding:0;
+  border:0;
+  border-radius:0;
+  color:#00d4c7;
+  background:transparent;
+  font-size:9px !important;
   font-weight:900;
   letter-spacing:.4px;
 }

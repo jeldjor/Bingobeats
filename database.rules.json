@@ -1,0 +1,12 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$roomCode": {
+        ".read": "$roomCode.matches(/^[A-HJ-NP-Z2-9]{4}$/)",
+        ".write": "$roomCode.matches(/^[A-HJ-NP-Z2-9]{4}$/)"
+      }
+    }
+  }
+}

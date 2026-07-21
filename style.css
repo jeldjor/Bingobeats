@@ -8421,3 +8421,124 @@ body.bbKeyboardOpen .stageAnswer .bbStageSubmit{height:43px!important;min-height
 .bbV174Decision p{margin:3px 0;text-align:center}
 .bbV174VoteCount{font-size:.72rem;opacity:.82}
 body.bbKeyboardOpen #bbV174LeaveBtn,body.bbKeyboardOpen #bbV174HostTestBtn{display:none}
+
+/* V175.1 - vaste mobiele viewport, merkverloop en compacte hostschermen */
+html,body{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  overflow:hidden!important;
+  overscroll-behavior:none;
+  -webkit-text-size-adjust:100%;
+}
+body{
+  touch-action:pan-x pan-y;
+}
+.bbHostWordmark strong{
+  color:transparent!important;
+  background:linear-gradient(90deg,#f4d45b 0 22%,#00d4c7 27% 45%,#ff8a1f 50% 65%,#7ed957 70% 84%,#ff5a5f 89% 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-shadow:none!important;
+  filter:drop-shadow(0 2px 7px rgba(126,217,87,.18));
+}
+body:not(.playerMode):not(.bbHostPlayerMode) .app{
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+body:not(.playerMode):not(.bbHostPlayerMode) #mainHeader{
+  flex:0 0 68px!important;
+  min-height:68px!important;
+}
+body:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+.bbHostProgress{
+  height:62px!important;
+  min-height:62px!important;
+  box-sizing:border-box!important;
+  padding:3px 4px 7px!important;
+}
+.bbHostStep.active{
+  height:calc(100% - 62px)!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+}
+body:not(.playerMode) #hostApp .panel.bbHostCard,
+body:not(.playerMode) #hostApp .bbHostReadyCard,
+body:not(.playerMode) #hostApp .bbHostPlayCard,
+body:not(.playerMode) #hostApp .bbHostScoreCard,
+body:not(.playerMode) #hostApp #hostBingoPanel{
+  margin:0!important;
+  padding:9px!important;
+}
+body:not(.playerMode) #hostApp .bbHostNext{
+  position:static!important;
+  flex:0 0 46px!important;
+  min-height:46px!important;
+  margin:0!important;
+}
+.bbHostStep[data-host-step-panel="1"] .bbHostCard{flex:0 1 auto!important}
+.bbHostStep[data-host-step-panel="1"] .playlistImportPanel{min-height:0!important}
+.bbHostStep[data-host-step-panel="1"] .small{margin:3px 0!important;line-height:1.2!important}
+.bbHostStep[data-host-step-panel="1"] button{min-height:34px!important;padding:6px 9px!important;margin:2px 0!important}
+.bbHostStep[data-host-step-panel="1"] .bbPreGameTestBlock{padding-top:7px!important;padding-bottom:7px!important}
+.bbHostStep[data-host-step-panel="2"] .bbSettingsCard{flex:0 0 auto!important}
+.bbHostStep[data-host-step-panel="2"] .bbFixedCategories{flex:1 1 auto!important;min-height:0!important}
+.bbCategoryRow{min-height:31px!important;margin:2px 0!important;padding:5px 8px!important}
+.bbSwitchRow{min-height:54px!important;margin:5px 0!important;padding:7px!important}
+.bbRoomCard{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+.bbRoomCard #roomBox{margin:5px 0!important}
+.hostQrClean,.hostQrV89,.hostQrV91{
+  width:min(27dvh,190px)!important;
+  height:min(27dvh,190px)!important;
+  margin:1px auto!important;
+  padding:5px!important;
+}
+.hostRoomCodeV89,.hostRoomCopyV89,.hostRoomCodeClean,.hostRoomLinkClean{padding:5px!important}
+.roomCodeV89,.roomCodeClean{font-size:clamp(26px,8vw,38px)!important}
+.joinLinkHiddenV89{height:32px!important;min-height:32px!important}
+.bbRoomCard #hostPlayers{
+  height:auto!important;
+  max-height:72px!important;
+  overflow:hidden!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:3px!important;
+}
+.bbRoomCard .playerRow{min-height:28px!important;margin:0!important;padding:4px 6px!important}
+.bbHostStep[data-host-step-panel="4"] .bbHostReadyCard{flex:0 0 auto!important}
+.bbHostStep[data-host-step-panel="4"] .bbHostPlayCard{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+body:not(.playerMode) #hostApp #hostPickerArea{min-height:0!important;height:auto!important;flex:1 1 auto!important}
+.bbHostStep[data-host-step-panel="4"] .bbHostScoreCard{flex:1 1 auto!important;min-height:0!important;overflow:hidden!important}
+.bbHostStep[data-host-step-panel="4"] .scoreBoard{max-height:none!important;overflow:hidden!important}
+body.playerMode .app,
+body.bbHostPlayerMode .app{
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+}
+@media(max-height:720px){
+  body:not(.playerMode):not(.bbHostPlayerMode) #mainHeader{flex-basis:56px!important;min-height:56px!important}
+  body:not(.playerMode):not(.bbHostPlayerMode) .bbLogoHeader{width:78px!important;height:50px!important}
+  .bbHostProgress{height:54px!important;min-height:54px!important;padding-bottom:3px!important}
+  .bbHostStep.active{height:calc(100% - 54px)!important;gap:3px!important}
+  .bbHostStepTab span{width:30px!important;height:30px!important;font-size:14px!important}
+  .bbHostProgress>i{margin-top:15px!important}
+  .bbHostStepTab small{font-size:9px!important}
+  body:not(.playerMode) #hostApp .panel.bbHostCard{padding:7px!important}
+  body:not(.playerMode) #hostApp .panel h2,body:not(.playerMode) #hostApp .panel h3{margin-bottom:5px!important}
+  .hostQrClean,.hostQrV89,.hostQrV91{width:min(22dvh,150px)!important;height:min(22dvh,150px)!important}
+}

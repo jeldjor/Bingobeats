@@ -328,7 +328,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       currentRoomCode=code;localStorage.hb_host_room=code;localStorage.hb_last_stable_room=code;
       renderRoomBox(code);listenHost(code);listenBingo(code);
       return code;
-    }catch(e){alert('Kamer maken mislukt: '+(e.message||e));return'';}
+    }catch(e){
+      const raw=String(e?.code||e?.message||e||'Onbekende fout');
+      const denied=/permission[_\s-]*denied/i.test(raw);
+      const message=denied
+        ? 'Kamer maken mislukt: Firebase blokkeert toegang tot rooms. Publiceer de meegeleverde database.rules.json één keer in Firebase Realtime Database > Regels.'
+        : 'Kamer maken mislukt: '+raw;
+      alert(message);return'';
+    }
   };
 
   const previousListenHost=typeof listenHost==='function'?listenHost:null;

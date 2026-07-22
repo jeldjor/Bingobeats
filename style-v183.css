@@ -1,0 +1,53 @@
+/* Bingo Beats V183 — juiste vijf vaste spelcategorieën op het muziekscherm. */
+html.bbV183 .bbFixedQuestionCategories{
+  flex:0 0 166px!important;
+  height:166px!important;
+  min-height:166px!important;
+  max-height:166px!important;
+  grid-template-rows:repeat(5,30px)!important;
+  gap:4px!important;
+}
+html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow{
+  height:30px!important;
+  min-height:30px!important;
+  max-height:30px!important;
+  grid-template-columns:23px minmax(0,1fr) 43px!important;
+}
+html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow>div{
+  display:grid!important;
+  grid-template-columns:max-content minmax(0,1fr)!important;
+  align-items:baseline!important;
+  column-gap:6px!important;
+}
+html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow em{
+  width:43px!important;
+  text-align:right!important;
+  font-size:7px!important;
+}
+html.bbV183 .bbCatGold{--row-color:#ffd84a;border-color:rgba(255,216,74,.35)!important}
+html.bbV183 .bbCatAqua{--row-color:#36dff5;border-color:rgba(54,223,245,.35)!important}
+html.bbV183 .bbCatOrange{--row-color:#ff972b;border-color:rgba(255,151,43,.35)!important}
+html.bbV183 .bbCatLime{--row-color:#9bea30;border-color:rgba(155,234,48,.35)!important}
+html.bbV183 .bbCatCoral{--row-color:#ff6b70;border-color:rgba(255,107,112,.35)!important}
+
+@media (max-height:720px){
+  html.bbV183 .bbFixedQuestionCategories{
+    flex-basis:133px!important;
+    height:133px!important;
+    min-height:133px!important;
+    max-height:133px!important;
+    grid-template-rows:repeat(5,24px)!important;
+    gap:3px!important;
+  }
+  html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow{
+    height:24px!important;
+    min-height:24px!important;
+    max-height:24px!important;
+    grid-template-columns:19px minmax(0,1fr) 36px!important;
+  }
+  html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow>div{column-gap:4px!important}
+  html.bbV183 .bbFixedQuestionCategories .bbMusicCategoryRow em{
+    width:36px!important;
+    font-size:5.5px!important;
+  }
+}

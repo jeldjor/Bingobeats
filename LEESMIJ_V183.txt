@@ -1,0 +1,12 @@
+BINGO BEATS V183
+
+Correctie muziekscherm:
+- De onjuiste filters Decennium, Genre, Land, Artiest, Taal en Thema zijn verwijderd.
+- De vijf echte vaste spelcategorieën worden getoond:
+  1. Goud — Voor of na 2001
+  2. Aqua — Naam van artiest
+  3. Oranje — Decennium
+  4. Lime — Jaartal +/- 2
+  5. Koraal — Titel van track
+- Elke rij bevat de bijbehorende vraaguitleg.
+- Geen keuzepijlen of 'Alle', omdat deze categorieën vaststaan en niet aanpasbaar zijn.

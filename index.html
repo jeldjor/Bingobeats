@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="bbV177 bbV178 bbV179 bbV180 bbV181">
+<html lang="nl" class="bbV177 bbV178 bbV179 bbV180 bbV181 bbV182 bbV183">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -10,13 +10,15 @@
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1810">
-  <link rel="stylesheet" href="style-v176.css?v=1810">
-  <link rel="stylesheet" href="style-v177.css?v=1810">
-  <link rel="stylesheet" href="style-v178.css?v=1810">
-  <link rel="stylesheet" href="style-v179.css?v=1810">
-  <link rel="stylesheet" href="style-v180.css?v=1810">
-  <link rel="stylesheet" href="style-v181.css?v=1810">
+  <link rel="stylesheet" href="style.css?v=1830">
+  <link rel="stylesheet" href="style-v176.css?v=1830">
+  <link rel="stylesheet" href="style-v177.css?v=1830">
+  <link rel="stylesheet" href="style-v178.css?v=1830">
+  <link rel="stylesheet" href="style-v179.css?v=1830">
+  <link rel="stylesheet" href="style-v180.css?v=1830">
+  <link rel="stylesheet" href="style-v181.css?v=1830">
+  <link rel="stylesheet" href="style-v182.css?v=1830">
+  <link rel="stylesheet" href="style-v183.css?v=1830">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -119,37 +121,32 @@
         <div id="playlistPreview" class="playlistPreview hidden"></div>
         <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met je muziek-app en laad daarna je playlists.</p>
 
-        <h2 class="bbMusicSectionTitle bbCategoryTitle">KIES CATEGORIEËN</h2>
-        <div class="bbMusicCategoryList" aria-label="Muziekcategorieën">
-          <div class="bbMusicCategoryRow bbCatDecade">
-            <span class="bbCategoryIcon" aria-hidden="true">▣</span>
-            <div><strong>Decennium</strong><small>60s – 20s</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
-          </div>
-          <div class="bbMusicCategoryRow bbCatGenre">
-            <span class="bbCategoryIcon" aria-hidden="true">♫</span>
-            <div><strong>Genre</strong><small>Pop · Rock · Hip-hop en meer</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
-          </div>
-          <div class="bbMusicCategoryRow bbCatLand">
-            <span class="bbCategoryIcon" aria-hidden="true">◎</span>
-            <div><strong>Land</strong><small>NL · USA · UK en meer</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
-          </div>
-          <div class="bbMusicCategoryRow bbCatArtist">
-            <span class="bbCategoryIcon" aria-hidden="true">♟</span>
-            <div><strong>Artiest</strong><small>Bekende artiesten en meer</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
-          </div>
-          <div class="bbMusicCategoryRow bbCatLanguage">
-            <span class="bbCategoryIcon" aria-hidden="true">●</span>
-            <div><strong>Taal</strong><small>Nederlands · Engels en meer</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
-          </div>
-          <div class="bbMusicCategoryRow bbCatTheme">
+        <h2 class="bbMusicSectionTitle bbCategoryTitle">VASTE CATEGORIEËN</h2>
+        <div class="bbMusicCategoryList bbFixedQuestionCategories" aria-label="Vaste spelcategorieën">
+          <div class="bbMusicCategoryRow bbCatGold">
             <span class="bbCategoryIcon" aria-hidden="true">★</span>
-            <div><strong>Thema</strong><small>Love · Party · Guilty en meer</small></div>
-            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
+            <div><strong>Voor of na 2001</strong><small>Is het nummer uitgebracht vóór of na 2001?</small></div>
+            <em>GOUD</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatAqua">
+            <span class="bbCategoryIcon" aria-hidden="true">♬</span>
+            <div><strong>Naam van artiest</strong><small>Welke artiest hoor je?</small></div>
+            <em>AQUA</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatOrange">
+            <span class="bbCategoryIcon" aria-hidden="true">◉</span>
+            <div><strong>Decennium</strong><small>Uit welk decennium komt deze track?</small></div>
+            <em>ORANJE</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatLime">
+            <span class="bbCategoryIcon" aria-hidden="true">▣</span>
+            <div><strong>Jaartal ± 2</strong><small>Noem het jaartal; twee jaar verschil telt goed.</small></div>
+            <em>LIME</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatCoral">
+            <span class="bbCategoryIcon" aria-hidden="true">♫</span>
+            <div><strong>Titel van track</strong><small>Hoe heet deze track?</small></div>
+            <em>KORAAL</em>
           </div>
         </div>
       </div>
@@ -408,12 +405,14 @@
   </div>
 </div>
 
-<script src="app.js?v=1810"></script>
-<script src="app-v176.js?v=1810"></script>
-<script src="app-v177.js?v=1810"></script>
-<script src="app-v178.js?v=1810"></script>
-<script src="app-v180.js?v=1810"></script>
-<script src="app-v181.js?v=1810"></script>
+<script src="app.js?v=1830"></script>
+<script src="app-v176.js?v=1830"></script>
+<script src="app-v177.js?v=1830"></script>
+<script src="app-v178.js?v=1830"></script>
+<script src="app-v180.js?v=1830"></script>
+<script src="app-v181.js?v=1830"></script>
+<script src="app-v182.js?v=1830"></script>
+<script src="app-v183.js?v=1830"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -438,4 +437,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V180 - exact muziekscherm, compacte layout en automatische muziekspeler -->
+<!-- Bingo Beats V183 - juiste vijf vaste spelcategorieën -->

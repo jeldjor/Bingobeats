@@ -1,0 +1,13 @@
+Bingo Beats V182
+
+Belangrijkste aanpassing:
+- Host scherm 1 (Muziek) opnieuw uitgelijnd volgens de gewenste voorbeeldstijl.
+- Modulebalk bovenin staat weer zichtbaar.
+- Muziekblokken staan netjes onder elkaar en overlappen niet meer.
+- Categorieën tonen duidelijk de vraag/omschrijving.
+- Actieve spelers staat onder HOST.
+- Muziek-app kop blijft behouden.
+- Cacheversie verhoogd naar v182.
+
+Upload alle bestanden uit deze map naar de hoofdmap van je GitHub-project.
+Als je nog een oude PWA ziet: verwijder de app van je beginscherm en voeg hem opnieuw toe.

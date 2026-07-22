@@ -1,0 +1,979 @@
+/* Bingo Beats V182 — definitief passend muziekscherm met zichtbare modulebalk. */
+html.bbV182{
+  --bb182-green:#9af300;
+  --bb182-green-dark:#4d9800;
+  --bb182-surface:#071009;
+  --bb182-line:rgba(255,255,255,.16);
+  --bb182-muted:#b9c1ba;
+}
+
+/* Alleen de compacte modulebalk blijft bovenaan zichtbaar. De dubbele merkbalk blijft weg. */
+html.bbV182 body.bbHostWizardOpen{
+  overflow:hidden!important;
+  background:#000!important;
+}
+html.bbV182 body.bbHostWizardOpen #mainHeader{display:none!important}
+html.bbV182 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+  box-sizing:border-box!important;
+  width:min(100%,500px)!important;
+  max-width:500px!important;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  margin:0 auto!important;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)!important;
+  display:grid!important;
+  grid-template-rows:52px minmax(0,1fr)!important;
+  align-items:stretch!important;
+  justify-items:stretch!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.15)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 50% 12%,rgba(103,0,160,.22),transparent 29%),
+    radial-gradient(circle at 50% 68%,rgba(64,142,0,.08),transparent 42%),
+    linear-gradient(180deg,#020303 0%,#000 100%)!important;
+  box-shadow:0 22px 72px rgba(0,0,0,.88)!important;
+}
+
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostProgress{
+  position:relative!important;
+  inset:auto!important;
+  z-index:20!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:52px!important;
+  min-height:52px!important;
+  max-height:52px!important;
+  margin:0!important;
+  padding:4px 13px 3px!important;
+  display:grid!important;
+  grid-template-columns:45px minmax(12px,1fr) 45px minmax(12px,1fr) 62px minmax(12px,1fr) 45px!important;
+  align-items:center!important;
+  gap:3px!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-bottom:1px solid rgba(143,240,0,.32)!important;
+  border-radius:0!important;
+  background:linear-gradient(180deg,rgba(1,5,2,.98),rgba(1,3,2,.94))!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.26)!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostProgress>i{
+  width:100%!important;
+  height:1px!important;
+  min-width:0!important;
+  margin:0!important;
+  background:linear-gradient(90deg,rgba(154,243,0,.55),rgba(154,243,0,.14))!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:44px!important;
+  min-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-rows:25px 13px!important;
+  place-items:center!important;
+  gap:1px!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#9ea69f!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  transform:none!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab span{
+  box-sizing:border-box!important;
+  width:25px!important;
+  height:25px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:50%!important;
+  color:#b1b7b2!important;
+  background:#0b0d0c!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab small{
+  color:inherit!important;
+  font-size:7.5px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab.active{color:#fff!important}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab.active span{
+  color:#112000!important;
+  border-color:var(--bb182-green)!important;
+  background:var(--bb182-green)!important;
+  box-shadow:0 0 0 3px rgba(154,243,0,.10),0 0 11px rgba(154,243,0,.18)!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab.done{color:var(--bb182-green)!important}
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab.done span{
+  color:var(--bb182-green)!important;
+  border-color:rgba(154,243,0,.58)!important;
+  background:#091007!important;
+}
+
+/* Het muziekscherm gebruikt één normale kolom. Niets mag nog absoluut over een andere rij vallen. */
+html.bbV182 body.bbHostMusicStep #hostApp .bbHostStep.bbMusicExact.active{
+  isolation:isolate!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:5px 14px 8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbMusicExact.active::before{
+  top:18%!important;
+  height:52%!important;
+  opacity:.10!important;
+}
+
+html.bbV182 .bbMusicTop{
+  position:relative!important;
+  flex:0 0 105px!important;
+  width:100%!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  overflow:visible!important;
+}
+html.bbV182 .bbMusicLogo{
+  width:126px!important;
+  height:104px!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 15px rgba(145,32,255,.46)) drop-shadow(0 0 7px rgba(154,243,0,.15))!important;
+}
+html.bbV182 .bbMusicBackMark{
+  top:7px!important;
+  left:0!important;
+  width:38px!important;
+  height:38px!important;
+  border-color:rgba(255,255,255,.28)!important;
+  background:rgba(1,5,2,.75)!important;
+  font-size:24px!important;
+}
+html.bbV182 .bbMusicHostMeta{
+  top:8px!important;
+  right:0!important;
+  max-width:118px!important;
+  align-items:flex-end!important;
+  gap:3px!important;
+}
+html.bbV182 .bbMusicHostBadge{
+  gap:6px!important;
+  color:var(--bb182-green)!important;
+  font-size:16px!important;
+  line-height:1!important;
+}
+html.bbV182 .bbMusicHostBadge span{font-size:23px!important}
+html.bbV182 .bbMusicHostPlayers{
+  color:#c9d0ca!important;
+  font-size:8.5px!important;
+  line-height:1.05!important;
+}
+html.bbV182 .bbMusicHostPlayers span{font-size:10.5px!important}
+
+html.bbV182 .bbMusicIntro{
+  flex:0 0 43px!important;
+  margin:0 0 4px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  text-align:center!important;
+}
+html.bbV182 .bbMusicIntro h1{
+  margin:0!important;
+  font-size:22px!important;
+  line-height:1.02!important;
+  letter-spacing:.012em!important;
+}
+html.bbV182 .bbMusicIntro p{
+  margin:4px 0 0!important;
+  font-size:10.5px!important;
+  line-height:1.05!important;
+}
+
+html.bbV182 .bbMusicBody{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:4px!important;
+  overflow:hidden!important;
+}
+html.bbV182 .bbMusicSectionTitle{
+  flex:0 0 13px!important;
+  height:13px!important;
+  min-height:13px!important;
+  margin:0 0 1px 4px!important;
+  font-size:10.5px!important;
+  line-height:13px!important;
+}
+html.bbV182 .bbCategoryTitle{
+  margin-top:1px!important;
+  text-align:center!important;
+}
+
+html.bbV182 .bbMusicRow,
+html.bbV182 #playlistImportBox .bbMusicRow{
+  position:relative!important;
+  inset:auto!important;
+  box-sizing:border-box!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:4px 7px!important;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr) 101px!important;
+  align-items:center!important;
+  gap:7px!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182 #playlistImportBox{
+  position:static!important;
+  inset:auto!important;
+  box-sizing:border-box!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  display:block!important;
+  overflow:visible!important;
+  border:0!important;
+  background:transparent!important;
+  transform:none!important;
+}
+html.bbV182 .bbMusicRowIcon{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  font-size:19px!important;
+}
+html.bbV182 .bbSpotifyIcon::after{font-size:21px!important}
+html.bbV182 .bbMusicRowCopy{
+  position:static!important;
+  min-width:0!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:1px!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182 .bbMusicRowCopy small{
+  display:block!important;
+  margin:0!important;
+  overflow:hidden!important;
+  color:#c6ccc7!important;
+  font-size:7.5px!important;
+  line-height:1!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV182 .bbMusicRowCopy strong,
+html.bbV182 #playlistSelect{
+  box-sizing:border-box!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:20px!important;
+  min-height:20px!important;
+  margin:0!important;
+  padding:0 18px 0 0!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#fff!important;
+  background:transparent!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  line-height:20px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+  transform:none!important;
+  -webkit-appearance:auto!important;
+  appearance:auto!important;
+}
+html.bbV182 #playlistSelect:disabled{color:#939b95!important;opacity:1!important}
+html.bbV182 .bbTrackCountRow .bbMusicRowCopy strong{color:var(--bb182-green)!important}
+html.bbV182 .bbMusicRowActions{
+  position:static!important;
+  width:101px!important;
+  min-width:101px!important;
+  height:34px!important;
+  display:block!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182 .bbMusicRowActions button,
+html.bbV182 .bbMusicOutlineButton{
+  position:static!important;
+  box-sizing:border-box!important;
+  width:101px!important;
+  min-width:101px!important;
+  max-width:101px!important;
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  margin:0!important;
+  padding:0 5px!important;
+  border-radius:8px!important;
+  font-size:8.5px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+html.bbV182 .bbAutoSpotifyAction{display:none!important}
+
+html.bbV182 .bbPlaylistSearch{
+  position:static!important;
+  box-sizing:border-box!important;
+  flex:0 0 34px!important;
+  width:100%!important;
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  margin:0!important;
+  padding:0 10px!important;
+  display:grid!important;
+  grid-template-columns:22px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:5px!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182 .bbPlaylistSearch span{font-size:20px!important}
+html.bbV182 .bbPlaylistSearch input{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:32px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:10.5px!important;
+  transform:none!important;
+}
+html.bbV182 body.bbHostMusicStep #playlistPreview{display:none!important}
+html.bbV182 .bbMusicStatus{
+  box-sizing:border-box!important;
+  flex:0 0 9px!important;
+  width:100%!important;
+  height:9px!important;
+  min-height:9px!important;
+  max-height:9px!important;
+  margin:0 3px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  font-size:6.5px!important;
+  line-height:9px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+html.bbV182 .bbMusicCategoryList{
+  flex:0 0 194px!important;
+  width:100%!important;
+  height:194px!important;
+  min-height:194px!important;
+  max-height:194px!important;
+  display:grid!important;
+  grid-template-rows:repeat(6,29px)!important;
+  gap:4px!important;
+  overflow:hidden!important;
+}
+html.bbV182 .bbMusicCategoryRow{
+  position:static!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:29px!important;
+  min-height:29px!important;
+  max-height:29px!important;
+  margin:0!important;
+  padding:2px 7px!important;
+  display:grid!important;
+  grid-template-columns:23px minmax(0,1fr) 29px 8px!important;
+  align-items:center!important;
+  gap:6px!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182 .bbCategoryIcon{
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  border-radius:5px!important;
+  font-size:11px!important;
+}
+html.bbV182 .bbMusicCategoryRow>div{
+  min-width:0!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:baseline!important;
+  gap:5px!important;
+  overflow:hidden!important;
+}
+html.bbV182 .bbMusicCategoryRow strong{
+  flex:0 0 auto!important;
+  font-size:8.7px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+html.bbV182 .bbMusicCategoryRow small{
+  min-width:0!important;
+  overflow:hidden!important;
+  font-size:6.7px!important;
+  line-height:1!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV182 .bbMusicCategoryRow em{
+  width:29px!important;
+  font-size:7.8px!important;
+  line-height:1!important;
+  text-align:right!important;
+  white-space:nowrap!important;
+}
+html.bbV182 .bbCategoryChevron{font-size:15px!important}
+
+html.bbV182 .bbMusicNext{
+  position:static!important;
+  box-sizing:border-box!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:6px 0 0!important;
+  padding:0 11px!important;
+  font-size:18px!important;
+  transform:none!important;
+}
+html.bbV182 .bbMusicNext b{width:25px!important;height:25px!important;font-size:24px!important}
+
+/* Zeer kleine iPhones: dezelfde volgorde, alleen iets compacter. */
+@media (max-height:720px){
+  html.bbV182 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+    grid-template-rows:46px minmax(0,1fr)!important;
+  }
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostProgress{
+    height:46px!important;min-height:46px!important;max-height:46px!important;padding-top:2px!important;padding-bottom:2px!important;
+  }
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab{height:40px!important;min-height:40px!important;grid-template-rows:22px 12px!important}
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostStepTab span{width:22px!important;height:22px!important;font-size:9px!important}
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostStep.bbMusicExact.active{padding-top:3px!important;padding-bottom:5px!important}
+  html.bbV182 .bbMusicTop{flex-basis:78px!important}
+  html.bbV182 .bbMusicLogo{width:96px!important;height:78px!important}
+  html.bbV182 .bbMusicBackMark{top:3px!important;width:32px!important;height:32px!important;font-size:20px!important}
+  html.bbV182 .bbMusicHostMeta{top:4px!important}
+  html.bbV182 .bbMusicHostBadge{font-size:13px!important}
+  html.bbV182 .bbMusicHostBadge span{font-size:19px!important}
+  html.bbV182 .bbMusicHostPlayers{font-size:7px!important}
+  html.bbV182 .bbMusicHostPlayers span{font-size:8px!important}
+  html.bbV182 .bbMusicIntro{flex-basis:34px!important;margin-bottom:3px!important}
+  html.bbV182 .bbMusicIntro h1{font-size:18px!important}
+  html.bbV182 .bbMusicIntro p{margin-top:2px!important;font-size:8.5px!important}
+  html.bbV182 .bbMusicBody{gap:2px!important}
+  html.bbV182 .bbMusicSectionTitle{flex-basis:10px!important;height:10px!important;min-height:10px!important;font-size:8.5px!important;line-height:10px!important}
+  html.bbV182 .bbMusicRow,html.bbV182 #playlistImportBox .bbMusicRow{flex-basis:36px!important;height:36px!important;min-height:36px!important;max-height:36px!important;grid-template-columns:28px minmax(0,1fr) 86px!important;gap:5px!important;padding:2px 5px!important}
+  html.bbV182 #playlistImportBox{flex-basis:36px!important;height:36px!important;min-height:36px!important;max-height:36px!important}
+  html.bbV182 .bbMusicRowIcon{width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;font-size:16px!important}
+  html.bbV182 .bbSpotifyIcon::after{font-size:18px!important}
+  html.bbV182 .bbMusicRowCopy small{font-size:6.3px!important}
+  html.bbV182 .bbMusicRowCopy strong,html.bbV182 #playlistSelect{height:16px!important;min-height:16px!important;font-size:8.7px!important;line-height:16px!important}
+  html.bbV182 .bbMusicRowActions{width:86px!important;min-width:86px!important;height:28px!important}
+  html.bbV182 .bbMusicRowActions button,html.bbV182 .bbMusicOutlineButton{width:86px!important;min-width:86px!important;max-width:86px!important;height:28px!important;min-height:28px!important;max-height:28px!important;font-size:7px!important}
+  html.bbV182 .bbPlaylistSearch{flex-basis:28px!important;height:28px!important;min-height:28px!important;max-height:28px!important;padding:0 7px!important;grid-template-columns:18px minmax(0,1fr)!important}
+  html.bbV182 .bbPlaylistSearch span{font-size:17px!important}
+  html.bbV182 .bbPlaylistSearch input{height:26px!important;font-size:8.5px!important}
+  html.bbV182 .bbMusicStatus{flex-basis:7px!important;height:7px!important;min-height:7px!important;max-height:7px!important;font-size:5.5px!important;line-height:7px!important}
+  html.bbV182 .bbMusicCategoryList{flex-basis:158px!important;height:158px!important;min-height:158px!important;max-height:158px!important;grid-template-rows:repeat(6,24px)!important;gap:3px!important}
+  html.bbV182 .bbMusicCategoryRow{height:24px!important;min-height:24px!important;max-height:24px!important;grid-template-columns:19px minmax(0,1fr) 25px 7px!important;gap:4px!important;padding:1px 5px!important}
+  html.bbV182 .bbCategoryIcon{width:17px!important;height:17px!important;min-width:17px!important;font-size:9px!important}
+  html.bbV182 .bbMusicCategoryRow>div{gap:3px!important}
+  html.bbV182 .bbMusicCategoryRow strong{font-size:7.2px!important}
+  html.bbV182 .bbMusicCategoryRow small{font-size:5.4px!important}
+  html.bbV182 .bbMusicCategoryRow em{width:25px!important;font-size:6.4px!important}
+  html.bbV182 .bbCategoryChevron{font-size:12px!important}
+  html.bbV182 .bbMusicNext{flex-basis:37px!important;height:37px!important;min-height:37px!important;max-height:37px!important;margin-top:3px!important;font-size:15px!important}
+  html.bbV182 .bbMusicNext b{width:21px!important;height:21px!important;font-size:20px!important}
+}
+
+@media (max-width:620px){
+  html.bbV182 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+    width:100%!important;
+    max-width:none!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+}
+@media (max-width:360px){
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostProgress{padding-left:8px!important;padding-right:8px!important;grid-template-columns:40px minmax(8px,1fr) 40px minmax(8px,1fr) 54px minmax(8px,1fr) 40px!important}
+  html.bbV182 body.bbHostMusicStep #hostApp .bbHostStep.bbMusicExact.active{padding-left:10px!important;padding-right:10px!important}
+  html.bbV182 .bbMusicRow,html.bbV182 #playlistImportBox .bbMusicRow{grid-template-columns:32px minmax(0,1fr) 94px!important;gap:5px!important}
+  html.bbV182 .bbMusicRowActions{width:94px!important;min-width:94px!important}
+  html.bbV182 .bbMusicRowActions button,html.bbV182 .bbMusicOutlineButton{width:94px!important;min-width:94px!important;max-width:94px!important}
+}
+
+html.bbV182 body #hostApp.bbHostWizard.hidden{display:none!important}
+
+
+/* Laatste prioriteitslaag tegen oudere wizardregels. */
+html.bbV182 body.bbHostMusicStep #hostApp.bbHostWizard > .bbHostStep.bbMusicExact.active{
+  grid-row:2!important;
+  align-self:stretch!important;
+  justify-self:stretch!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:5px 14px 8px!important;
+}
+html.bbV182 body.bbHostMusicStep #hostApp .bbMusicExact .bbMusicNext{
+  box-sizing:border-box!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:6px 0 0!important;
+  padding:0 11px!important;
+}
+@media (max-height:720px){
+  html.bbV182 body.bbHostMusicStep #hostApp.bbHostWizard > .bbHostStep.bbMusicExact.active{padding:3px 14px 5px!important}
+  html.bbV182 body.bbHostMusicStep #hostApp .bbMusicExact .bbMusicNext{
+    flex-basis:37px!important;height:37px!important;min-height:37px!important;max-height:37px!important;margin-top:3px!important;padding:0 9px!important;
+  }
+}
+
+/* Absoluut laatste cascadefix: oudere versies gebruikten een vaste schermhoogte en translate. */
+html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp.bbHostWizard{
+  row-gap:0!important;
+  column-gap:0!important;
+  gap:0!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp.bbHostWizard > section.bbHostStep.bbMusicExact.active[data-host-step-panel="1"]{
+  grid-row:2 / 3!important;
+  align-self:stretch!important;
+  justify-self:stretch!important;
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:5px 14px 8px!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp .bbMusicExact .bbMusicBody{
+  min-height:0!important;
+  max-height:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp .bbMusicExact button.bbHostNext.bbMusicNext{
+  box-sizing:border-box!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:6px 0 0!important;
+  padding:0 11px!important;
+  transform:none!important;
+}
+@media (max-height:720px){
+  html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp.bbHostWizard > section.bbHostStep.bbMusicExact.active[data-host-step-panel="1"]{padding:3px 14px 5px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep.bbHostMusicStep #hostApp#hostApp .bbMusicExact button.bbHostNext.bbMusicNext{
+    flex-basis:37px!important;height:37px!important;min-height:37px!important;max-height:37px!important;margin-top:3px!important;padding:0 9px!important;
+  }
+}
+
+/* Visuele eindafwerking voor 390 × 844: groter, leesbaar en zonder ongebruikte lege middenruimte. */
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicTop{
+  flex:0 0 125px!important;
+  height:125px!important;
+  min-height:125px!important;
+  max-height:125px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicLogo{
+  width:148px!important;
+  height:123px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro{
+  flex:0 0 49px!important;
+  height:49px!important;
+  min-height:49px!important;
+  max-height:49px!important;
+  margin:0 0 4px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro h1{
+  margin:0!important;
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:24px!important;
+  font-weight:400!important;
+  line-height:1!important;
+  letter-spacing:.01em!important;
+  text-shadow:0 2px 0 #000!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro p{
+  margin:5px 0 0!important;
+  color:#e4e7e4!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:10.5px!important;
+  font-weight:600!important;
+  line-height:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicBody{
+  flex:1 1 auto!important;
+  gap:4px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicSectionTitle{
+  flex:0 0 14px!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+  margin:0 0 1px 4px!important;
+  color:var(--bb182-green)!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:10.5px!important;
+  font-weight:950!important;
+  line-height:14px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbCategoryTitle{
+  margin-top:1px!important;
+  text-align:center!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRow,
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp #playlistImportBox .bbMusicRow{
+  flex:0 0 47px!important;
+  width:100%!important;
+  height:47px!important;
+  min-height:47px!important;
+  max-height:47px!important;
+  margin:0!important;
+  padding:4px 7px!important;
+  grid-template-columns:36px minmax(0,1fr) 104px!important;
+  gap:8px!important;
+  border-radius:10px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp #playlistImportBox{
+  flex:0 0 47px!important;
+  height:47px!important;
+  min-height:47px!important;
+  max-height:47px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowIcon{
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  min-height:32px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:20px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbSpotifyIcon::after{font-size:22px!important}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowCopy{
+  position:static!important;
+  box-sizing:border-box!important;
+  min-width:0!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  gap:2px!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowCopy small{
+  margin:0!important;
+  padding:0!important;
+  color:#bfc6c0!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:7.5px!important;
+  font-weight:650!important;
+  line-height:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowCopy strong,
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp select#playlistSelect{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:19px!important;
+  min-height:19px!important;
+  max-height:19px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  color:#fff!important;
+  background:transparent!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  line-height:19px!important;
+  text-indent:0!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp select#playlistSelect{
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  cursor:pointer!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp select#playlistSelect:disabled{
+  color:#8f9791!important;
+  opacity:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowActions{
+  position:static!important;
+  width:104px!important;
+  min-width:104px!important;
+  max-width:104px!important;
+  height:35px!important;
+  min-height:35px!important;
+  max-height:35px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowActions button,
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp button.bbMusicOutlineButton{
+  position:static!important;
+  box-sizing:border-box!important;
+  width:104px!important;
+  min-width:104px!important;
+  max-width:104px!important;
+  height:35px!important;
+  min-height:35px!important;
+  max-height:35px!important;
+  margin:0!important;
+  padding:0 5px!important;
+  border-radius:8px!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:8.5px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbPlaylistSearch{
+  flex:0 0 36px!important;
+  width:100%!important;
+  height:36px!important;
+  min-height:36px!important;
+  max-height:36px!important;
+  margin:0!important;
+  padding:0 10px!important;
+  grid-template-columns:22px minmax(0,1fr)!important;
+  gap:6px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbPlaylistSearch input{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:34px!important;
+  margin:0!important;
+  padding:0!important;
+  color:#fff!important;
+  background:transparent!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:10.5px!important;
+  font-weight:500!important;
+  line-height:34px!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicStatus{
+  flex:0 0 9px!important;
+  height:9px!important;
+  min-height:9px!important;
+  max-height:9px!important;
+  margin:0 3px!important;
+  padding:0!important;
+  font-size:6.5px!important;
+  line-height:9px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryList{
+  flex:0 0 236px!important;
+  width:100%!important;
+  height:236px!important;
+  min-height:236px!important;
+  max-height:236px!important;
+  grid-template-rows:repeat(6,36px)!important;
+  gap:4px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow{
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:36px!important;
+  min-height:36px!important;
+  max-height:36px!important;
+  margin:0!important;
+  padding:3px 8px!important;
+  grid-template-columns:25px minmax(0,1fr) 30px 9px!important;
+  gap:7px!important;
+  border-radius:9px!important;
+  transform:none!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbCategoryIcon{
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+  min-height:22px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:12px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow>div{
+  min-width:0!important;
+  width:100%!important;
+  gap:5px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow strong{
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:9px!important;
+  font-weight:850!important;
+  line-height:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow small{
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:7px!important;
+  font-weight:500!important;
+  line-height:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow em{
+  width:30px!important;
+  font-family:Arial,system-ui,sans-serif!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbCategoryChevron{font-size:16px!important}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicExact button.bbHostNext.bbMusicNext{
+  flex:0 0 47px!important;
+  height:47px!important;
+  min-height:47px!important;
+  max-height:47px!important;
+  margin:6px 0 0!important;
+  padding:0 12px!important;
+  border:1px solid #a9ff12!important;
+  border-radius:11px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#8be411 0%,#4d9b00 100%)!important;
+  box-shadow:0 0 18px rgba(139,228,17,.27),inset 0 1px 0 rgba(255,255,255,.27)!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:20px!important;
+  font-weight:400!important;
+  line-height:1!important;
+  letter-spacing:.02em!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicExact button.bbHostNext.bbMusicNext span{
+  color:#fff!important;
+}
+
+@media (max-height:760px){
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicTop{flex-basis:96px!important;height:96px!important;min-height:96px!important;max-height:96px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicLogo{width:116px!important;height:94px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro{flex-basis:38px!important;height:38px!important;min-height:38px!important;max-height:38px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro h1{font-size:19px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro p{margin-top:3px!important;font-size:8.5px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRow,
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp #playlistImportBox .bbMusicRow{flex-basis:39px!important;height:39px!important;min-height:39px!important;max-height:39px!important;grid-template-columns:30px minmax(0,1fr) 91px!important;gap:6px!important;padding:3px 6px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp #playlistImportBox{flex-basis:39px!important;height:39px!important;min-height:39px!important;max-height:39px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowIcon{width:27px!important;height:27px!important;min-width:27px!important;min-height:27px!important;font-size:17px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbSpotifyIcon::after{font-size:19px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowActions{width:91px!important;min-width:91px!important;max-width:91px!important;height:30px!important;min-height:30px!important;max-height:30px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowActions button,
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp button.bbMusicOutlineButton{width:91px!important;min-width:91px!important;max-width:91px!important;height:30px!important;min-height:30px!important;max-height:30px!important;font-size:7.3px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowCopy small{font-size:6.5px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicRowCopy strong,
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp select#playlistSelect{height:16px!important;min-height:16px!important;max-height:16px!important;font-size:9px!important;line-height:16px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbPlaylistSearch{flex-basis:30px!important;height:30px!important;min-height:30px!important;max-height:30px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbPlaylistSearch input{height:28px!important;font-size:9px!important;line-height:28px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryList{flex-basis:170px!important;height:170px!important;min-height:170px!important;max-height:170px!important;grid-template-rows:repeat(6,26px)!important;gap:3px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow{height:26px!important;min-height:26px!important;max-height:26px!important;grid-template-columns:20px minmax(0,1fr) 26px 7px!important;gap:5px!important;padding:1px 6px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbCategoryIcon{width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;font-size:9px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow strong{font-size:7.4px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow small{font-size:5.6px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow em{width:26px!important;font-size:6.5px!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicExact button.bbHostNext.bbMusicNext{flex-basis:39px!important;height:39px!important;min-height:39px!important;max-height:39px!important;margin-top:3px!important;font-size:16px!important}
+}
+
+/* Extra veilige ruimte voor iPhone safe-area boven en onder. */
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryList{
+  flex-basis:224px!important;
+  height:224px!important;
+  min-height:224px!important;
+  max-height:224px!important;
+  grid-template-rows:repeat(6,34px)!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow{
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+}
+html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicIntro h1{
+  font-family:"Arial Narrow",Arial,sans-serif!important;
+  font-weight:950!important;
+  font-stretch:condensed!important;
+  letter-spacing:-.025em!important;
+}
+@media (max-height:760px){
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryList{flex-basis:170px!important;height:170px!important;min-height:170px!important;max-height:170px!important;grid-template-rows:repeat(6,26px)!important}
+  html.bbV182.bbV182 body.bbHostMusicStep #hostApp#hostApp .bbMusicCategoryRow{height:26px!important;min-height:26px!important;max-height:26px!important}
+}

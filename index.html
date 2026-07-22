@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="bbV177 bbV178 bbV179">
+<html lang="nl" class="bbV177 bbV178 bbV179 bbV180">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -10,11 +10,12 @@
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1790">
-  <link rel="stylesheet" href="style-v176.css?v=1790">
-  <link rel="stylesheet" href="style-v177.css?v=1790">
-  <link rel="stylesheet" href="style-v178.css?v=1790">
-  <link rel="stylesheet" href="style-v179.css?v=1790">
+  <link rel="stylesheet" href="style.css?v=1800">
+  <link rel="stylesheet" href="style-v176.css?v=1800">
+  <link rel="stylesheet" href="style-v177.css?v=1800">
+  <link rel="stylesheet" href="style-v178.css?v=1800">
+  <link rel="stylesheet" href="style-v179.css?v=1800">
+  <link rel="stylesheet" href="style-v180.css?v=1800">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -61,16 +62,19 @@
       <div class="bbMusicTop">
         <span class="bbMusicBackMark" aria-hidden="true">←</span>
         <img src="bb_logo.png" class="bbMusicLogo" alt="Bingo Beats">
-        <div class="bbMusicHostBadge" aria-label="Host"><span>♛</span> HOST</div>
+        <div class="bbMusicHostMeta">
+          <div class="bbMusicHostBadge" aria-label="Host"><span>♛</span><strong>HOST</strong></div>
+          <div class="bbMusicHostPlayers"><span id="bbMusicActivePlayers">0</span> actieve spelers</div>
+        </div>
       </div>
 
       <div class="bbMusicIntro">
         <h1>MUZIEK &amp; CATEGORIE</h1>
-        <p>Kies je muziek en bekijk de vaste spelcategorieën</p>
+        <p>Kies je muziek en categorieën</p>
       </div>
 
       <div class="bbMusicBody">
-        <h2 class="bbMusicSectionTitle">SPOTIFY</h2>
+        <h2 class="bbMusicSectionTitle">MUZIEK-APP</h2>
 
         <section class="bbMusicRow bbSpotifyAccountRow">
           <div class="bbMusicRowIcon bbSpotifyIcon" aria-hidden="true">●</div>
@@ -89,7 +93,7 @@
           <div class="bbMusicRowIcon bbPlaylistIcon" aria-hidden="true">♫</div>
           <label class="bbMusicRowCopy" for="playlistSelect">
             <small>Playlist</small>
-            <select id="playlistSelect" aria-label="Spotify-playlist" disabled>
+            <select id="playlistSelect" aria-label="Muziekplaylist" disabled>
               <option value="">Nog geen playlist geladen</option>
             </select>
           </label>
@@ -107,41 +111,44 @@
           </section>
         </div>
 
+        <label class="bbPlaylistSearch" for="bbPlaylistSearchInput">
+          <span aria-hidden="true">⌕</span>
+          <input id="bbPlaylistSearchInput" type="search" placeholder="Zoek in Spotify-playlists..." autocomplete="off">
+        </label>
         <div id="playlistPreview" class="playlistPreview hidden"></div>
-        <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met Spotify en laad daarna je playlists.</p>
+        <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met je muziek-app en laad daarna je playlists.</p>
 
-        <h2 class="bbMusicSectionTitle bbCategoryTitle">SPELCATEGORIEËN</h2>
-        <div class="bbMusicCategoryList" aria-label="Vaste spelcategorieën">
-          <input type="hidden" id="cat-yellow" value="Voor of na 2001">
-          <input type="hidden" id="cat-pink" value="Naam van artiest">
-          <input type="hidden" id="cat-purple" value="Decennium">
-          <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
-          <input type="hidden" id="cat-green" value="Titel van track">
-
-          <div class="bbMusicCategoryRow bbCatGold">
-            <span class="bbCategoryIcon" aria-hidden="true">★</span>
-            <div><strong>Goud</strong><small>Voor of na 2001</small></div>
-            <em>VAST</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatAqua">
-            <span class="bbCategoryIcon" aria-hidden="true">●</span>
-            <div><strong>Aqua</strong><small>Naam van artiest</small></div>
-            <em>VAST</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatOrange">
-            <span class="bbCategoryIcon" aria-hidden="true">◷</span>
-            <div><strong>Oranje</strong><small>Decennium</small></div>
-            <em>VAST</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatLime">
+        <h2 class="bbMusicSectionTitle bbCategoryTitle">KIES CATEGORIEËN</h2>
+        <div class="bbMusicCategoryList" aria-label="Muziekcategorieën">
+          <div class="bbMusicCategoryRow bbCatDecade">
             <span class="bbCategoryIcon" aria-hidden="true">▣</span>
-            <div><strong>Lime</strong><small>Jaartal ± 2</small></div>
-            <em>VAST</em>
+            <div><strong>Decennium</strong><small>60s – 20s</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
           </div>
-          <div class="bbMusicCategoryRow bbCatCoral">
+          <div class="bbMusicCategoryRow bbCatGenre">
             <span class="bbCategoryIcon" aria-hidden="true">♫</span>
-            <div><strong>Koraal</strong><small>Titel van track</small></div>
-            <em>VAST</em>
+            <div><strong>Genre</strong><small>Pop · Rock · Hip-hop en meer</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
+          </div>
+          <div class="bbMusicCategoryRow bbCatLand">
+            <span class="bbCategoryIcon" aria-hidden="true">◎</span>
+            <div><strong>Land</strong><small>NL · USA · UK en meer</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
+          </div>
+          <div class="bbMusicCategoryRow bbCatArtist">
+            <span class="bbCategoryIcon" aria-hidden="true">♟</span>
+            <div><strong>Artiest</strong><small>Bekende artiesten en meer</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
+          </div>
+          <div class="bbMusicCategoryRow bbCatLanguage">
+            <span class="bbCategoryIcon" aria-hidden="true">●</span>
+            <div><strong>Taal</strong><small>Nederlands · Engels en meer</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
+          </div>
+          <div class="bbMusicCategoryRow bbCatTheme">
+            <span class="bbCategoryIcon" aria-hidden="true">★</span>
+            <div><strong>Thema</strong><small>Love · Party · Guilty en meer</small></div>
+            <em>Alle</em><span class="bbCategoryChevron" aria-hidden="true">›</span>
           </div>
         </div>
       </div>
@@ -198,6 +205,11 @@
 
       <section class="panel bbHostCard bbFixedCategories">
         <div class="bbSectionHead"><span class="bbSectionIcon">◆</span><div><small>VASTE SPELCATEGORIEËN</small><h2>Categorieën</h2><p>Iedere kleur heeft tijdens het hele spel dezelfde opdracht.</p></div></div>
+        <input type="hidden" id="cat-yellow" value="Voor of na 2001">
+        <input type="hidden" id="cat-pink" value="Naam van artiest">
+        <input type="hidden" id="cat-purple" value="Decennium">
+        <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
+        <input type="hidden" id="cat-green" value="Titel van track">
         <div class="bbCategoryRow yellow"><b>⭐ Goud</b><span>Voor of na 2001</span></div>
         <div class="bbCategoryRow aqua"><b>💧 Aqua</b><span>Naam van artiest</span></div>
         <div class="bbCategoryRow orange"><b>◉ Oranje</b><span>Decennium</span></div>
@@ -395,10 +407,11 @@
   </div>
 </div>
 
-<script src="app.js?v=1790"></script>
-<script src="app-v176.js?v=1790"></script>
-<script src="app-v177.js?v=1790"></script>
-<script src="app-v178.js?v=1790"></script>
+<script src="app.js?v=1800"></script>
+<script src="app-v176.js?v=1800"></script>
+<script src="app-v177.js?v=1800"></script>
+<script src="app-v178.js?v=1800"></script>
+<script src="app-v180.js?v=1800"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -423,4 +436,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V179 - exact muziekscherm + automatische Spotify-activatie -->
+<!-- Bingo Beats V180 - exact muziekscherm, compacte layout en automatische muziekspeler -->

@@ -1,0 +1,16 @@
+BINGO BEATS V180 — GECORRIGEERD MUZIEKSCHERM
+
+Aangepast:
+- Bovenste appbalk en stappenbalk verwijderd tijdens de host-opbouw.
+- Host staat rechtsboven met het actuele aantal actieve spelers er direct onder.
+- Kop SPOTIFY gewijzigd naar MUZIEK-APP.
+- Muziekscherm opnieuw opgebouwd volgens de aangeleverde voorbeeldafbeelding.
+- Zoekregel voor geladen muziekplaylists toegevoegd.
+- Zes gekleurde categorierijen volledig zichtbaar: Decennium, Genre, Land, Artiest, Taal en Thema.
+- Playlist laden/importeren activeert de Spotify Web Playback-speler automatisch.
+- Geen losse knop voor Spotify-speler activeren zichtbaar.
+- Passend gemaakt voor compacte iPhones, normale telefoons en desktop zonder paginascroll.
+
+UPLOAD
+Upload alle bestanden uit deze map en overschrijf de bestaande bestanden.
+Door de nieuwe cacheversie bingo-beats-v180 wordt de oude PWA-cache vervangen.

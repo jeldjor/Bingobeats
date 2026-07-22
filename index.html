@@ -6,12 +6,13 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <meta name="theme-color" content="#07110d">
+  <meta name="theme-color" content="#050807">
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1760">
-  <link rel="stylesheet" href="style-v176.css?v=1760">
+  <link rel="stylesheet" href="style.css?v=1770">
+  <link rel="stylesheet" href="style-v176.css?v=1770">
+  <link rel="stylesheet" href="style-v177.css?v=1770">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -55,16 +56,16 @@
     </nav>
 
     <section class="bbHostStep active" data-host-step-panel="1">
-      <section class="panel bbHostCard">
-        <h2>SPOTIFY</h2>
+      <section class="panel bbHostCard bbSpotifyCard">
+        <div class="bbSectionHead"><span class="bbSectionIcon">●</span><div><small>MUZIEKBRON</small><h2>Spotify</h2><p>Verbind het account waarmee de muziek wordt afgespeeld.</p></div></div>
         <p id="loginStatus" class="small">Nog niet ingelogd.</p>
         <button id="loginBtn">🔐 Login met Spotify</button>
         <button id="logoutBtn" class="secondary">Uitloggen</button>
         <button id="activateBtn" disabled>▶️ Activeer Spotify-speler</button>
       </section>
 
-      <section class="panel playlistImportPanel bbHostCard">
-        <h2>PLAYLIST</h2>
+      <section class="panel playlistImportPanel bbHostCard bbPlaylistCard">
+        <div class="bbSectionHead"><span class="bbSectionIcon">♫</span><div><small>MUZIEKKEUZE</small><h2>Playlist</h2><p>Kies de nummers die tijdens dit spel gebruikt worden.</p></div></div>
         <button id="loadPlaylistsBtn" type="button">🎵 Mijn playlists laden</button>
         <div id="playlistImportBox" class="playlistImportBox hidden">
           <label>Gekozen playlist
@@ -78,8 +79,8 @@
       </section>
 
       <section id="bbPreGameTestBlock" class="panel bbHostCard bbPreGameTestBlock">
-        <h2>TEST VOOR JE BEGINT</h2>
-        <p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p>
+        <div class="bbTestMark">🔊</div><div class="bbTestCopy"><h2>Geluidstest</h2>
+        <p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p></div>
         <button id="bbPreGameTestBtn" type="button" class="secondary bbPreGameTestBtn">🔊 TEST VOOR JE BEGINT</button>
         <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
       </section>
@@ -89,7 +90,7 @@
 
     <section class="bbHostStep" data-host-step-panel="2">
       <section class="panel bbHostCard bbRoomCard">
-        <h2 class="srOnly">4. Kamer</h2>
+        <div class="bbSectionHead bbRoomTitle"><span class="bbSectionIcon">#</span><div><small>SPELERS UITNODIGEN</small><h2>Kamer</h2><p>Maak de kamer, deel de QR-code en controleer wie er binnen is.</p></div></div>
         <label class="bbHostNameField">NAAM HOST
           <input id="bbHostNameInput" type="text" maxlength="24" placeholder="Bijv. Georgio" autocomplete="nickname">
         </label>
@@ -108,6 +109,7 @@
 
     <section class="bbHostStep" data-host-step-panel="3">
       <section class="panel bbHostCard bbSettingsCard">
+        <div class="bbSectionHead"><span class="bbSectionIcon">◷</span><div><small>SPELTEMPO</small><h2>Ronde-instellingen</h2><p>Deze instellingen gelden voor iedere normale ronde.</p></div></div>
         <label class="bbDurationLabel">FRAGMENTDUUR
           <select id="duration" class="srOnly" aria-label="Fragmentduur">
             <option value="10">10 seconden</option>
@@ -132,7 +134,7 @@
       </section>
 
       <section class="panel bbHostCard bbFixedCategories">
-        <h2>VASTE CATEGORIEËN <small>(NIET AANPASBAAR)</small></h2>
+        <div class="bbSectionHead"><span class="bbSectionIcon">◆</span><div><small>VASTE SPELCATEGORIEËN</small><h2>Categorieën</h2><p>Iedere kleur heeft tijdens het hele spel dezelfde opdracht.</p></div></div>
         <input type="hidden" id="cat-yellow" value="Voor of na 2001">
         <input type="hidden" id="cat-pink" value="Naam van artiest">
         <input type="hidden" id="cat-purple" value="Decennium">
@@ -150,13 +152,14 @@
 
     <section class="bbHostStep" data-host-step-panel="4">
       <section class="panel bbHostReadyCard">
-        <h2>RONDE KLAAR OM TE STARTEN</h2>
+        <div class="bbReadyTitle"><span>✓</span><div><small>CONTROLE VOLTOOID</small><h2>Klaar om te spelen</h2></div></div>
         <div class="bbReadySummary">
           <span>✓ Spotify</span><span>✓ Playlist</span><span>✓ Kamer</span><span>✓ Spelers</span><span>✓ Instellingen</span>
         </div>
       </section>
 
       <section class="panel stage bbHostPlayCard">
+        <div class="bbPlayHead"><div><small>LIVE SPELREGIE</small><h2>Ronde bedienen</h2></div><span class="bbLiveBadge">● LIVE</span></div>
         <div class="bbV176RoundMeta"><span id="bbV176RoundType">NORMALE RONDE</span><strong id="bbV176RoundProgress">Ronde 1 van 5</strong></div>
         <div id="hostPickerArea" class="pickerIntro">🎮<br>Klaar om te spelen</div>
         <button id="startRoundBtn">▶ START RONDE</button>
@@ -185,7 +188,9 @@
   
   <main id="playerApp" class="hidden">
     <section id="screenJoin" class="joinPanel">
-      <h2>🎫 Meedoen</h2>
+      <img src="bb_logo_lime.webp" class="bbJoinLogo" alt="Bingo Beats">
+      <span class="bbJoinEyebrow">MUZIEKBINGO</span>
+      <h2>Doe mee met de kamer</h2>
       <p>Spelcode: <strong id="playerRoomCode"></strong></p>
       <input id="playerNameInput" placeholder="Jouw naam">
       <button id="joinBtn">Meedoen</button>
@@ -324,8 +329,9 @@
   </div>
 </div>
 
-<script src="app.js?v=1760"></script>
-<script src="app-v176.js?v=1760"></script>
+<script src="app.js?v=1770"></script>
+<script src="app-v176.js?v=1770"></script>
+<script src="app-v177.js?v=1770"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -350,4 +356,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V176 - premium interface + officiële spelregels -->
+<!-- Bingo Beats V177 - complete premium redesign + officiële spelregels -->

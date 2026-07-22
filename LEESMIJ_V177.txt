@@ -1,0 +1,46 @@
+BINGO BEATS V177 — COMPLETE PREMIUM REDESIGN
+================================================
+
+Deze versie vervangt de eerdere V176-layout. In V176 werd een deel van de
+oude opmaak nog door oudere CSS-regels overschreven. V177 bevat daarom een
+volledige laatste presentatielaag die zichtbaar boven alle oudere stijlen staat.
+
+BELANGRIJK BIJ UPLOADEN
+-----------------------
+1. Pak de ZIP uit.
+2. Upload ALLE bestanden uit de map naar de hoofdmap van je GitHub-repository.
+3. Overschrijf de bestaande bestanden wanneer GitHub daarom vraagt.
+4. Laat style-v176.css en app-v176.js staan: hierin zitten de nieuwe spelregels.
+5. style-v177.css en app-v177.js bevatten de nieuwe visuele presentatielaag.
+6. Open na de deployment de website één keer opnieuw.
+7. Zie je nog een oude versie, verwijder de PWA van het beginscherm en voeg hem
+   opnieuw toe, of wis de websitegegevens/cache van de browser.
+
+NIEUWE OPBOUW
+-------------
+- Host: Muziek -> Kamer -> Instellingen -> Spelen.
+- Nieuwe professionele donker-neon layout.
+- Compact op telefoon en breed uitgewerkt op laptop/tablet.
+- Kamercode en QR-code tegelijk zichtbaar.
+- Spelerslijst toont alleen het actuele aantal spelers, zonder /50.
+- Lobby en speelschermen hebben dezelfde visuele stijl.
+- Uitlegpopup bij binnenkomst in de lobby.
+- Uitlegpopup vóór de BingoBeats Round.
+
+OFFICIËLE SPELREGELS IN DEZE VERSIE
+-----------------------------------
+- Vier normale rondes, daarna één BingoBeats Round.
+- Normale ronde: +100 voor goed, +50 voor de snelste goede speler.
+- BingoBeats Round: vijf antwoorden, 60 seconden, +100 per goed antwoord.
+- Minimaal vier van de vijf goed geeft een vrij te kiezen vak.
+- Eén verborgen Beat Bomb per kaart.
+- Eén verborgen Beat Engineer per kaart.
+- De blokwinnaar kiest één voordeel voor het volgende blok.
+- Joker wordt vóór een ronde geactiveerd; alleen het antwoord van de Joker-
+  speler telt in die ronde.
+
+FIREBASE
+--------
+Wanneer kamers maken permission_denied geeft, moet database.rules.json ook
+handmatig worden gepubliceerd via Firebase Console -> Realtime Database -> Regels.
+Alleen uploaden naar GitHub publiceert de Firebase-regels niet.

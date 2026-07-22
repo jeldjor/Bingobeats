@@ -1,0 +1,10 @@
+BINGO BEATS V181 — STARTPOPUP FIX
+
+Aangepast:
+- De oude popup "Voor je begint" verschijnt niet meer automatisch.
+- De host opent direct bij stap 1: Muziek.
+- Een bestaande kamer wordt nog steeds hersteld.
+- Extra beveiliging sluit een eventueel door oude cache geopende popup direct.
+- Nieuwe cacheversie v181 voorkomt dat V180 blijft hangen.
+
+Upload alle bestanden en overschrijf de bestaande bestanden.

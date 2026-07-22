@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="bbV177 bbV178">
+<html lang="nl" class="bbV177 bbV178 bbV179">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -10,10 +10,11 @@
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1780">
-  <link rel="stylesheet" href="style-v176.css?v=1780">
-  <link rel="stylesheet" href="style-v177.css?v=1780">
-  <link rel="stylesheet" href="style-v178.css?v=1780">
+  <link rel="stylesheet" href="style.css?v=1790">
+  <link rel="stylesheet" href="style-v176.css?v=1790">
+  <link rel="stylesheet" href="style-v177.css?v=1790">
+  <link rel="stylesheet" href="style-v178.css?v=1790">
+  <link rel="stylesheet" href="style-v179.css?v=1790">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -56,38 +57,96 @@
       <button type="button" class="bbHostStepTab" data-host-step="4"><span>4</span><small>Spelen</small></button>
     </nav>
 
-    <section class="bbHostStep active" data-host-step-panel="1">
-      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>MUZIEK</span></div>
-      <section class="panel bbHostCard bbSpotifyCard">
-        <div class="bbSectionHead"><span class="bbSectionIcon">●</span><div><small>MUZIEKBRON</small><h2>Spotify</h2><p>Verbind het account waarmee de muziek wordt afgespeeld.</p></div></div>
-        <p id="loginStatus" class="small">Nog niet ingelogd.</p>
-        <button id="loginBtn">🔐 Login met Spotify</button>
-        <button id="logoutBtn" class="secondary">Uitloggen</button>
-        <button id="activateBtn" disabled>▶️ Activeer Spotify-speler</button>
-      </section>
+    <section class="bbHostStep active bbMusicExact" data-host-step-panel="1">
+      <div class="bbMusicTop">
+        <span class="bbMusicBackMark" aria-hidden="true">←</span>
+        <img src="bb_logo.png" class="bbMusicLogo" alt="Bingo Beats">
+        <div class="bbMusicHostBadge" aria-label="Host"><span>♛</span> HOST</div>
+      </div>
 
-      <section class="panel playlistImportPanel bbHostCard bbPlaylistCard">
-        <div class="bbSectionHead"><span class="bbSectionIcon">♫</span><div><small>MUZIEKKEUZE</small><h2>Playlist</h2><p>Kies de nummers die tijdens dit spel gebruikt worden.</p></div></div>
-        <button id="loadPlaylistsBtn" type="button">🎵 Mijn playlists laden</button>
-        <div id="playlistImportBox" class="playlistImportBox hidden">
-          <label>Gekozen playlist
-            <select id="playlistSelect"></select>
+      <div class="bbMusicIntro">
+        <h1>MUZIEK &amp; CATEGORIE</h1>
+        <p>Kies je muziek en bekijk de vaste spelcategorieën</p>
+      </div>
+
+      <div class="bbMusicBody">
+        <h2 class="bbMusicSectionTitle">SPOTIFY</h2>
+
+        <section class="bbMusicRow bbSpotifyAccountRow">
+          <div class="bbMusicRowIcon bbSpotifyIcon" aria-hidden="true">●</div>
+          <div class="bbMusicRowCopy">
+            <small id="bbSpotifyCaption">Spotify-account</small>
+            <strong id="loginStatus">Nog niet ingelogd.</strong>
+          </div>
+          <div class="bbMusicRowActions">
+            <button id="loginBtn" type="button">INLOGGEN</button>
+            <button id="logoutBtn" type="button" class="secondary">UITLOGGEN</button>
+          </div>
+          <button id="activateBtn" type="button" class="bbAutoSpotifyAction" disabled>Activeer Spotify-speler</button>
+        </section>
+
+        <section class="bbMusicRow bbPlaylistRow">
+          <div class="bbMusicRowIcon bbPlaylistIcon" aria-hidden="true">♫</div>
+          <label class="bbMusicRowCopy" for="playlistSelect">
+            <small>Playlist</small>
+            <select id="playlistSelect" aria-label="Spotify-playlist" disabled>
+              <option value="">Nog geen playlist geladen</option>
+            </select>
           </label>
-          <button id="importPlaylistBtn" type="button">Playlist importeren</button>
+          <button id="loadPlaylistsBtn" type="button" class="bbMusicOutlineButton">LADEN</button>
+        </section>
+
+        <div id="playlistImportBox" class="bbPlaylistImportBox">
+          <section class="bbMusicRow bbTrackCountRow">
+            <div class="bbMusicRowIcon bbTrackCountIcon" aria-hidden="true">≡</div>
+            <div class="bbMusicRowCopy">
+              <small>Aantal nummers</small>
+              <strong id="bbPlaylistCountValue">0 nummers</strong>
+            </div>
+            <button id="importPlaylistBtn" type="button" class="bbMusicOutlineButton" disabled>IMPORTEREN</button>
+          </section>
         </div>
+
         <div id="playlistPreview" class="playlistPreview hidden"></div>
-        <p id="playlistStatus" class="small">Log in met Spotify en laad daarna je playlists.</p>
-        <button id="resetUsedBtn" class="secondary">Gespeelde nummers resetten</button>
-      </section>
+        <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met Spotify en laad daarna je playlists.</p>
 
-      <section id="bbPreGameTestBlock" class="panel bbHostCard bbPreGameTestBlock">
-        <div class="bbTestMark">🔊</div><div class="bbTestCopy"><h2>Geluidstest</h2>
-        <p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p></div>
-        <button id="bbPreGameTestBtn" type="button" class="secondary bbPreGameTestBtn">🔊 TEST VOOR JE BEGINT</button>
-        <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
-      </section>
+        <h2 class="bbMusicSectionTitle bbCategoryTitle">SPELCATEGORIEËN</h2>
+        <div class="bbMusicCategoryList" aria-label="Vaste spelcategorieën">
+          <input type="hidden" id="cat-yellow" value="Voor of na 2001">
+          <input type="hidden" id="cat-pink" value="Naam van artiest">
+          <input type="hidden" id="cat-purple" value="Decennium">
+          <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
+          <input type="hidden" id="cat-green" value="Titel van track">
 
-      <button type="button" class="bbHostNext" data-host-go="2">VOLGENDE: KAMER →</button>
+          <div class="bbMusicCategoryRow bbCatGold">
+            <span class="bbCategoryIcon" aria-hidden="true">★</span>
+            <div><strong>Goud</strong><small>Voor of na 2001</small></div>
+            <em>VAST</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatAqua">
+            <span class="bbCategoryIcon" aria-hidden="true">●</span>
+            <div><strong>Aqua</strong><small>Naam van artiest</small></div>
+            <em>VAST</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatOrange">
+            <span class="bbCategoryIcon" aria-hidden="true">◷</span>
+            <div><strong>Oranje</strong><small>Decennium</small></div>
+            <em>VAST</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatLime">
+            <span class="bbCategoryIcon" aria-hidden="true">▣</span>
+            <div><strong>Lime</strong><small>Jaartal ± 2</small></div>
+            <em>VAST</em>
+          </div>
+          <div class="bbMusicCategoryRow bbCatCoral">
+            <span class="bbCategoryIcon" aria-hidden="true">♫</span>
+            <div><strong>Koraal</strong><small>Titel van track</small></div>
+            <em>VAST</em>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="bbHostNext bbMusicNext" data-host-go="2"><span>VOLGENDE</span><b aria-hidden="true">›</b></button>
     </section>
 
     <section class="bbHostStep" data-host-step-panel="2">
@@ -139,11 +198,6 @@
 
       <section class="panel bbHostCard bbFixedCategories">
         <div class="bbSectionHead"><span class="bbSectionIcon">◆</span><div><small>VASTE SPELCATEGORIEËN</small><h2>Categorieën</h2><p>Iedere kleur heeft tijdens het hele spel dezelfde opdracht.</p></div></div>
-        <input type="hidden" id="cat-yellow" value="Voor of na 2001">
-        <input type="hidden" id="cat-pink" value="Naam van artiest">
-        <input type="hidden" id="cat-purple" value="Decennium">
-        <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
-        <input type="hidden" id="cat-green" value="Titel van track">
         <div class="bbCategoryRow yellow"><b>⭐ Goud</b><span>Voor of na 2001</span></div>
         <div class="bbCategoryRow aqua"><b>💧 Aqua</b><span>Naam van artiest</span></div>
         <div class="bbCategoryRow orange"><b>◉ Oranje</b><span>Decennium</span></div>
@@ -161,6 +215,14 @@
         <div class="bbReadySummary">
           <span>✓ Spotify</span><span>✓ Playlist</span><span>✓ Kamer</span><span>✓ Spelers</span><span>✓ Instellingen</span>
         </div>
+      </section>
+
+      <section id="bbPreGameTestBlock" class="panel bbHostCard bbPreGameTestBlock">
+        <div class="bbTestMark">🔊</div>
+        <div class="bbTestCopy"><h2>Geluidstest</h2><p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p></div>
+        <button id="bbPreGameTestBtn" type="button" class="secondary bbPreGameTestBtn">🔊 TEST VOOR JE BEGINT</button>
+        <button id="resetUsedBtn" type="button" class="secondary">Gespeelde nummers resetten</button>
+        <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
       </section>
 
       <section class="panel stage bbHostPlayCard">
@@ -333,10 +395,10 @@
   </div>
 </div>
 
-<script src="app.js?v=1780"></script>
-<script src="app-v176.js?v=1780"></script>
-<script src="app-v177.js?v=1780"></script>
-<script src="app-v178.js?v=1780"></script>
+<script src="app.js?v=1790"></script>
+<script src="app-v176.js?v=1790"></script>
+<script src="app-v177.js?v=1790"></script>
+<script src="app-v178.js?v=1790"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -361,4 +423,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V178 - complete premium redesign + officiële spelregels -->
+<!-- Bingo Beats V179 - exact muziekscherm + automatische Spotify-activatie -->

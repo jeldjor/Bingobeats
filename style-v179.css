@@ -1,0 +1,499 @@
+/* Bingo Beats V179 — muziekscherm exact volgens de gekozen zwart/neon-groene stijl. */
+html.bbV179{
+  --bb179-green:#92f100;
+  --bb179-green2:#62bd00;
+  --bb179-line:rgba(255,255,255,.16);
+  --bb179-panel:#071009;
+  --bb179-muted:#b7beb8;
+  --bb179-purple:#a738ff;
+  --bb179-aqua:#32cfff;
+  --bb179-orange:#ff981f;
+  --bb179-coral:#ff5578;
+  --bb179-gold:#b7f400;
+}
+
+html.bbV179 body.bbHostMusicStep{
+  background:#000!important;
+  overflow:hidden!important;
+}
+html.bbV179 body.bbHostMusicStep::before{
+  opacity:.85!important;
+  background:
+    radial-gradient(circle at 50% 8%,rgba(99,0,164,.22),transparent 28%),
+    radial-gradient(circle at 50% 60%,rgba(73,147,0,.09),transparent 44%),
+    linear-gradient(180deg,#010202 0%,#000 100%)!important;
+}
+html.bbV179 body.bbHostMusicStep::after{
+  opacity:.08!important;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px)!important;
+  background-size:24px 24px!important;
+}
+
+/* Op het muziekscherm hoort geen losse app-header of stappenbalk te staan. */
+html.bbV179 body.bbHostMusicStep #mainHeader,
+html.bbV179 body.bbHostMusicStep .bbHostProgress{
+  display:none!important;
+}
+html.bbV179 body.bbHostMusicStep #hostApp.bbHostWizard{
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+html.bbV179 body.bbHostMusicStep .bbHostStep:not([data-host-step-panel="1"]){display:none!important}
+html.bbV179 body.bbHostMusicStep .bbMusicExact.active{
+  isolation:isolate!important;
+  position:relative!important;
+  width:min(100%,500px)!important;
+  height:min(100dvh,970px)!important;
+  min-height:0!important;
+  margin:0 auto!important;
+  padding:max(8px,env(safe-area-inset-top)) clamp(14px,4vw,24px) max(12px,env(safe-area-inset-bottom))!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 50% 9%,rgba(112,0,187,.23),transparent 23%),
+    linear-gradient(180deg,rgba(4,5,7,.99),rgba(1,4,2,.995))!important;
+  box-shadow:0 22px 70px rgba(0,0,0,.86),inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+html.bbV179 body.bbHostMusicStep .bbMusicExact::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:-1!important;
+  left:0!important;
+  right:0!important;
+  top:17%!important;
+  height:35%!important;
+  opacity:.19!important;
+  pointer-events:none!important;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0 9px,
+      rgba(107,219,0,.55) 9px 13px,
+      transparent 13px 20px)!important;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 74%,transparent 100%)!important;
+  mask-image:linear-gradient(180deg,transparent 0,#000 20%,#000 74%,transparent 100%)!important;
+  clip-path:polygon(0 62%,4% 62%,4% 45%,8% 45%,8% 70%,12% 70%,12% 31%,16% 31%,16% 60%,20% 60%,20% 22%,24% 22%,24% 58%,28% 58%,28% 40%,32% 40%,32% 72%,36% 72%,36% 29%,40% 29%,40% 55%,44% 55%,44% 17%,48% 17%,48% 65%,52% 65%,52% 25%,56% 25%,56% 52%,60% 52%,60% 35%,64% 35%,64% 69%,68% 69%,68% 23%,72% 23%,72% 58%,76% 58%,76% 38%,80% 38%,80% 67%,84% 67%,84% 28%,88% 28%,88% 56%,92% 56%,92% 43%,96% 43%,96% 64%,100% 64%,100% 100%,0 100%)!important;
+}
+
+/* Bovenstuk: logo centraal, decoratieve terugmarkering en hostlabel. */
+html.bbV179 .bbMusicTop{
+  flex:0 0 clamp(112px,18.2dvh,166px)!important;
+  min-height:0!important;
+  position:relative!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+}
+html.bbV179 .bbMusicLogo{
+  width:clamp(118px,35vw,172px)!important;
+  height:clamp(108px,17.5dvh,160px)!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 16px rgba(142,30,255,.48)) drop-shadow(0 0 7px rgba(142,241,0,.18))!important;
+}
+html.bbV179 .bbMusicBackMark{
+  position:absolute!important;
+  top:8px!important;
+  left:0!important;
+  width:42px!important;
+  height:42px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.30)!important;
+  border-radius:50%!important;
+  background:rgba(4,7,5,.70)!important;
+  font-size:27px!important;
+  line-height:1!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+html.bbV179 .bbMusicHostBadge{
+  position:absolute!important;
+  top:8px!important;
+  right:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  color:var(--bb179-green)!important;
+  font-size:18px!important;
+  font-weight:900!important;
+  letter-spacing:.02em!important;
+}
+html.bbV179 .bbMusicHostBadge span{
+  font-size:27px!important;
+  line-height:1!important;
+  transform:translateY(-1px)!important;
+}
+
+html.bbV179 .bbMusicIntro{
+  flex:0 0 auto!important;
+  margin:-2px 0 clamp(9px,1.5dvh,14px)!important;
+  text-align:center!important;
+}
+html.bbV179 .bbMusicIntro h1{
+  margin:0!important;
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",sans-serif!important;
+  font-size:clamp(22px,3.1dvh,28px)!important;
+  line-height:1.04!important;
+  letter-spacing:.015em!important;
+  text-shadow:0 2px 0 #000!important;
+}
+html.bbV179 .bbMusicIntro p{
+  margin:5px 0 0!important;
+  color:#e4e7e4!important;
+  font-size:clamp(12px,1.7dvh,15px)!important;
+  line-height:1.2!important;
+}
+
+html.bbV179 .bbMusicBody{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:clamp(5px,.72dvh,8px)!important;
+  overflow:hidden!important;
+}
+html.bbV179 .bbMusicSectionTitle{
+  flex:0 0 auto!important;
+  margin:0 0 1px 5px!important;
+  color:var(--bb179-green)!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:clamp(12px,1.75dvh,15px)!important;
+  font-weight:900!important;
+  letter-spacing:.025em!important;
+  line-height:1.1!important;
+  text-transform:uppercase!important;
+}
+html.bbV179 .bbCategoryTitle{margin-top:2px!important}
+
+html.bbV179 .bbMusicRow{
+  flex:0 0 clamp(49px,6.75dvh,64px)!important;
+  min-height:0!important;
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:6px 10px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:11px!important;
+  background:linear-gradient(180deg,rgba(11,17,13,.96),rgba(4,8,6,.96))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 7px 17px rgba(0,0,0,.18)!important;
+  overflow:hidden!important;
+}
+html.bbV179 .bbSpotifyAccountRow{border-color:rgba(138,241,0,.35)!important}
+html.bbV179 .bbPlaylistRow,
+html.bbV179 .bbTrackCountRow{border-color:rgba(169,55,255,.36)!important}
+html.bbV179 .bbMusicRowIcon{
+  width:38px!important;
+  height:38px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  font-size:25px!important;
+  font-weight:900!important;
+  line-height:1!important;
+}
+html.bbV179 .bbSpotifyIcon{
+  color:#050805!important;
+  background:#66d313!important;
+  box-shadow:0 0 12px rgba(110,224,18,.30)!important;
+}
+html.bbV179 .bbSpotifyIcon::after{
+  content:"≋"!important;
+  color:#061005!important;
+  font-size:27px!important;
+  transform:rotate(2deg)!important;
+}
+html.bbV179 .bbSpotifyIcon{font-size:0!important}
+html.bbV179 .bbPlaylistIcon{color:#b54cff!important;background:rgba(130,28,212,.13)!important;border-radius:10px!important}
+html.bbV179 .bbTrackCountIcon{color:#a744ef!important;background:rgba(130,28,212,.10)!important;border-radius:10px!important;font-size:23px!important}
+html.bbV179 .bbMusicRowCopy{
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:2px!important;
+  color:#fff!important;
+  text-decoration:none!important;
+}
+html.bbV179 .bbMusicRowCopy small{
+  color:#d4d8d4!important;
+  font-size:clamp(10px,1.4dvh,13px)!important;
+  font-weight:500!important;
+  line-height:1.05!important;
+}
+html.bbV179 .bbMusicRowCopy strong{
+  min-width:0!important;
+  overflow:hidden!important;
+  color:#fff!important;
+  font-size:clamp(13px,1.8dvh,16px)!important;
+  font-weight:800!important;
+  line-height:1.12!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV179 #bbPlaylistCountValue{color:var(--bb179-green)!important}
+html.bbV179 #playlistSelect{
+  width:100%!important;
+  min-width:0!important;
+  height:22px!important;
+  margin:0!important;
+  padding:0 20px 0 0!important;
+  border:0!important;
+  outline:0!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  color:#fff!important;
+  background:transparent!important;
+  background-image:linear-gradient(45deg,transparent 50%,#aeb5ae 50%),linear-gradient(135deg,#aeb5ae 50%,transparent 50%)!important;
+  background-position:calc(100% - 8px) 9px,calc(100% - 3px) 9px!important;
+  background-size:5px 5px,5px 5px!important;
+  background-repeat:no-repeat!important;
+  font-size:clamp(13px,1.8dvh,16px)!important;
+  font-weight:800!important;
+  line-height:22px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV179 #playlistSelect:disabled{opacity:.58!important}
+html.bbV179 #playlistSelect option{color:#fff!important;background:#081009!important}
+html.bbV179 .bbMusicRowActions{display:flex!important;align-items:center!important}
+html.bbV179 .bbMusicRowActions button,
+html.bbV179 .bbMusicOutlineButton{
+  width:auto!important;
+  min-width:94px!important;
+  height:38px!important;
+  min-height:38px!important;
+  margin:0!important;
+  padding:0 13px!important;
+  border:1px solid rgba(150,241,0,.45)!important;
+  border-radius:9px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,rgba(80,143,0,.30),rgba(17,34,5,.52))!important;
+  box-shadow:0 0 14px rgba(129,233,0,.07) inset!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.025em!important;
+}
+html.bbV179 .bbPlaylistRow .bbMusicOutlineButton,
+html.bbV179 .bbTrackCountRow .bbMusicOutlineButton{
+  border-color:rgba(180,65,255,.58)!important;
+  background:linear-gradient(180deg,rgba(106,25,167,.28),rgba(28,7,47,.58))!important;
+}
+html.bbV179 .bbMusicRowActions #logoutBtn{display:none!important}
+html.bbV179 .bbSpotifyAccountRow.isLoggedIn .bbMusicRowActions #loginBtn{display:none!important}
+html.bbV179 .bbSpotifyAccountRow.isLoggedIn .bbMusicRowActions #logoutBtn{display:block!important}
+html.bbV179 .bbAutoSpotifyAction{display:none!important}
+html.bbV179 .bbMusicOutlineButton:disabled,
+html.bbV179 .bbMusicRowActions button:disabled{opacity:.42!important;filter:none!important}
+html.bbV179 .bbPlaylistImportBox{
+  display:block!important;
+  flex:0 0 auto!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:none!important;
+}
+html.bbV179 .bbPlaylistImportBox.hidden{display:block!important}
+html.bbV179 .playlistPreview{display:none!important}
+html.bbV179 .bbMusicStatus{
+  flex:0 0 clamp(13px,1.9dvh,18px)!important;
+  min-height:0!important;
+  margin:0 4px!important;
+  overflow:hidden!important;
+  color:#9da69f!important;
+  font-size:clamp(8px,1.2dvh,10px)!important;
+  font-weight:650!important;
+  line-height:1.25!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV179 .bbMusicStatus.playlistOk{color:#8fe600!important}
+html.bbV179 .bbMusicStatus.playlistErr{color:#ff6c73!important}
+
+html.bbV179 .bbMusicCategoryList{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:grid!important;
+  grid-template-rows:repeat(5,minmax(0,1fr))!important;
+  gap:clamp(4px,.55dvh,6px)!important;
+  overflow:hidden!important;
+}
+html.bbV179 .bbMusicCategoryRow{
+  min-height:0!important;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:9px!important;
+  padding:4px 11px!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:9px!important;
+  background:linear-gradient(180deg,rgba(11,16,13,.94),rgba(5,8,6,.96))!important;
+  overflow:hidden!important;
+}
+html.bbV179 .bbCategoryIcon{
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:7px!important;
+  font-size:17px!important;
+  font-weight:900!important;
+}
+html.bbV179 .bbMusicCategoryRow>div{min-width:0!important;display:flex!important;align-items:baseline!important;gap:7px!important;overflow:hidden!important}
+html.bbV179 .bbMusicCategoryRow strong{
+  flex:0 0 auto!important;
+  color:#fff!important;
+  font-size:clamp(11px,1.55dvh,14px)!important;
+  font-weight:850!important;
+  text-transform:none!important;
+}
+html.bbV179 .bbMusicCategoryRow small{
+  min-width:0!important;
+  overflow:hidden!important;
+  color:#c2c8c3!important;
+  font-size:clamp(8px,1.2dvh,11px)!important;
+  line-height:1!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html.bbV179 .bbMusicCategoryRow em{
+  color:var(--row-color)!important;
+  font-size:clamp(9px,1.25dvh,11px)!important;
+  font-style:normal!important;
+  font-weight:900!important;
+}
+html.bbV179 .bbCatGold{--row-color:#9be500;border-color:rgba(151,229,0,.26)!important}
+html.bbV179 .bbCatAqua{--row-color:#31cfff;border-color:rgba(49,207,255,.26)!important}
+html.bbV179 .bbCatOrange{--row-color:#ff981f;border-color:rgba(255,152,31,.28)!important}
+html.bbV179 .bbCatLime{--row-color:#8fe900;border-color:rgba(143,233,0,.28)!important}
+html.bbV179 .bbCatCoral{--row-color:#ff5578;border-color:rgba(255,85,120,.28)!important}
+html.bbV179 .bbMusicCategoryRow .bbCategoryIcon{color:var(--row-color)!important;background:color-mix(in srgb,var(--row-color) 12%,transparent)!important}
+
+html.bbV179 .bbMusicNext{
+  flex:0 0 clamp(50px,6.5dvh,62px)!important;
+  width:100%!important;
+  min-height:0!important;
+  margin:clamp(8px,1.2dvh,12px) 0 0!important;
+  padding:0 16px!important;
+  display:grid!important;
+  grid-template-columns:1fr 34px!important;
+  align-items:center!important;
+  border:1px solid #9cf300!important;
+  border-radius:13px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#82df0a 0%,#4f9e00 100%)!important;
+  box-shadow:0 0 20px rgba(128,227,0,.30),inset 0 1px 0 rgba(255,255,255,.31)!important;
+  font-family:Impact,"Arial Narrow",sans-serif!important;
+  font-size:clamp(20px,2.8dvh,25px)!important;
+  letter-spacing:.025em!important;
+}
+html.bbV179 .bbMusicNext span{justify-self:center!important;transform:translateX(17px)!important}
+html.bbV179 .bbMusicNext b{
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  color:#65a700!important;
+  background:#eefbd8!important;
+  font-family:Arial,sans-serif!important;
+  font-size:28px!important;
+  line-height:1!important;
+}
+
+/* Telefoons: de interface is het scherm zelf, dus geen buitenframe. */
+@media (max-width:620px){
+  html.bbV179 body.bbHostMusicStep .bbMusicExact.active{
+    width:100%!important;
+    height:100dvh!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+}
+
+/* Compacte iPhones en liggende schermen: alles blijft zichtbaar zonder paginascroll. */
+@media (max-height:720px){
+  html.bbV179 body.bbHostMusicStep .bbMusicExact.active{padding-top:max(4px,env(safe-area-inset-top))!important;padding-bottom:max(7px,env(safe-area-inset-bottom))!important}
+  html.bbV179 .bbMusicTop{flex-basis:100px!important}
+  html.bbV179 .bbMusicLogo{width:112px!important;height:100px!important}
+  html.bbV179 .bbMusicBackMark{top:4px!important;width:36px!important;height:36px!important;font-size:23px!important}
+  html.bbV179 .bbMusicHostBadge{top:6px!important;font-size:15px!important}
+  html.bbV179 .bbMusicHostBadge span{font-size:22px!important}
+  html.bbV179 .bbMusicIntro{margin-bottom:6px!important}
+  html.bbV179 .bbMusicIntro h1{font-size:20px!important}
+  html.bbV179 .bbMusicIntro p{font-size:11px!important;margin-top:3px!important}
+  html.bbV179 .bbMusicBody{gap:4px!important}
+  html.bbV179 .bbMusicRow{flex-basis:45px!important;padding:4px 8px!important;grid-template-columns:34px minmax(0,1fr) auto!important;gap:7px!important}
+  html.bbV179 .bbMusicRowIcon{width:31px!important;height:31px!important;font-size:20px!important}
+  html.bbV179 .bbMusicRowActions button,html.bbV179 .bbMusicOutlineButton{height:33px!important;min-height:33px!important;min-width:82px!important;padding:0 9px!important;font-size:9px!important}
+  html.bbV179 .bbMusicStatus{flex-basis:12px!important;font-size:8px!important}
+  html.bbV179 .bbMusicCategoryList{gap:3px!important}
+  html.bbV179 .bbMusicCategoryRow{padding:2px 8px!important;grid-template-columns:29px minmax(0,1fr) auto!important;gap:7px!important}
+  html.bbV179 .bbCategoryIcon{width:24px!important;height:24px!important;font-size:14px!important}
+  html.bbV179 .bbMusicNext{flex-basis:46px!important;margin-top:6px!important;font-size:19px!important}
+}
+
+@media (max-width:360px){
+  html.bbV179 body.bbHostMusicStep .bbMusicExact.active{padding-left:10px!important;padding-right:10px!important}
+  html.bbV179 .bbMusicRowActions button,html.bbV179 .bbMusicOutlineButton{min-width:78px!important;padding:0 8px!important}
+  html.bbV179 .bbMusicCategoryRow>div{gap:4px!important}
+}
+
+/* Specificiteitsfix: oudere V178-regels gebruikten :not()-selectors met een hogere
+   specificiteit. Deze laatste regels zorgen dat V179 werkelijk het hele scherm vult. */
+html.bbV179 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+  flex:1 1 auto!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+}
+html.bbV179 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard .bbHostStep.bbMusicExact.active{
+  flex:0 0 auto!important;
+  width:min(100%,500px)!important;
+  height:min(100dvh,970px)!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0 auto!important;
+  display:flex!important;
+  grid-template-columns:none!important;
+  grid-template-rows:none!important;
+  align-content:normal!important;
+}
+@media (max-width:620px){
+  html.bbV179 body.bbHostMusicStep:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard .bbHostStep.bbMusicExact.active{
+    width:100%!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+}
+/* De licentie- en spelerflow blijven leidend: hidden mag nooit door de themalaag
+   worden overschreven. */
+html.bbV179 body #hostApp.bbHostWizard.hidden{display:none!important}

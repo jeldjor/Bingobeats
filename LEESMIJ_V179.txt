@@ -1,0 +1,24 @@
+BINGO BEATS V179 — EXACT MUZIEKSCHERM
+
+Deze versie bouwt voort op V178 en vervangt het eerste hostscherm door de gekozen zwart/neon-groene lay-out.
+
+AANGEPAST
+- Eerste hostscherm heet Muziek & Categorie en volgt de aangeleverde voorbeeldstijl.
+- Groot Bingo Beats-logo centraal bovenaan.
+- Spotify-account, playlist en aantal nummers staan in drie compacte rijen.
+- De vijf bestaande spelcategorieën staan eronder in hun eigen vaste kleuren.
+- Er zijn geen nieuwe functionele knoppen toegevoegd.
+- Na het importeren van een playlist probeert Bingo Beats de Spotify Web Playback-speler automatisch te activeren.
+- De oude zichtbare knop Activeer Spotify-speler is niet meer nodig op dit scherm.
+- Geluidstest en reset van gespeelde nummers blijven behouden bij de speelstap.
+- De interface vult telefoon en desktop zonder paginascroll.
+- PWA-cache verhoogd naar bingo-beats-v179.
+
+UPLOAD
+Pak de ZIP uit en upload alle bestanden naar de hoofdmap van de Bingo Beats GitHub-repository. Overschrijf de bestaande bestanden.
+
+OUDE PWA-VERSIE ZICHTBAAR?
+Sluit de PWA volledig en open opnieuw. Blijft de oude versie zichtbaar, verwijder Bingo Beats één keer van het beginscherm en voeg de website opnieuw toe. De V179-serviceworker verwijdert daarna de oude caches.
+
+SPOTIFY
+Automatisch activeren kan alleen slagen wanneer Spotify Web Playback beschikbaar is, het account Spotify Premium heeft en de browser de Spotify SDK kan laden. Bij een probleem blijft de playlist wel geïmporteerd en verschijnt een duidelijke statusmelding.

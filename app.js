@@ -5061,8 +5061,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     try{
       const token = await getToken();
       if(!token){
-        setPlaylistStatus('Log eerst bovenin in met Spotify om je playlists te laden.', false);
+        setPlaylistStatus('Log eerst in met Spotify om je playlists te laden.', false);
         return;
+      }
+      // De klik op LADEN is een geldig gebruikersgebaar. Start de Bingo Beats
+      // Spotify-speler daarom meteen op de achtergrond; na import hoeft de host
+      // niet nog een aparte activatieknop te gebruiken.
+      if(!deviceId && typeof activatePlayer === 'function'){
+        activatePlayer().catch(err=>console.warn('Automatische Spotify-activatie bij laden:',err));
       }
       setPlaylistStatus('Playlists laden...', null);
       const items = await fetchAllSpotifyPages('https://api.spotify.com/v1/me/playlists?limit=50');
@@ -5074,10 +5080,14 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
         return `<option value="${esc(p.id)}">${esc(p.name || 'Naamloze playlist')}${esc(count)}</option>`;
       }).join('');
       q('playlistImportBox')?.classList.toggle('hidden', !bbPlaylistsCache.length);
+      if(select) select.disabled = !bbPlaylistsCache.length;
+      const importButton = q('importPlaylistBtn');
+      if(importButton) importButton.disabled = !bbPlaylistsCache.length;
       if(!bbPlaylistsCache.length){
         setPlaylistStatus('Geen playlists gevonden in dit Spotify-account.', false);
       }else{
         setPlaylistStatus(`${bbPlaylistsCache.length} playlists gevonden. Kies een playlist en importeer.`, true);
+        window.dispatchEvent(new CustomEvent('bb:playlists-loaded',{detail:{count:bbPlaylistsCache.length}}));
       }
     }catch(e){
       console.error(e);
@@ -5131,8 +5141,33 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
       localStorage.hb_playlist_tracks = JSON.stringify(tracks);
       localStorage.removeItem('hb_used');
       localStorage.bb_imported_playlist = JSON.stringify({id:playlistId,name:playlist.name || 'Playlist',count:tracks.length,importedAt:new Date().toISOString()});
+
+      // Officiële V179-flow: playlist importeren activeert automatisch de
+      // Spotify Web Playback-speler. Geen extra zichtbare activatieknop nodig.
+      let spotifyActive = !!deviceId;
+      let spotifyActivationError = '';
+      if(!spotifyActive){
+        setPlaylistStatus(`✅ ${tracks.length} nummers geladen. Spotify-speler wordt geactiveerd...`, true);
+        try{
+          await activatePlayer();
+          const startedAt = Date.now();
+          while(!deviceId && Date.now()-startedAt < 7500){
+            await new Promise(resolve=>setTimeout(resolve,150));
+          }
+          spotifyActive = !!deviceId;
+          if(!spotifyActive) spotifyActivationError = 'Spotify gaf nog geen actief apparaat terug.';
+        }catch(err){
+          spotifyActivationError = err?.message || String(err || 'Onbekende Spotify-fout');
+        }
+      }
+
       updateStatus();
-      setPlaylistStatus(`✅ ${tracks.length} nummers geïmporteerd uit “${playlist.name || 'Playlist'}”. Je kunt nu een kamer maken of een ronde starten.`, true);
+      if(spotifyActive){
+        setPlaylistStatus(`✅ ${tracks.length} nummers geïmporteerd uit “${playlist.name || 'Playlist'}”. Spotify-speler is actief.`, true);
+      }else{
+        setPlaylistStatus(`✅ ${tracks.length} nummers geïmporteerd. Automatisch activeren lukte nog niet: ${spotifyActivationError || 'controleer Spotify Premium en probeer opnieuw.'}`, false);
+      }
+      window.dispatchEvent(new CustomEvent('bb:playlist-imported',{detail:{id:playlistId,name:playlist.name || 'Playlist',count:tracks.length,spotifyActive}}));
       const preview = q('playlistPreview');
       if(preview){
         preview.classList.remove('hidden');

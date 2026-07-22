@@ -1,0 +1,23 @@
+BINGO BEATS V178 — MOCK-UP STYLE
+================================
+
+Deze versie gebruikt de donkere zwart-groene stijl van de aangeleverde voorbeelden.
+
+Belangrijk:
+- De bestaande knoppen en functies zijn behouden.
+- Er zijn geen extra navigatieknoppen, statistiekknoppen of verzonnen acties toegevoegd.
+- De hostvolgorde blijft: Muziek > Kamer > Instellingen > Spelen.
+- De bestaande Spotify-, Firebase-, lobby-, jury- en spelwerking blijft leidend.
+- De speluitleg verschijnt automatisch bij het betreden van de lobby.
+- De BingoBeats Round-uitleg verschijnt vóór de speciale ronde.
+- Beat Bomb, Beat Engineer, Joker, punten en blokvoordelen blijven uit V176 aanwezig.
+
+Uploaden:
+1. Pak de ZIP uit.
+2. Upload alle bestanden naar de hoofdmap van de GitHub-repository.
+3. Overschrijf ook index.html, sw.js, alle CSS- en JS-bestanden.
+4. Verwijder op iPhone zo nodig de oude PWA en voeg de site opnieuw toe aan het beginscherm.
+   De cache heet nu bingo-beats-v178, zodat de nieuwe stijl niet door een oude cache wordt overschreven.
+5. Publiceer database.rules.json apart in Firebase Realtime Database wanneer dat nog niet is gedaan.
+
+Versie: V178

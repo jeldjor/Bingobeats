@@ -1,18 +1,19 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" class="bbV177 bbV178">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <meta name="theme-color" content="#050807">
+  <meta name="theme-color" content="#020402">
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1770">
-  <link rel="stylesheet" href="style-v176.css?v=1770">
-  <link rel="stylesheet" href="style-v177.css?v=1770">
+  <link rel="stylesheet" href="style.css?v=1780">
+  <link rel="stylesheet" href="style-v176.css?v=1780">
+  <link rel="stylesheet" href="style-v177.css?v=1780">
+  <link rel="stylesheet" href="style-v178.css?v=1780">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -56,6 +57,7 @@
     </nav>
 
     <section class="bbHostStep active" data-host-step-panel="1">
+      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>MUZIEK</span></div>
       <section class="panel bbHostCard bbSpotifyCard">
         <div class="bbSectionHead"><span class="bbSectionIcon">●</span><div><small>MUZIEKBRON</small><h2>Spotify</h2><p>Verbind het account waarmee de muziek wordt afgespeeld.</p></div></div>
         <p id="loginStatus" class="small">Nog niet ingelogd.</p>
@@ -89,6 +91,7 @@
     </section>
 
     <section class="bbHostStep" data-host-step-panel="2">
+      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>KAMER</span></div>
       <section class="panel bbHostCard bbRoomCard">
         <div class="bbSectionHead bbRoomTitle"><span class="bbSectionIcon">#</span><div><small>SPELERS UITNODIGEN</small><h2>Kamer</h2><p>Maak de kamer, deel de QR-code en controleer wie er binnen is.</p></div></div>
         <label class="bbHostNameField">NAAM HOST
@@ -108,6 +111,7 @@
     </section>
 
     <section class="bbHostStep" data-host-step-panel="3">
+      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>INSTELLINGEN</span></div>
       <section class="panel bbHostCard bbSettingsCard">
         <div class="bbSectionHead"><span class="bbSectionIcon">◷</span><div><small>SPELTEMPO</small><h2>Ronde-instellingen</h2><p>Deze instellingen gelden voor iedere normale ronde.</p></div></div>
         <label class="bbDurationLabel">FRAGMENTDUUR
@@ -151,6 +155,7 @@
     </section>
 
     <section class="bbHostStep" data-host-step-panel="4">
+      <div class="bbV178ScreenBrand bbV178PlayBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>SPELEN</span></div>
       <section class="panel bbHostReadyCard">
         <div class="bbReadyTitle"><span>✓</span><div><small>CONTROLE VOLTOOID</small><h2>Klaar om te spelen</h2></div></div>
         <div class="bbReadySummary">
@@ -194,7 +199,6 @@
       <p>Spelcode: <strong id="playerRoomCode"></strong></p>
       <input id="playerNameInput" placeholder="Jouw naam">
       <button id="joinBtn">Meedoen</button>
-      <button id="bbJoinRulesBtn" type="button" class="secondary bbV176RulesLink">Bekijk spelregels</button>
       <p id="joinStatus" class="small"></p>
     </section>
 
@@ -329,9 +333,10 @@
   </div>
 </div>
 
-<script src="app.js?v=1770"></script>
-<script src="app-v176.js?v=1770"></script>
-<script src="app-v177.js?v=1770"></script>
+<script src="app.js?v=1780"></script>
+<script src="app-v176.js?v=1780"></script>
+<script src="app-v177.js?v=1780"></script>
+<script src="app-v178.js?v=1780"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -356,4 +361,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V177 - complete premium redesign + officiële spelregels -->
+<!-- Bingo Beats V178 - complete premium redesign + officiële spelregels -->

@@ -1,0 +1,1617 @@
+/* =========================================================
+   BINGO BEATS V178 — EXACTE VISUELE RICHTING VAN DE MOCK-UPS
+   Alleen vormgeving. Bestaande IDs, knoppen en spelwerking blijven intact.
+   ========================================================= */
+:root{
+  --bb178-black:#020302;
+  --bb178-black-2:#050806;
+  --bb178-panel:#080d09;
+  --bb178-panel-2:#0b120d;
+  --bb178-panel-3:#101911;
+  --bb178-green:#93f500;
+  --bb178-green-bright:#b6ff28;
+  --bb178-green-dark:#3c7d00;
+  --bb178-purple:#8c2cff;
+  --bb178-white:#f6f8f5;
+  --bb178-muted:#a3ada4;
+  --bb178-line:rgba(182,255,40,.34);
+  --bb178-soft-line:rgba(255,255,255,.11);
+  --bb178-card-radius:17px;
+  --bb178-shadow:0 18px 50px rgba(0,0,0,.66);
+}
+
+html.bbV178,
+html.bbV178 body{
+  width:100%!important;
+  height:100%!important;
+  min-width:320px!important;
+  min-height:100%!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  background:var(--bb178-black)!important;
+  color:var(--bb178-white)!important;
+}
+html.bbV178 body{
+  font-family:Impact,"Arial Narrow","SF Pro Display",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  background:
+    radial-gradient(circle at 50% -8%,rgba(126,22,255,.24),transparent 31%),
+    radial-gradient(circle at 50% 112%,rgba(147,245,0,.10),transparent 30%),
+    linear-gradient(180deg,#010201 0%,#020403 46%,#010201 100%)!important;
+  position:relative!important;
+}
+html.bbV178 body::before{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-2!important;
+  pointer-events:none!important;
+  opacity:.46!important;
+  background:
+    linear-gradient(90deg,transparent 0 4.5%,rgba(147,245,0,.07) 4.8% 5.2%,transparent 5.5% 9.5%) 0 100%/70px 46% no-repeat,
+    repeating-linear-gradient(90deg,transparent 0 21px,rgba(147,245,0,.09) 22px 25px,transparent 26px 34px)!important;
+  mask-image:linear-gradient(to top,#000 0%,transparent 42%)!important;
+}
+html.bbV178 body::after{
+  content:""!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-3!important;
+  pointer-events:none!important;
+  opacity:.18!important;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px)!important;
+  background-size:28px 28px!important;
+}
+html.bbV178 *{box-sizing:border-box!important}
+html.bbV178 .hidden{display:none!important}
+html.bbV178 button,
+html.bbV178 input,
+html.bbV178 select{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+html.bbV178 h1,
+html.bbV178 h2,
+html.bbV178 h3,
+html.bbV178 .bbHostWordmark strong,
+html.bbV178 .bbV178ScreenBrand span{
+  font-family:Impact,"Arial Narrow","SF Pro Display",sans-serif!important;
+  text-transform:uppercase!important;
+  letter-spacing:.025em!important;
+}
+
+/* ---------- Hoofdbalk ---------- */
+html.bbV178 .app{
+  width:100%!important;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+html.bbV178 #mainHeader{
+  flex:0 0 58px!important;
+  width:100%!important;
+  height:58px!important;
+  min-height:58px!important;
+  padding:max(5px,env(safe-area-inset-top)) clamp(11px,2.5vw,22px) 5px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  background:rgba(1,3,2,.95)!important;
+  border:0!important;
+  border-bottom:1px solid rgba(147,245,0,.35)!important;
+  box-shadow:0 8px 25px rgba(0,0,0,.7),0 1px 0 rgba(147,245,0,.08) inset!important;
+  backdrop-filter:blur(18px)!important;
+  z-index:100!important;
+}
+html.bbV178 .bbHostBrand{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+html.bbV178 .bbLogoHeader{
+  width:46px!important;
+  height:46px!important;
+  flex:0 0 46px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 10px rgba(149,245,0,.22))!important;
+}
+html.bbV178 .bbHostWordmark{display:flex!important;flex-direction:column!important;gap:1px!important;line-height:1!important}
+html.bbV178 .bbHostWordmark strong{
+  font-size:19px!important;
+  color:#fff!important;
+  background:none!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 1px 0 #000!important;
+  white-space:nowrap!important;
+}
+html.bbV178 .bbHostWordmark span{
+  margin:2px 0 0!important;
+  color:var(--bb178-green)!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  letter-spacing:.20em!important;
+}
+html.bbV178 #bbHostHeaderPlayers{
+  min-width:54px!important;
+  height:34px!important;
+  padding:0 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid var(--bb178-line)!important;
+  border-radius:10px!important;
+  color:var(--bb178-green-bright)!important;
+  background:linear-gradient(180deg,#0c160e,#050906)!important;
+  box-shadow:0 0 13px rgba(147,245,0,.07) inset!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+
+/* ---------- Host flow ---------- */
+html.bbV178 body:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{
+  flex:1 1 auto!important;
+  width:min(100%,1060px)!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0 auto!important;
+  padding:0 clamp(8px,2vw,20px) max(7px,env(safe-area-inset-bottom))!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+html.bbV178 .bbHostProgress{
+  flex:0 0 53px!important;
+  width:min(100%,620px)!important;
+  height:53px!important;
+  min-height:53px!important;
+  margin:0 auto!important;
+  padding:6px 1px!important;
+  display:grid!important;
+  grid-template-columns:auto 1fr auto 1fr auto 1fr auto!important;
+  align-items:center!important;
+  gap:4px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+html.bbV178 .bbHostProgress>i{
+  display:block!important;
+  height:1px!important;
+  margin:0!important;
+  border-radius:99px!important;
+  background:rgba(147,245,0,.24)!important;
+}
+html.bbV178 .bbHostStepTab{
+  width:58px!important;
+  min-width:0!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:0 2px!important;
+  display:grid!important;
+  grid-template-rows:22px 12px!important;
+  place-items:center!important;
+  gap:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#68726a!important;
+}
+html.bbV178 .bbHostStepTab span{
+  width:22px!important;
+  height:22px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:50%!important;
+  color:#929c94!important;
+  background:#050705!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbHostStepTab small{
+  color:inherit!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.02em!important;
+  text-transform:uppercase!important;
+}
+html.bbV178 .bbHostStepTab.active,
+html.bbV178 .bbHostStepTab.done{color:var(--bb178-green)!important}
+html.bbV178 .bbHostStepTab.active span{
+  color:#061000!important;
+  border-color:var(--bb178-green-bright)!important;
+  background:linear-gradient(180deg,var(--bb178-green-bright),#6fc900)!important;
+  box-shadow:0 0 13px rgba(147,245,0,.42)!important;
+}
+html.bbV178 .bbHostStepTab.done span{
+  color:var(--bb178-green)!important;
+  border-color:rgba(147,245,0,.48)!important;
+  background:#071006!important;
+}
+html.bbV178 .bbHostStep{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  display:none!important;
+  overflow:hidden!important;
+  position:relative!important;
+}
+html.bbV178 .bbHostStep.active{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+  gap:9px!important;
+  align-content:stretch!important;
+}
+html.bbV178 .bbV178ScreenBrand{
+  grid-column:1/-1!important;
+  height:74px!important;
+  min-height:74px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  overflow:visible!important;
+  position:relative!important;
+}
+html.bbV178 .bbV178ScreenBrand::before,
+html.bbV178 .bbV178ScreenBrand::after{
+  content:""!important;
+  width:min(15vw,100px)!important;
+  height:1px!important;
+  background:linear-gradient(90deg,transparent,rgba(147,245,0,.46))!important;
+}
+html.bbV178 .bbV178ScreenBrand::after{transform:scaleX(-1)!important}
+html.bbV178 .bbV178ScreenBrand img{
+  width:72px!important;
+  height:72px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 13px rgba(131,25,255,.42)) drop-shadow(0 0 8px rgba(147,245,0,.18))!important;
+}
+html.bbV178 .bbV178ScreenBrand span{
+  color:var(--bb178-green)!important;
+  font-size:20px!important;
+  line-height:1!important;
+  text-shadow:0 0 15px rgba(147,245,0,.25)!important;
+}
+html.bbV178 .bbV178PlayBrand{height:58px!important;min-height:58px!important}
+html.bbV178 .bbV178PlayBrand img{width:58px!important;height:58px!important}
+
+/* ---------- Panelen en controls ---------- */
+html.bbV178 .panel,
+html.bbV178 .bbHostCard,
+html.bbV178 .bbHostReadyCard,
+html.bbV178 .bbHostPlayCard,
+html.bbV178 .bbHostScoreCard{
+  margin:0!important;
+  padding:13px!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  border-radius:var(--bb178-card-radius)!important;
+  background:linear-gradient(180deg,rgba(12,17,13,.98),rgba(4,7,5,.98))!important;
+  box-shadow:var(--bb178-shadow),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  color:var(--bb178-white)!important;
+  overflow:hidden!important;
+}
+html.bbV178 .panel::before,
+html.bbV178 .bbHostCard::before{display:none!important}
+html.bbV178 .bbSectionHead{
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:9px!important;
+  margin:0 0 9px!important;
+  padding:0 0 9px!important;
+  border-bottom:1px solid rgba(255,255,255,.09)!important;
+}
+html.bbV178 .bbSectionIcon{
+  width:36px!important;
+  height:36px!important;
+  display:grid!important;
+  place-items:center!important;
+  color:var(--bb178-green)!important;
+  border:1px solid rgba(147,245,0,.4)!important;
+  border-radius:10px!important;
+  background:#081009!important;
+  box-shadow:0 0 12px rgba(147,245,0,.08) inset!important;
+  font-size:17px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbSectionHead small,
+html.bbV178 .bbReadyTitle small,
+html.bbV178 .bbPlayHead small{
+  display:block!important;
+  color:var(--bb178-green)!important;
+  font-size:8px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:.13em!important;
+}
+html.bbV178 .bbSectionHead h2,
+html.bbV178 .bbReadyTitle h2,
+html.bbV178 .bbPlayHead h2{
+  margin:3px 0 0!important;
+  color:#fff!important;
+  font-size:18px!important;
+  line-height:1!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbSectionHead p{
+  margin:4px 0 0!important;
+  color:#9ba49d!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+}
+html.bbV178 input,
+html.bbV178 select{
+  width:100%!important;
+  min-width:0!important;
+  min-height:40px!important;
+  margin:4px 0!important;
+  padding:0 11px!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:10px!important;
+  color:#fff!important;
+  background:#050806!important;
+  box-shadow:inset 0 1px 5px rgba(0,0,0,.55)!important;
+  outline:none!important;
+  font-size:12px!important;
+}
+html.bbV178 input:focus,
+html.bbV178 select:focus{
+  border-color:var(--bb178-green)!important;
+  box-shadow:0 0 0 2px rgba(147,245,0,.13)!important;
+}
+html.bbV178 input::placeholder{color:#697169!important;opacity:1!important}
+html.bbV178 button{
+  min-height:42px!important;
+  margin:4px 0!important;
+  padding:9px 12px!important;
+  border:1px solid rgba(202,255,107,.42)!important;
+  border-radius:11px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#71bf00,#3d8500)!important;
+  box-shadow:0 0 17px rgba(147,245,0,.10),inset 0 1px 0 rgba(255,255,255,.20)!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  letter-spacing:.015em!important;
+  text-transform:none!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.65)!important;
+}
+html.bbV178 button:not(:disabled):active{transform:translateY(1px) scale(.992)!important}
+html.bbV178 button:disabled{opacity:.40!important;filter:saturate(.45)!important}
+html.bbV178 button.secondary,
+html.bbV178 .secondary{
+  color:#f0f3f0!important;
+  border-color:rgba(255,255,255,.18)!important;
+  background:linear-gradient(180deg,#121713,#080b09)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+html.bbV178 .small{
+  margin:4px 0!important;
+  color:var(--bb178-muted)!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+  line-height:1.3!important;
+  opacity:1!important;
+}
+html.bbV178 .bbHostNext{
+  grid-column:1/-1!important;
+  align-self:end!important;
+  width:100%!important;
+  min-height:48px!important;
+  margin:0!important;
+  border-radius:12px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#8fe900,#4a9700)!important;
+  border:1px solid var(--bb178-green-bright)!important;
+  box-shadow:0 0 24px rgba(147,245,0,.20),inset 0 1px 0 rgba(255,255,255,.30)!important;
+  font-size:13px!important;
+  text-transform:uppercase!important;
+}
+
+/* ---------- Muziek ---------- */
+html.bbV178 .bbHostStep[data-host-step-panel="1"].active .bbSpotifyCard,
+html.bbV178 .bbHostStep[data-host-step-panel="1"].active .bbPlaylistCard{
+  min-height:0!important;
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+html.bbV178 .bbSpotifyCard #loginBtn,
+html.bbV178 .bbSpotifyCard #activateBtn,
+html.bbV178 .bbSpotifyCard #logoutBtn,
+html.bbV178 .bbPlaylistCard>button,
+html.bbV178 .bbPlaylistCard .playlistImportBox button{width:100%!important}
+html.bbV178 .playlistImportBox{
+  margin:3px 0!important;
+  padding:7px!important;
+  border:1px solid rgba(147,245,0,.20)!important;
+  border-radius:10px!important;
+  background:#050906!important;
+}
+html.bbV178 .playlistPreview{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  max-height:105px!important;
+  margin:5px 0!important;
+  padding:7px!important;
+  overflow:auto!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:9px!important;
+  background:#030503!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+}
+html.bbV178 .bbPreGameTestBlock{
+  grid-column:1/-1!important;
+  min-height:66px!important;
+  padding:9px 12px!important;
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) minmax(150px,230px)!important;
+  grid-template-rows:auto auto!important;
+  gap:2px 10px!important;
+  align-items:center!important;
+  border-color:rgba(147,245,0,.23)!important;
+}
+html.bbV178 .bbTestMark{
+  grid-row:1/3!important;
+  width:36px!important;
+  height:36px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid var(--bb178-line)!important;
+  border-radius:50%!important;
+  background:#071008!important;
+  font-size:17px!important;
+}
+html.bbV178 .bbTestCopy h2{margin:0!important;font-size:15px!important;color:#fff!important}
+html.bbV178 .bbTestCopy p{margin:2px 0 0!important}
+html.bbV178 .bbPreGameTestBtn{grid-column:3!important;grid-row:1/3!important;margin:0!important}
+html.bbV178 #bbPreGameTestStatus{grid-column:2!important;margin:0!important}
+
+/* ---------- Kamer ---------- */
+html.bbV178 .bbHostStep[data-host-step-panel="2"].active{
+  grid-template-columns:1fr!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+}
+html.bbV178 .bbRoomCard{
+  display:grid!important;
+  grid-template-columns:minmax(230px,.82fr) minmax(280px,1.18fr)!important;
+  grid-template-rows:auto auto minmax(0,1fr) auto!important;
+  grid-template-areas:
+    "head head"
+    "name actions"
+    "room players"
+    "status status"!important;
+  gap:8px 12px!important;
+  min-height:0!important;
+  height:100%!important;
+}
+html.bbV178 .bbRoomTitle{grid-area:head!important;margin:0!important}
+html.bbV178 .bbHostNameField{
+  grid-area:name!important;
+  display:flex!important;
+  flex-direction:column!important;
+  color:#dbe0dc!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbRoomActions{
+  grid-area:actions!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:7px!important;
+  align-items:end!important;
+}
+html.bbV178 .bbRoomActions button{margin:0!important}
+html.bbV178 #roomBox{
+  grid-area:room!important;
+  min-height:0!important;
+  height:100%!important;
+  margin:0!important;
+  padding:9px!important;
+  border:1px solid rgba(147,245,0,.30)!important;
+  border-radius:13px!important;
+  background:linear-gradient(180deg,#080d09,#030503)!important;
+  overflow:hidden!important;
+}
+html.bbV178 .hostRoomGridClean{
+  width:100%!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-columns:1fr 124px!important;
+  grid-template-rows:auto 1fr!important;
+  grid-template-areas:"code qr" "link qr"!important;
+  gap:8px!important;
+  align-items:center!important;
+}
+html.bbV178 .hostRoomCodeClean{grid-area:code!important;text-align:left!important}
+html.bbV178 .roomLabelClean{
+  margin:0 0 2px!important;
+  color:#98a199!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.10em!important;
+}
+html.bbV178 .roomCodeClean{
+  color:var(--bb178-green)!important;
+  font-family:Impact,"Arial Narrow",sans-serif!important;
+  font-size:clamp(30px,4.2vw,50px)!important;
+  line-height:.95!important;
+  letter-spacing:.08em!important;
+  text-shadow:0 0 17px rgba(147,245,0,.23)!important;
+}
+html.bbV178 .hostQrClean{
+  grid-area:qr!important;
+  width:124px!important;
+  height:124px!important;
+  padding:6px!important;
+  border:1px solid var(--bb178-green)!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  box-shadow:0 0 17px rgba(147,245,0,.18)!important;
+  object-fit:contain!important;
+}
+html.bbV178 .hostRoomLinkClean{
+  grid-area:link!important;
+  min-width:0!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  gap:5px!important;
+  align-items:end!important;
+}
+html.bbV178 .hostRoomLinkClean .roomLabelClean{grid-column:1/-1!important}
+html.bbV178 .hostRoomLinkClean input{height:36px!important;min-height:36px!important;margin:0!important;font-size:8px!important}
+html.bbV178 .copyRoomLinkBtn{height:36px!important;min-height:36px!important;margin:0!important;padding:6px 8px!important;font-size:9px!important}
+html.bbV178 .bbRoomCard>h3{
+  grid-area:players!important;
+  align-self:start!important;
+  margin:0!important;
+  color:var(--bb178-green)!important;
+  font-size:12px!important;
+  transform:translateY(-1px)!important;
+  pointer-events:none!important;
+}
+html.bbV178 #hostPlayers{
+  grid-area:players!important;
+  min-height:0!important;
+  height:100%!important;
+  margin:20px 0 0!important;
+  padding:7px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:12px!important;
+  background:#030503!important;
+}
+html.bbV178 .bbV160ReadyCount.host{
+  height:30px!important;
+  margin:0 0 6px!important;
+  padding:0 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  border:1px solid rgba(147,245,0,.24)!important;
+  border-radius:8px!important;
+  color:var(--bb178-green)!important;
+  background:#071008!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbV160HostGrid{
+  max-height:calc(100% - 36px)!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:5px!important;
+  overflow:auto!important;
+}
+html.bbV178 .bbV160HostChip{
+  min-height:38px!important;
+  padding:5px 7px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:5px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:8px!important;
+  background:#090d0a!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:10px!important;
+  overflow:hidden!important;
+}
+html.bbV178 .bbV160HostChip.ready{border-color:rgba(147,245,0,.35)!important;background:#0b130b!important}
+html.bbV178 .bbAnimalAvatar{font-size:19px!important;line-height:1!important}
+html.bbV178 #hostStatus{grid-area:status!important;margin:0!important;text-align:center!important}
+
+/* ---------- Instellingen ---------- */
+html.bbV178 .bbHostStep[data-host-step-panel="3"].active .bbSettingsCard,
+html.bbV178 .bbHostStep[data-host-step-panel="3"].active .bbFixedCategories{
+  min-height:0!important;
+  height:100%!important;
+}
+html.bbV178 .bbDurationLabel{
+  display:block!important;
+  margin:0 0 5px!important;
+  color:#dfe3df!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbDurationChoices{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:5px!important;
+  margin:0 0 8px!important;
+}
+html.bbV178 .bbDurationChoices button{
+  min-height:37px!important;
+  margin:0!important;
+  color:#c6ccc7!important;
+  border-color:rgba(255,255,255,.14)!important;
+  background:#080b08!important;
+  box-shadow:none!important;
+}
+html.bbV178 .bbDurationChoices button.active{
+  color:#071000!important;
+  border-color:var(--bb178-green)!important;
+  background:linear-gradient(180deg,var(--bb178-green-bright),#66bf00)!important;
+  text-shadow:none!important;
+  box-shadow:0 0 15px rgba(147,245,0,.18)!important;
+}
+html.bbV178 .bbSwitchRow{
+  min-height:48px!important;
+  margin:6px 0 0!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:10px!important;
+  background:#070a07!important;
+}
+html.bbV178 .bbSwitchRow strong{display:block!important;color:#fff!important;font-size:10px!important}
+html.bbV178 .bbSwitchRow small{display:block!important;margin-top:2px!important;color:#8e9790!important;font-size:8px!important}
+html.bbV178 .bbSwitchRow input[type="checkbox"]{
+  width:38px!important;
+  height:22px!important;
+  min-height:22px!important;
+  flex:0 0 38px!important;
+  padding:0!important;
+  accent-color:var(--bb178-green)!important;
+}
+html.bbV178 .bbFixedCategories{display:flex!important;flex-direction:column!important}
+html.bbV178 .bbCategoryRow{
+  flex:1 1 0!important;
+  min-height:39px!important;
+  margin:3px 0!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  border-radius:10px!important;
+  background:#090c09!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:10px!important;
+}
+html.bbV178 .bbCategoryRow b{font-size:10px!important;white-space:nowrap!important}
+html.bbV178 .bbCategoryRow span{color:#d5d9d6!important;text-align:right!important;font-size:9px!important}
+html.bbV178 .bbCategoryRow.yellow{border-color:rgba(255,210,45,.48)!important;background:linear-gradient(90deg,rgba(255,210,45,.17),#090c09 40%)!important}
+html.bbV178 .bbCategoryRow.aqua{border-color:rgba(0,213,199,.48)!important;background:linear-gradient(90deg,rgba(0,213,199,.15),#090c09 40%)!important}
+html.bbV178 .bbCategoryRow.orange{border-color:rgba(255,132,25,.48)!important;background:linear-gradient(90deg,rgba(255,132,25,.15),#090c09 40%)!important}
+html.bbV178 .bbCategoryRow.lime{border-color:rgba(147,245,0,.48)!important;background:linear-gradient(90deg,rgba(147,245,0,.14),#090c09 40%)!important}
+html.bbV178 .bbCategoryRow.coral{border-color:rgba(255,78,92,.48)!important;background:linear-gradient(90deg,rgba(255,78,92,.14),#090c09 40%)!important}
+
+/* ---------- Spelen host ---------- */
+html.bbV178 .bbHostStep[data-host-step-panel="4"].active{
+  grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)!important;
+  grid-template-rows:auto auto minmax(0,1fr)!important;
+}
+html.bbV178 .bbHostStep[data-host-step-panel="4"] .bbV178ScreenBrand{grid-column:1/-1!important}
+html.bbV178 .bbHostReadyCard{
+  grid-column:1!important;
+  grid-row:2/4!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+html.bbV178 .bbReadyTitle{display:flex!important;align-items:center!important;gap:8px!important;margin-bottom:8px!important}
+html.bbV178 .bbReadyTitle>span{
+  width:34px!important;height:34px!important;display:grid!important;place-items:center!important;
+  color:#071000!important;background:var(--bb178-green)!important;border-radius:50%!important;font-weight:900!important;
+}
+html.bbV178 .bbReadySummary{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;min-height:0!important;overflow:auto!important}
+html.bbV178 .bbReadySummary span{
+  min-height:39px!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:6px!important;
+  border:1px solid rgba(147,245,0,.22)!important;
+  border-radius:9px!important;
+  color:var(--bb178-green)!important;
+  background:#071008!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbReadySummary b{color:#fff!important;font-size:9px!important}
+html.bbV178 .bbHostPlayCard{
+  grid-column:2!important;
+  grid-row:2/4!important;
+  min-height:0!important;
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+html.bbV178 .bbPlayHead{display:flex!important;align-items:center!important;justify-content:space-between!important;margin:0 0 6px!important}
+html.bbV178 .bbLiveBadge{
+  padding:4px 7px!important;
+  border:1px solid rgba(255,70,70,.42)!important;
+  border-radius:999px!important;
+  color:#ff6868!important;
+  background:rgba(255,45,45,.08)!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:8px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbV176RoundMeta{
+  min-height:35px!important;
+  padding:5px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  border:1px solid rgba(147,245,0,.21)!important;
+  border-radius:9px!important;
+  background:#071008!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+}
+html.bbV178 .bbV176RoundMeta span{color:var(--bb178-green)!important;font-weight:900!important}
+html.bbV178 .pickerIntro,
+html.bbV178 #hostPickerArea{
+  flex:1 1 auto!important;
+  min-height:82px!important;
+  margin:7px 0!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:12px!important;
+  background:radial-gradient(circle,rgba(147,245,0,.10),transparent 58%),#030503!important;
+  color:#dfe4df!important;
+  text-align:center!important;
+  font-family:Inter,system-ui,sans-serif!important;
+}
+html.bbV178 #startRoundBtn{min-height:48px!important;font-size:15px!important;text-transform:uppercase!important}
+html.bbV178 .bbTransportRow{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin-top:3px!important}
+html.bbV178 .bbTransportRow button{min-height:53px!important;margin:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important}
+html.bbV178 .bbTransportRow small{font-size:7px!important;color:inherit!important}
+html.bbV178 #hostAnswerArea{min-height:0!important;max-height:105px!important;overflow:auto!important}
+html.bbV178 #hostScorePanel{
+  position:absolute!important;
+  inset:0!important;
+  z-index:20!important;
+  overflow:auto!important;
+  border-color:rgba(147,245,0,.42)!important;
+}
+html.bbV178 .scoreBoard{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+
+/* ---------- Speler aanmelden ---------- */
+html.bbV178 body.playerMode #mainHeader{display:none!important}
+html.bbV178 body.playerMode #playerApp,
+html.bbV178 body.bbHostPlayerMode #playerApp{
+  flex:1 1 auto!important;
+  width:100%!important;
+  min-height:0!important;
+  height:100dvh!important;
+  padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(118,15,255,.26),transparent 33%),
+    linear-gradient(180deg,#010201,#030603)!important;
+}
+html.bbV178 #screenJoin.joinPanel{
+  width:min(100%,410px)!important;
+  max-height:100%!important;
+  margin:0!important;
+  padding:18px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,rgba(9,12,9,.98),rgba(2,4,2,.98))!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.78),0 0 30px rgba(135,25,255,.10)!important;
+  overflow:hidden!important;
+  text-align:center!important;
+}
+html.bbV178 .bbJoinLogo{
+  width:min(55vw,190px)!important;
+  height:auto!important;
+  max-height:205px!important;
+  margin:0 auto 6px!important;
+  object-fit:contain!important;
+  filter:drop-shadow(0 0 16px rgba(126,25,255,.38))!important;
+}
+html.bbV178 .bbJoinEyebrow{
+  color:var(--bb178-green)!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.18em!important;
+}
+html.bbV178 #screenJoin h2{margin:5px 0 7px!important;color:#fff!important;font-size:24px!important;line-height:1!important}
+html.bbV178 #screenJoin p{margin:3px 0!important;color:#cfd4d0!important;font-family:Inter,system-ui,sans-serif!important;font-size:10px!important}
+html.bbV178 #screenJoin .bbJoinCode,
+html.bbV178 #screenJoin p:has(#playerRoomCode){
+  min-height:58px!important;
+  margin:7px 0 9px!important;
+  padding:7px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(147,245,0,.34)!important;
+  border-radius:11px!important;
+  background:#071008!important;
+}
+html.bbV178 #playerRoomCode{
+  display:block!important;
+  color:var(--bb178-green)!important;
+  font-family:Impact,"Arial Narrow",sans-serif!important;
+  font-size:29px!important;
+  line-height:1!important;
+  letter-spacing:.10em!important;
+}
+html.bbV178 #playerNameInput{height:46px!important;min-height:46px!important;text-align:center!important;font-size:14px!important}
+html.bbV178 #joinBtn{height:49px!important;min-height:49px!important;font-size:15px!important;text-transform:uppercase!important}
+
+/* ---------- Spelerschermen algemeen ---------- */
+html.bbV178 #screenDashboard{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-width:760px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+html.bbV178 body.bbStageMode #playerApp,
+html.bbV178 body.playerMode #playerApp:has(#screenDashboard:not(.hidden)){
+  padding:max(7px,env(safe-area-inset-top)) 8px max(7px,env(safe-area-inset-bottom))!important;
+}
+html.bbV178 .bbStageDashboard,
+html.bbV178 .bbV160LobbyStage,
+html.bbV178 .bbV160LiveStage,
+html.bbV178 .bbV176Stage{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,rgba(7,10,7,.98),rgba(1,3,2,.98))!important;
+  box-shadow:0 25px 70px rgba(0,0,0,.72)!important;
+}
+
+/* ---------- Lobby ---------- */
+html.bbV178 .bbV160LobbyStage{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(160px,.52fr)!important;
+  grid-template-rows:112px minmax(0,1fr) auto!important;
+  grid-template-areas:"hero card" "players card" "bottom bottom"!important;
+  gap:8px!important;
+  padding:10px!important;
+}
+html.bbV178 .bbV160LobbyStage::before{
+  content:""!important;
+  position:absolute!important;
+  width:100px!important;
+  height:100px!important;
+  top:6px!important;
+  left:14px!important;
+  background:url('bb_logo_lime.webp') center/contain no-repeat!important;
+  filter:drop-shadow(0 0 12px rgba(133,25,255,.32))!important;
+  pointer-events:none!important;
+}
+html.bbV178 .bbV160Hero{
+  grid-area:hero!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:13px 10px 8px 116px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  border:0!important;
+  background:transparent!important;
+  text-align:left!important;
+}
+html.bbV178 .bbV160Hero h2{margin:0!important;color:var(--bb178-green)!important;font-size:22px!important;line-height:1!important}
+html.bbV178 .bbV160Hero p{margin:5px 0 0!important;color:#c6cbc7!important;font-family:Inter,system-ui,sans-serif!important;font-size:10px!important}
+html.bbV178 .bbV160LobbyBox{
+  grid-area:players!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:13px!important;
+  background:#040604!important;
+}
+html.bbV178 .bbV160ReadyCount{
+  flex:0 0 34px!important;
+  min-height:34px!important;
+  margin:0 0 6px!important;
+  padding:0 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  border:1px solid rgba(147,245,0,.28)!important;
+  border-radius:9px!important;
+  color:var(--bb178-green)!important;
+  background:#071008!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+html.bbV178 .bbV160PlayerGrid{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-content:start!important;
+  gap:6px!important;
+  overflow:auto!important;
+}
+html.bbV178 .bbV160PlayerChip{
+  width:100%!important;
+  min-height:49px!important;
+  margin:0!important;
+  padding:6px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:5px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:10px!important;
+  color:#fff!important;
+  background:linear-gradient(180deg,#0c100c,#060806)!important;
+  box-shadow:none!important;
+  text-align:left!important;
+}
+html.bbV178 .bbV160PlayerChip.ready{border-color:rgba(147,245,0,.38)!important;background:linear-gradient(180deg,#101810,#071007)!important}
+html.bbV178 .bbV160PlayerName{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important;font-size:10px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+html.bbV178 .bbV160ReadyIcon{font-size:13px!important}
+html.bbV178 .bbV160Hint{margin:5px 0 0!important;color:#7e887f!important;font-family:Inter,system-ui,sans-serif!important;font-size:8px!important;text-align:center!important}
+html.bbV178 .bbV160OwnCardWrap{
+  grid-area:card!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:9px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  border:1px solid rgba(147,245,0,.25)!important;
+  border-radius:13px!important;
+  background:#050905!important;
+}
+html.bbV178 .bbV160OwnTitle{margin:0 0 7px!important;color:var(--bb178-green)!important;font-size:13px!important;text-align:center!important}
+html.bbV178 .bbV160OwnMiniCard{
+  width:min(100%,225px)!important;
+  aspect-ratio:1!important;
+  margin:0 auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,1fr)!important;
+  gap:3px!important;
+}
+html.bbV178 .bbV160MiniCell{border:1px solid rgba(255,255,255,.32)!important;border-radius:5px!important;display:grid!important;place-items:center!important;font-size:10px!important}
+html.bbV178 .bbV160Bottom{
+  grid-area:bottom!important;
+  min-height:48px!important;
+  display:flex!important;
+  align-items:end!important;
+}
+html.bbV178 .bbV160ReadyBtn{width:100%!important;min-height:48px!important;margin:0!important;font-size:15px!important;text-transform:uppercase!important}
+
+/* ---------- Normale ronde / scoreboard / bingokaart ---------- */
+html.bbV178 .bbV144Shell,
+html.bbV178 .bbStageShell{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:10px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+html.bbV178 .bbV144TopTitle,
+html.bbV178 .bbV144PickHeader,
+html.bbV178 .bbV144LobbyHero{
+  flex:0 0 auto!important;
+  margin:0 0 7px!important;
+  color:var(--bb178-green)!important;
+  text-align:center!important;
+}
+html.bbV178 .bbV144TopTitle h2,
+html.bbV178 .bbV144PickHeader h2,
+html.bbV178 .bbV144LobbyHero h2{margin:0!important;font-size:22px!important;color:var(--bb178-green)!important}
+html.bbV178 .bbV144Sub,
+html.bbV178 .bbV144PickHeader p{margin:3px 0!important;color:#c4cac5!important;font-family:Inter,system-ui,sans-serif!important;font-size:9px!important;text-align:center!important}
+html.bbV178 .bbV144HeroCard{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:12px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(147,245,0,.25)!important;
+  border-radius:15px!important;
+  background:radial-gradient(circle at 50% 25%,rgba(147,245,0,.12),transparent 48%),#040604!important;
+}
+html.bbV178 .bbV144Kicker{color:var(--bb178-green)!important;font-family:Inter,system-ui,sans-serif!important;font-size:9px!important;font-weight:900!important;letter-spacing:.12em!important}
+html.bbV178 .bbV144Record{width:102px!important;height:102px!important;margin:9px auto!important;border:2px solid var(--bb178-green)!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#070a07!important;box-shadow:0 0 20px rgba(147,245,0,.14)!important}
+html.bbV178 .bbV144RecordInner{color:var(--bb178-green)!important;font-size:26px!important}
+html.bbV178 .bbV144AnswerGrid{width:100%!important;display:grid!important;grid-template-columns:2fr 1.4fr .7fr!important;gap:6px!important}
+html.bbV178 .bbV144AnswerGrid>div{padding:8px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:9px!important;background:#080b08!important;text-align:center!important}
+html.bbV178 .bbV144AnswerGrid span{display:block!important;color:#8e978f!important;font-family:Inter,system-ui,sans-serif!important;font-size:7px!important;font-weight:900!important}
+html.bbV178 .bbV144AnswerGrid strong{display:block!important;margin-top:3px!important;color:#fff!important;font-family:Inter,system-ui,sans-serif!important;font-size:11px!important}
+html.bbV178 .bbV144Stats{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:5px!important;margin:0 0 6px!important}
+html.bbV178 .bbV144Stats>div{min-height:48px!important;padding:6px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:9px!important;background:#070a07!important;text-align:center!important;font-size:18px!important}
+html.bbV178 .bbV144Stats span{display:block!important;margin-top:2px!important;font-family:Inter,system-ui,sans-serif!important;font-size:7px!important}
+html.bbV178 .bbV144ScoreList,
+html.bbV178 .bbV146LiveList{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  overflow:auto!important;
+}
+html.bbV178 .bbV144ScoreRow{
+  min-height:52px!important;
+  padding:6px 8px!important;
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) 46px!important;
+  align-items:center!important;
+  gap:7px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:10px!important;
+  background:#080b08!important;
+  font-family:Inter,system-ui,sans-serif!important;
+}
+html.bbV178 .bbV144Avatar{width:34px!important;height:34px!important;display:grid!important;place-items:center!important;border:1px solid var(--bb178-line)!important;border-radius:50%!important;color:var(--bb178-green)!important;background:#071008!important;font-weight:900!important}
+html.bbV178 .bbV144Who{min-width:0!important}.bbV144Who strong{font-size:10px!important}.bbV144Who span{display:block!important;margin-top:2px!important;color:#c9cfca!important;font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.bbV144Who small{font-size:7px!important;color:#8e978f!important}
+html.bbV178 .bbV144State{text-align:center!important}.bbV144State b{display:block!important;font-size:15px!important}.bbV144State span{font-size:7px!important;font-weight:900!important}
+html.bbV178 .bbV144Bottom{flex:0 0 auto!important;margin-top:7px!important}
+html.bbV178 .bbV144MainBtn{width:100%!important;min-height:48px!important;margin:0!important;text-transform:uppercase!important;font-size:14px!important}
+html.bbV178 .bbV144Card,
+html.bbV178 .compactBingoCard,
+html.bbV178 .bbV176Card{
+  width:min(100%,430px)!important;
+  max-height:calc(100% - 75px)!important;
+  aspect-ratio:1!important;
+  margin:auto!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,1fr)!important;
+  gap:5px!important;
+}
+html.bbV178 .bbV144Cell,
+html.bbV178 .compactCell,
+html.bbV178 .bbV176Cell{
+  min-width:0!important;
+  min-height:0!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.58)!important;
+  border-radius:8px!important;
+  box-shadow:inset 0 0 10px rgba(0,0,0,.28)!important;
+}
+html.bbV178 .bbV144Cell.pickable,
+html.bbV178 .bbV176Cell.pickable{outline:2px solid #fff!important;box-shadow:0 0 15px currentColor!important;animation:bb178Pulse 1.1s ease-in-out infinite!important}
+@keyframes bb178Pulse{50%{filter:brightness(1.25)!important;transform:scale(1.025)!important}}
+
+/* ---------- BingoBeats Round ---------- */
+html.bbV178 .bbV176Stage{
+  padding:9px!important;
+  display:grid!important;
+  grid-template-rows:44px minmax(0,1fr) auto!important;
+  gap:7px!important;
+}
+html.bbV178 .bbV176Topbar{
+  min-height:44px!important;
+  padding:0 9px!important;
+  display:grid!important;
+  grid-template-columns:1fr auto 1fr!important;
+  align-items:center!important;
+  border:1px solid rgba(147,245,0,.25)!important;
+  border-radius:10px!important;
+  color:#e9eee9!important;
+  background:#071008!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:9px!important;
+}
+html.bbV178 .bbV176Topbar>div:last-child{text-align:right!important}
+html.bbV178 .bbV176Timer{min-width:54px!important;padding:7px!important;border:1px solid var(--bb178-green)!important;border-radius:8px!important;color:var(--bb178-green)!important;background:#030503!important;text-align:center!important;font-size:14px!important;font-weight:900!important}
+html.bbV178 .bbV176MainCard{
+  min-height:0!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:auto!important;
+  border:1px solid rgba(147,245,0,.28)!important;
+  border-radius:15px!important;
+  background:radial-gradient(circle at 50% 10%,rgba(147,245,0,.11),transparent 38%),#040604!important;
+}
+html.bbV178 .bbV176Waiting{display:grid!important;place-items:center!important;text-align:center!important}
+html.bbV178 .bbV176SpecialStar{color:var(--bb178-green)!important;text-shadow:0 0 20px rgba(147,245,0,.42)!important}
+html.bbV178 .bbV176Kicker{color:var(--bb178-green)!important;font-family:Inter,system-ui,sans-serif!important;font-size:9px!important;font-weight:900!important;letter-spacing:.13em!important}
+html.bbV178 .bbV176MainCard h2{margin:5px 0!important;color:#fff!important;font-size:25px!important;line-height:1!important}
+html.bbV178 .bbV176MainCard p{margin:4px 0!important;color:#c5cbc6!important;font-family:Inter,system-ui,sans-serif!important;font-size:10px!important}
+html.bbV178 .bbV176FiveFields{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:8px 0!important}
+html.bbV178 .bbV176Field:last-child{grid-column:1/-1!important}
+html.bbV178 .bbV176Field label{display:block!important;margin:0 0 2px!important;color:#dce1dc!important;font-family:Inter,system-ui,sans-serif!important;font-size:8px!important;font-weight:900!important}
+html.bbV178 .bbV176Field input{margin:0!important;height:40px!important;min-height:40px!important}
+html.bbV178 .bbV176Submit{width:100%!important;min-height:48px!important;text-transform:uppercase!important}
+html.bbV178 .bbV176Banner{
+  min-height:37px!important;
+  margin:0!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(147,245,0,.22)!important;
+  border-radius:9px!important;
+  color:#dfe5df!important;
+  background:#071008!important;
+  font-family:Inter,system-ui,sans-serif!important;
+  font-size:8px!important;
+  text-align:center!important;
+}
+html.bbV178 .bbV176ResultGrid{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:5px!important;margin:8px 0!important}
+html.bbV178 .bbV176ResultGrid span{height:38px!important;display:grid!important;place-items:center!important;border-radius:8px!important;font-size:18px!important;font-weight:900!important}
+html.bbV178 .bbV176ResultGrid .good{color:#071000!important;background:var(--bb178-green)!important}
+html.bbV178 .bbV176ResultGrid .bad{color:#fff!important;background:#641018!important}
+
+/* ---------- Pop-ups ---------- */
+html.bbV178 .bbV176Overlay,
+html.bbV178 .modalOverlay,
+html.bbV178 .hbHostStartOverlay,
+html.bbV178 .bbV160CardModal,
+html.bbV178 .bingoFullOverlay{
+  position:fixed!important;
+  inset:0!important;
+  z-index:9999!important;
+  padding:12px!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  background:rgba(0,0,0,.88)!important;
+  backdrop-filter:blur(13px)!important;
+}
+html.bbV178 .bbV176Overlay.hidden,
+html.bbV178 .modalOverlay.hidden,
+html.bbV178 .hbHostStartOverlay.hidden,
+html.bbV178 .bbV160CardModal.hidden,
+html.bbV178 .bingoFullOverlay.hidden{display:none!important}
+html.bbV178 .bbV176Modal,
+html.bbV178 .modalCard,
+html.bbV178 .hbHostStartModal,
+html.bbV178 .bbV160CardPop,
+html.bbV178 .bingoFullCard{
+  width:min(100%,520px)!important;
+  max-height:calc(100dvh - 24px)!important;
+  margin:0!important;
+  padding:17px!important;
+  overflow:auto!important;
+  border:1px solid rgba(147,245,0,.40)!important;
+  border-radius:18px!important;
+  color:#fff!important;
+  background:radial-gradient(circle at 50% 0%,rgba(128,23,255,.18),transparent 33%),linear-gradient(180deg,#0b100b,#020402)!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.8),0 0 30px rgba(147,245,0,.09)!important;
+}
+html.bbV178 .bbV176ModalLogo,
+html.bbV178 .bbLogoPopup,
+html.bbV178 .bbLogoModal,
+html.bbV178 .bbLogoBingo{
+  width:120px!important;
+  height:auto!important;
+  margin:0 auto 6px!important;
+  display:block!important;
+  object-fit:contain!important;
+}
+html.bbV178 .bbV176Modal h2,
+html.bbV178 .modalCard h2,
+html.bbV178 .hbHostStartModal h2{margin:5px 0 8px!important;color:var(--bb178-green)!important;font-size:24px!important;text-align:center!important}
+html.bbV178 .bbV176RuleGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:9px 0!important}
+html.bbV178 .bbV176RuleGrid>div{
+  min-height:72px!important;
+  padding:8px!important;
+  display:grid!important;
+  grid-template-columns:30px 1fr!important;
+  gap:7px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:10px!important;
+  background:#070a07!important;
+  font-family:Inter,system-ui,sans-serif!important;
+}
+html.bbV178 .bbV176RuleGrid>div.wide{grid-column:1/-1!important}
+html.bbV178 .bbV176RuleGrid b{color:var(--bb178-green)!important;font-size:16px!important}
+html.bbV178 .bbV176RuleGrid span{color:#cbd0cc!important;font-size:9px!important;line-height:1.25!important}
+html.bbV178 .bbV176RuleGrid strong{display:block!important;margin-bottom:2px!important;color:#fff!important;font-size:10px!important}
+html.bbV178 .bbV176Primary{width:100%!important;min-height:48px!important;text-transform:uppercase!important}
+html.bbV178 .bbV176AdvantageGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+html.bbV178 .bbV176AdvantageGrid button{min-height:75px!important;margin:0!important;text-align:left!important;color:#fff!important;background:#080c08!important;border-color:rgba(147,245,0,.27)!important;box-shadow:none!important}
+html.bbV178 .bbV176AdvantageGrid button:last-child{grid-column:1/-1!important}
+html.bbV178 .bbV176AdvantageGrid b{display:block!important;color:var(--bb178-green)!important;font-size:11px!important}
+html.bbV178 .bbV176AdvantageGrid small{display:block!important;margin-top:4px!important;color:#b9c0ba!important;font-size:8px!important;line-height:1.25!important}
+html.bbV178 .bbV176ModalClose,
+html.bbV178 .bbV160Close{
+  position:absolute!important;
+  top:9px!important;
+  right:9px!important;
+  width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  color:#fff!important;
+  background:#131713!important;
+  border-color:rgba(255,255,255,.18)!important;
+  box-shadow:none!important;
+  font-size:20px!important;
+}
+
+/* ---------- Licentie ---------- */
+html.bbV178 .licenseScreen{
+  position:fixed!important;
+  inset:0!important;
+  z-index:10000!important;
+  padding:12px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:radial-gradient(circle at 50% 20%,rgba(123,20,255,.25),transparent 34%),#010201!important;
+}
+html.bbV178 .licenseCard{
+  width:min(100%,390px)!important;
+  padding:18px!important;
+  border:1px solid rgba(147,245,0,.35)!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,#0b0f0b,#020402)!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.8)!important;
+  text-align:center!important;
+}
+html.bbV178 .licenseCard .bbLogoHero{width:180px!important;max-height:200px!important;margin:0 auto 5px!important;object-fit:contain!important}
+html.bbV178 .licenseCard h2{margin:5px 0!important;color:var(--bb178-green)!important;font-size:24px!important}
+html.bbV178 #licenseBtn{width:100%!important;min-height:48px!important;text-transform:uppercase!important}
+
+/* ---------- Mobiel ---------- */
+@media(max-width:720px){
+  html.bbV178 #mainHeader{flex-basis:55px!important;height:55px!important;min-height:55px!important}
+  html.bbV178 .bbLogoHeader{width:42px!important;height:42px!important;flex-basis:42px!important}
+  html.bbV178 .bbHostWordmark strong{font-size:17px!important}
+  html.bbV178 body:not(.playerMode):not(.bbHostPlayerMode) #hostApp.bbHostWizard{padding:0 7px max(6px,env(safe-area-inset-bottom))!important}
+  html.bbV178 .bbHostProgress{height:47px!important;min-height:47px!important;flex-basis:47px!important}
+  html.bbV178 .bbHostStepTab{width:51px!important;height:40px!important;min-height:40px!important}
+  html.bbV178 .bbV178ScreenBrand{height:62px!important;min-height:62px!important;gap:7px!important}
+  html.bbV178 .bbV178ScreenBrand img{width:61px!important;height:61px!important}
+  html.bbV178 .bbV178ScreenBrand span{font-size:17px!important}
+  html.bbV178 .bbV178ScreenBrand::before,
+  html.bbV178 .bbV178ScreenBrand::after{width:38px!important}
+  html.bbV178 .bbHostStep.active{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr) auto!important;gap:7px!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="1"].active{
+    grid-template-columns:1fr 1fr!important;
+    grid-template-rows:auto minmax(0,1fr) auto auto!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbV178ScreenBrand{grid-column:1/-1!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbSpotifyCard{grid-column:1!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbPlaylistCard{grid-column:2!important}
+  html.bbV178 .bbPreGameTestBlock{grid-column:1/-1!important;grid-template-columns:30px minmax(0,1fr) minmax(105px,148px)!important;min-height:58px!important;padding:7px!important;gap:2px 7px!important}
+  html.bbV178 .bbTestMark{width:30px!important;height:30px!important;font-size:14px!important}
+  html.bbV178 .bbTestCopy h2{font-size:13px!important}
+  html.bbV178 .bbSectionHead{grid-template-columns:30px minmax(0,1fr)!important;gap:7px!important;margin-bottom:6px!important;padding-bottom:6px!important}
+  html.bbV178 .bbSectionIcon{width:30px!important;height:30px!important;font-size:14px!important}
+  html.bbV178 .bbSectionHead h2{font-size:15px!important}
+  html.bbV178 .bbSectionHead p{display:none!important}
+  html.bbV178 .panel,
+  html.bbV178 .bbHostCard{padding:9px!important;border-radius:13px!important}
+  html.bbV178 button{min-height:38px!important;padding:7px 8px!important;font-size:10px!important;border-radius:9px!important}
+  html.bbV178 input,
+  html.bbV178 select{min-height:37px!important;height:37px!important;font-size:10px!important;border-radius:9px!important}
+  html.bbV178 .small{font-size:8px!important}
+  html.bbV178 .bbHostNext{min-height:44px!important;font-size:11px!important}
+  html.bbV178 .bbRoomCard{
+    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important;
+    grid-template-rows:auto auto minmax(0,1fr) auto!important;
+    grid-template-areas:"head head" "name actions" "room players" "status status"!important;
+    gap:6px!important;
+  }
+  html.bbV178 .bbRoomActions{gap:4px!important}
+  html.bbV178 .hostRoomGridClean{grid-template-columns:1fr 91px!important}
+  html.bbV178 .hostQrClean{width:91px!important;height:91px!important;padding:4px!important}
+  html.bbV178 .roomCodeClean{font-size:29px!important}
+  html.bbV178 .hostRoomLinkClean{grid-template-columns:1fr!important}
+  html.bbV178 .copyRoomLinkBtn{width:100%!important;height:31px!important;min-height:31px!important}
+  html.bbV178 .hostRoomLinkClean input{display:none!important}
+  html.bbV178 .bbV160HostGrid{grid-template-columns:1fr!important}
+  html.bbV178 .bbV160HostChip{min-height:34px!important;padding:4px 6px!important;font-size:9px!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="3"].active{grid-template-columns:1fr 1fr!important;grid-template-rows:auto minmax(0,1fr) auto!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbV178ScreenBrand{grid-column:1/-1!important}
+  html.bbV178 .bbDurationChoices{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;margin-bottom:5px!important}
+  html.bbV178 .bbDurationChoices button{min-height:31px!important}
+  html.bbV178 .bbSwitchRow{min-height:42px!important;margin-top:4px!important;padding:5px 7px!important}
+  html.bbV178 .bbCategoryRow{min-height:34px!important;margin:2px 0!important;padding:5px 6px!important}
+  html.bbV178 .bbCategoryRow span{font-size:7px!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="4"].active{grid-template-columns:145px minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr)!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="4"] .bbV178ScreenBrand{display:none!important}
+  html.bbV178 .bbHostReadyCard{grid-column:1!important;grid-row:1/-1!important;padding:8px!important}
+  html.bbV178 .bbHostPlayCard{grid-column:2!important;grid-row:1/-1!important;padding:8px!important}
+  html.bbV178 .bbReadyTitle h2,
+  html.bbV178 .bbPlayHead h2{font-size:14px!important}
+  html.bbV178 .bbReadySummary span{min-height:34px!important;padding:5px!important;font-size:7px!important;display:block!important}
+  html.bbV178 .bbReadySummary b{display:block!important;margin-top:2px!important;font-size:7px!important}
+  html.bbV178 .bbTransportRow{gap:4px!important}
+  html.bbV178 .bbTransportRow button{min-height:46px!important;font-size:9px!important}
+  html.bbV178 .bbV160LobbyStage{
+    grid-template-columns:1fr 126px!important;
+    grid-template-rows:91px minmax(0,1fr) auto!important;
+    padding:7px!important;
+    gap:6px!important;
+  }
+  html.bbV178 .bbV160LobbyStage::before{width:78px!important;height:78px!important;top:6px!important;left:7px!important}
+  html.bbV178 .bbV160Hero{padding:10px 4px 6px 86px!important}
+  html.bbV178 .bbV160Hero h2{font-size:17px!important}
+  html.bbV178 .bbV160Hero p{font-size:8px!important}
+  html.bbV178 .bbV160PlayerGrid{grid-template-columns:1fr!important;gap:4px!important}
+  html.bbV178 .bbV160PlayerChip{min-height:41px!important;padding:4px 6px!important}
+  html.bbV178 .bbAnimalAvatar{font-size:16px!important}
+  html.bbV178 .bbV160OwnCardWrap{padding:6px!important}
+  html.bbV178 .bbV160OwnTitle{font-size:10px!important}
+  html.bbV178 .bbV160OwnMiniCard{width:100%!important;gap:2px!important}
+  html.bbV178 .bbV160MiniCell{border-radius:3px!important;font-size:7px!important}
+  html.bbV178 .bbV144Shell,
+  html.bbV178 .bbStageShell{padding:7px!important}
+  html.bbV178 .bbV144Card,
+  html.bbV178 .compactBingoCard,
+  html.bbV178 .bbV176Card{width:min(100%,385px)!important;gap:4px!important}
+  html.bbV178 .bbV176FiveFields{grid-template-columns:1fr 1fr!important;gap:4px!important}
+  html.bbV178 .bbV176Field input{height:36px!important;min-height:36px!important}
+}
+
+@media(max-width:480px){
+  html.bbV178 .bbHostStep[data-host-step-panel="1"].active{
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto minmax(0,.82fr) minmax(0,1fr) auto auto!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbSpotifyCard,
+  html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbPlaylistCard{grid-column:1!important;min-height:0!important}
+  html.bbV178 .bbPreGameTestBlock{
+    display:grid!important;
+    grid-template-columns:28px minmax(0,1fr) 112px!important;
+    min-height:48px!important;
+    padding:5px 6px!important;
+  }
+  html.bbV178 .bbPreGameTestBlock .bbTestCopy p,
+  html.bbV178 #bbPreGameTestStatus{display:none!important}
+  html.bbV178 .bbPreGameTestBtn{min-height:34px!important;font-size:8px!important}
+  html.bbV178 .bbRoomCard{
+    grid-template-columns:1fr 1fr!important;
+    grid-template-rows:auto auto minmax(0,.9fr) minmax(0,1.1fr) auto!important;
+    grid-template-areas:"head head" "name actions" "room room" "players players" "status status"!important;
+  }
+  html.bbV178 .hostRoomGridClean{grid-template-columns:1fr 104px!important}
+  html.bbV178 .hostQrClean{width:104px!important;height:104px!important}
+  html.bbV178 #hostPlayers{margin-top:18px!important}
+  html.bbV178 .bbV160HostGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="3"].active{
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto minmax(0,.82fr) minmax(0,1.18fr) auto!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbSettingsCard,
+  html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbFixedCategories{min-height:0!important}
+  html.bbV178 .bbHostStep[data-host-step-panel="4"].active{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important}
+  html.bbV178 .bbHostReadyCard{display:none!important}
+  html.bbV178 .bbHostPlayCard{grid-column:1!important;grid-row:1/-1!important}
+  html.bbV178 .bbV160LobbyStage{
+    grid-template-columns:1fr!important;
+    grid-template-rows:92px minmax(0,1fr) 148px auto!important;
+    grid-template-areas:"hero" "players" "card" "bottom"!important;
+  }
+  html.bbV178 .bbV160OwnCardWrap{display:grid!important;grid-template-columns:80px minmax(0,1fr)!important;align-items:center!important;gap:7px!important}
+  html.bbV178 .bbV160OwnTitle{margin:0!important}
+  html.bbV178 .bbV160OwnMiniCard{width:125px!important;max-width:100%!important}
+  html.bbV178 .bbV176RuleGrid{grid-template-columns:1fr!important}
+  html.bbV178 .bbV176RuleGrid>div.wide{grid-column:1!important}
+}
+
+@media(max-height:720px){
+  html.bbV178 #mainHeader{height:50px!important;min-height:50px!important;flex-basis:50px!important}
+  html.bbV178 .bbLogoHeader{width:38px!important;height:38px!important;flex-basis:38px!important}
+  html.bbV178 .bbHostProgress{height:42px!important;min-height:42px!important;flex-basis:42px!important;padding:2px 1px!important}
+  html.bbV178 .bbHostStepTab{height:36px!important;min-height:36px!important;grid-template-rows:20px 10px!important}
+  html.bbV178 .bbV178ScreenBrand{height:48px!important;min-height:48px!important}
+  html.bbV178 .bbV178ScreenBrand img{width:48px!important;height:48px!important}
+  html.bbV178 .bbV178ScreenBrand span{font-size:15px!important}
+  html.bbV178 .panel,
+  html.bbV178 .bbHostCard{padding:7px!important}
+  html.bbV178 .bbSectionHead{margin-bottom:4px!important;padding-bottom:4px!important}
+  html.bbV178 button{min-height:34px!important;margin:2px 0!important;padding:5px 7px!important}
+  html.bbV178 input,
+  html.bbV178 select{min-height:33px!important;height:33px!important;margin:2px 0!important}
+  html.bbV178 .bbHostNext{min-height:39px!important}
+  html.bbV178 .bbCategoryRow{min-height:30px!important}
+  html.bbV178 .bbSwitchRow{min-height:37px!important}
+  html.bbV178 .bbJoinLogo{width:130px!important;max-height:140px!important}
+  html.bbV178 #screenJoin.joinPanel{padding:12px!important}
+  html.bbV178 .bbV160LobbyStage{grid-template-rows:78px minmax(0,1fr) auto!important}
+  html.bbV178 .bbV160LobbyStage::before{width:66px!important;height:66px!important}
+  html.bbV178 .bbV160Hero{padding-left:76px!important}
+}
+
+/* ---------- V178 vaste rasterplaatsen: voorkomt dat oude grid-areas de nieuwe merkbalk verplaatsen ---------- */
+html.bbV178 .bbV178ScreenBrand{grid-area:brand!important}
+html.bbV178 .bbHostStep[data-host-step-panel="1"].active{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:auto minmax(0,1fr) auto auto!important;
+  grid-template-areas:
+    "brand brand"
+    "spotify playlist"
+    "test test"
+    "next next"!important;
+}
+html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbSpotifyCard{grid-area:spotify!important}
+html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbPlaylistCard{grid-area:playlist!important}
+html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbPreGameTestBlock{grid-area:test!important}
+html.bbV178 .bbHostStep[data-host-step-panel="1"] .bbHostNext{grid-area:next!important}
+
+html.bbV178 .bbHostStep[data-host-step-panel="2"].active{
+  grid-template-columns:1fr!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+  grid-template-areas:"brand" "room" "next"!important;
+}
+html.bbV178 .bbHostStep[data-host-step-panel="2"] .bbRoomCard{grid-area:room!important}
+html.bbV178 .bbHostStep[data-host-step-panel="2"] .bbHostNext{grid-area:next!important}
+
+html.bbV178 .bbHostStep[data-host-step-panel="3"].active{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+  grid-template-areas:"brand brand" "settings categories" "next next"!important;
+}
+html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbSettingsCard{grid-area:settings!important}
+html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbFixedCategories{grid-area:categories!important}
+html.bbV178 .bbHostStep[data-host-step-panel="3"] .bbHostNext{grid-area:next!important}
+
+html.bbV178 .bbHostStep[data-host-step-panel="4"].active{
+  grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr)!important;
+  grid-template-rows:auto minmax(0,1fr)!important;
+  grid-template-areas:"brand brand" "ready play"!important;
+}
+html.bbV178 .bbHostStep[data-host-step-panel="4"] .bbHostReadyCard{grid-area:ready!important}
+html.bbV178 .bbHostStep[data-host-step-panel="4"] .bbHostPlayCard{grid-area:play!important}
+
+@media(max-width:720px){
+  html.bbV178 .bbHostStep[data-host-step-panel="1"].active{
+    grid-template-columns:1fr 1fr!important;
+    grid-template-rows:auto minmax(0,1fr) auto auto!important;
+    grid-template-areas:"brand brand" "spotify playlist" "test test" "next next"!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="3"].active{
+    grid-template-columns:1fr 1fr!important;
+    grid-template-rows:auto minmax(0,1fr) auto!important;
+    grid-template-areas:"brand brand" "settings categories" "next next"!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="4"].active{
+    grid-template-columns:145px minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr)!important;
+    grid-template-areas:"ready play"!important;
+  }
+}
+
+@media(max-width:480px){
+  html.bbV178 .bbHostStep[data-host-step-panel="1"].active{
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto minmax(0,1fr) minmax(0,1fr) auto auto!important;
+    grid-template-areas:"brand" "spotify" "playlist" "test" "next"!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="3"].active{
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto minmax(0,.82fr) minmax(0,1.18fr) auto!important;
+    grid-template-areas:"brand" "settings" "categories" "next"!important;
+  }
+  html.bbV178 .bbHostStep[data-host-step-panel="4"].active{
+    grid-template-columns:1fr!important;
+    grid-template-rows:minmax(0,1fr)!important;
+    grid-template-areas:"play"!important;
+  }
+}
+
+/* V178.1: alle bestaande instellingen blijven op kleine schermen zichtbaar. */
+@media(max-width:720px){
+  html.bbV178 .bbDurationChoices{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:480px){
+  html.bbV178 .bbHostStep[data-host-step-panel="3"].active{
+    grid-template-rows:auto minmax(0,1fr) minmax(0,1fr) auto!important;
+  }
+  html.bbV178 .bbCategoryRow{min-height:31px!important;padding:4px 6px!important}
+}
+
+/* V178.2: sterkere lobby-specificiteit dan oudere mobiele rasterregels. */
+@media(max-width:480px){
+  html.bbV178 #screenDashboard.bbV160LobbyStage{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:92px minmax(0,1fr) 148px auto!important;
+    grid-template-areas:"hero" "players" "card" "bottom"!important;
+    grid-auto-columns:0!important;
+  }
+  html.bbV178 #screenDashboard.bbV160LobbyStage>.bbV160Hero,
+  html.bbV178 #screenDashboard.bbV160LobbyStage>.bbV160LobbyBox,
+  html.bbV178 #screenDashboard.bbV160LobbyStage>.bbV160OwnCardWrap,
+  html.bbV178 #screenDashboard.bbV160LobbyStage>.bbV160Bottom{
+    grid-column:1!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+
+/* V178.3: het actieve spelersscherm vult altijd de beschikbare breedte. */
+html.bbV178 body.playerMode #playerApp,
+html.bbV178 body.bbHostPlayerMode #playerApp{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+}
+html.bbV178 #screenDashboard{
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  min-width:0!important;
+}
+
+/* V178.4: actieve vraag blijft helder en volledig leesbaar. */
+html.bbV178 .bbCategoryTitle{
+  margin:12px 0 10px!important;
+  color:#f7fff5!important;
+  opacity:1!important;
+  font-size:24px!important;
+  line-height:1!important;
+  text-align:center!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.7)!important;
+}
+html.bbV178 .bbRoundBadge{
+  color:#fff!important;
+  border-color:rgba(255,255,255,.14)!important;
+  background:#071008!important;
+}
+html.bbV178 .bbStageInput{
+  width:100%!important;
+  min-height:49px!important;
+  color:#fff!important;
+  background:#040604!important;
+}
+html.bbV178 .bbStageSubmit{
+  width:100%!important;
+  min-height:49px!important;
+  text-transform:uppercase!important;
+  font-size:14px!important;
+}

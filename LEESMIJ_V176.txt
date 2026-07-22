@@ -1,0 +1,35 @@
+BINGO BEATS V176
+================
+
+Deze versie bouwt voort op V175 en bevat:
+- Premium, compacte host- en spelerslayout.
+- Hostvolgorde: Muziek > Kamer > Instellingen > Spelen.
+- Geen paginascroll; schermen passen zich aan telefoon, tablet en laptop aan.
+- Uitlegpopup zodra een speler de lobby binnenkomt.
+- Uitlegpopup vóór iedere BingoBeats Round.
+- Vier normale rondes en daarna één BingoBeats Round.
+- Normale score: +100 goed, +50 snelste goede antwoord.
+- BingoBeats Round: vijf categorieën, 60 seconden, +100 per goed antwoord.
+- Bij minimaal 4/5 goed mag de speler ieder nog leeg kaartvak kiezen.
+- Iedere kaart heeft één verborgen Beat Bomb en één verborgen Beat Engineer.
+- De Engineer beschermt één keer tegen een explosie.
+- Na iedere BingoBeats Round kiest de blokwinnaar één voordeel:
+  Time Pressure, Double Trouble, Engineer Unlock, Extra Time of Joker.
+- Dierenavatar en score blijven zichtbaar.
+- PWA-cache bijgewerkt naar V176.
+
+UPLOAD
+------
+Upload alle bestanden en mappen uit deze ZIP naar dezelfde GitHub-repository.
+Laat database.rules.json staan. Publiceer dit bestand één keer handmatig in:
+Firebase Console > Realtime Database > Regels.
+
+TESTLICENTIE
+------------
+TEST-2026
+
+BELANGRIJK
+----------
+Spotify Web Playback vereist een Spotify Premium-account en een gebruikersactie
+voordat geluid in de browser mag starten. Gebruik daarom altijd eerst de knop
+'TEST VOOR JE BEGINT'.

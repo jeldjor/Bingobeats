@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="app-icon.png">
+  <meta name="theme-color" content="#07110d">
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1751">
+  <link rel="stylesheet" href="style.css?v=1760">
+  <link rel="stylesheet" href="style-v176.css?v=1760">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -44,9 +47,9 @@
     <nav class="bbHostProgress" aria-label="Hoststappen">
       <button type="button" class="bbHostStepTab active" data-host-step="1"><span>1</span><small>Muziek</small></button>
       <i></i>
-      <button type="button" class="bbHostStepTab" data-host-step="2"><span>2</span><small>Instellingen</small></button>
+      <button type="button" class="bbHostStepTab" data-host-step="2"><span>2</span><small>Kamer</small></button>
       <i></i>
-      <button type="button" class="bbHostStepTab" data-host-step="3"><span>3</span><small>Kamer</small></button>
+      <button type="button" class="bbHostStepTab" data-host-step="3"><span>3</span><small>Instellingen</small></button>
       <i></i>
       <button type="button" class="bbHostStepTab" data-host-step="4"><span>4</span><small>Spelen</small></button>
     </nav>
@@ -81,10 +84,10 @@
         <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
       </section>
 
-      <button type="button" class="bbHostNext" data-host-go="2">VOLGENDE: INSTELLINGEN →</button>
+      <button type="button" class="bbHostNext" data-host-go="2">VOLGENDE: KAMER →</button>
     </section>
 
-    <section class="bbHostStep" data-host-step-panel="3">
+    <section class="bbHostStep" data-host-step-panel="2">
       <section class="panel bbHostCard bbRoomCard">
         <h2 class="srOnly">4. Kamer</h2>
         <label class="bbHostNameField">NAAM HOST
@@ -100,10 +103,10 @@
         <p id="hostStatus" class="small">Maak een kamer.</p>
       </section>
 
-      <button type="button" class="bbHostNext" data-host-go="4">VOLGENDE: SPELEN →</button>
+      <button type="button" class="bbHostNext" data-host-go="3">VOLGENDE: INSTELLINGEN →</button>
     </section>
 
-    <section class="bbHostStep" data-host-step-panel="2">
+    <section class="bbHostStep" data-host-step-panel="3">
       <section class="panel bbHostCard bbSettingsCard">
         <label class="bbDurationLabel">FRAGMENTDUUR
           <select id="duration" class="srOnly" aria-label="Fragmentduur">
@@ -142,7 +145,7 @@
         <div class="bbCategoryRow coral"><b>♫ Koraal</b><span>Titel van track</span></div>
       </section>
 
-      <button type="button" class="bbHostNext" data-host-go="3">VOLGENDE: KAMER →</button>
+      <button type="button" class="bbHostNext" data-host-go="4">VOLGENDE: SPELEN →</button>
     </section>
 
     <section class="bbHostStep" data-host-step-panel="4">
@@ -154,6 +157,7 @@
       </section>
 
       <section class="panel stage bbHostPlayCard">
+        <div class="bbV176RoundMeta"><span id="bbV176RoundType">NORMALE RONDE</span><strong id="bbV176RoundProgress">Ronde 1 van 5</strong></div>
         <div id="hostPickerArea" class="pickerIntro">🎮<br>Klaar om te spelen</div>
         <button id="startRoundBtn">▶ START RONDE</button>
         <div class="bbTransportRow">
@@ -185,6 +189,7 @@
       <p>Spelcode: <strong id="playerRoomCode"></strong></p>
       <input id="playerNameInput" placeholder="Jouw naam">
       <button id="joinBtn">Meedoen</button>
+      <button id="bbJoinRulesBtn" type="button" class="secondary bbV176RulesLink">Bekijk spelregels</button>
       <p id="joinStatus" class="small"></p>
     </section>
 
@@ -257,6 +262,57 @@
 </div>
 
 
+<div id="bbV176RulesOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176RulesTitle">
+  <div class="bbV176Modal bbV176RulesModal">
+    <button id="bbV176RulesCloseX" type="button" class="bbV176ModalClose" aria-label="Sluiten">×</button>
+    <img src="bb_logo_lime.webp" class="bbV176ModalLogo" alt="Bingo Beats">
+    <span class="bbV176Eyebrow">WELKOM IN DE LOBBY</span>
+    <h2 id="bbV176RulesTitle">Zo speel je Bingo Beats</h2>
+    <div class="bbV176RuleGrid">
+      <div><b>1</b><span><strong>Luister & antwoord</strong>Goed antwoord: +100. Snelste goede antwoord: +50 extra.</span></div>
+      <div><b>2</b><span><strong>Kies een kleurvak</strong>Na een goed antwoord kies je één vak in de gekozen kleur.</span></div>
+      <div><b>💣</b><span><strong>Verborgen Beat Bomb</strong>Een bom wist je aangevinkte vakken, tenzij je Engineer actief is.</span></div>
+      <div><b>👷</b><span><strong>Verborgen Beat Engineer</strong>De Engineer repareert je kaart één keer na een explosie.</span></div>
+      <div class="wide"><b>★</b><span><strong>Elke vijfde ronde: BingoBeats Round</strong>Beantwoord vijf categorieën in 60 seconden. Met minimaal 4 goed kies je ieder vrij vak.</span></div>
+    </div>
+    <button id="bbV176RulesClose" type="button" class="bbV176Primary">Begrepen, ik ben klaar</button>
+  </div>
+</div>
+
+<div id="bbV176SpecialOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176SpecialTitle">
+  <div class="bbV176Modal bbV176SpecialModal">
+    <button id="bbV176SpecialCloseX" type="button" class="bbV176ModalClose" aria-label="Sluiten">×</button>
+    <div class="bbV176SpecialStar">★</div>
+    <span class="bbV176Eyebrow">RONDE 5 VAN 5</span>
+    <h2 id="bbV176SpecialTitle">BingoBeats Round</h2>
+    <p>Één nummer. Vijf categorieën. Zestig seconden.</p>
+    <div class="bbV176SpecialRules">
+      <span>✓ Elk goed antwoord is <strong>100 punten</strong></span>
+      <span>✓ Minimaal <strong>4 van 5 goed</strong> geeft een vrij vak</span>
+      <span>✓ Je vrije keuze kan de <strong>Beat Bomb</strong> of <strong>Engineer</strong> onthullen</span>
+    </div>
+    <button id="bbV176SpecialStart" type="button" class="bbV176Primary">Start BingoBeats Round</button>
+    <button id="bbV176SpecialPlayerClose" type="button" class="secondary hidden">Begrepen</button>
+  </div>
+</div>
+
+<div id="bbV176AdvantageOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176AdvantageTitle">
+  <div class="bbV176Modal bbV176AdvantageModal">
+    <div class="bbV176Trophy">🏆</div>
+    <span class="bbV176Eyebrow">BLOKWINNAAR</span>
+    <h2 id="bbV176AdvantageTitle">Kies jouw voordeel</h2>
+    <p id="bbV176AdvantageText">Je won dit blok. Kies één voordeel voor het volgende blok.</p>
+    <div class="bbV176AdvantageGrid">
+      <button type="button" data-bb-advantage="timePressure"><b>⏱️ Time Pressure</b><small>Tegenstanders krijgen 5 seconden minder.</small></button>
+      <button type="button" data-bb-advantage="doubleTrouble"><b>💣 Double Trouble</b><small>Tegenstanders krijgen een tweede Beat Bomb.</small></button>
+      <button type="button" data-bb-advantage="engineer"><b>👷 Engineer Unlock</b><small>Start het volgende blok met Engineer actief.</small></button>
+      <button type="button" data-bb-advantage="extraTime"><b>+5 Extra Time</b><small>Jij krijgt 5 seconden extra per ronde.</small></button>
+      <button type="button" data-bb-advantage="joker"><b>🃏 Joker</b><small>Gebruik hem vóór een nummer; alleen jouw antwoord telt.</small></button>
+    </div>
+  </div>
+</div>
+
+
 <div id="bingoFullOverlay" class="bingoFullOverlay hidden">
   <div class="bingoFullCard">
     <img src="bb_logo_orange.png" class="bbLogoBingo bbLogoOrange" alt="Bingo Beats">
@@ -268,7 +324,8 @@
   </div>
 </div>
 
-<script src="app.js?v=1751"></script>
+<script src="app.js?v=1760"></script>
+<script src="app-v176.js?v=1760"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -293,4 +350,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V175 - mobiele hostwizard op de V174-spellogica -->
+<!-- Bingo Beats V176 - premium interface + officiële spelregels -->

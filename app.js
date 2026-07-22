@@ -166,7 +166,7 @@ function listenBingo(room){if(!room)return;db.ref("rooms/"+room+"/bingos").off()
     });
     if(scroll) window.scrollTo({top:0,behavior:'smooth'});
     updateSummary();
-    if(step===3) setTimeout(()=>ensureRoomForQr(),0);
+    if(step===2) setTimeout(()=>ensureRoomForQr(),0);
   }
 
   async function ensureRoomForQr(){

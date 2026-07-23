@@ -1,0 +1,139 @@
+/* Bingo Beats V184 — klikbaar en passend host-muziekscherm. */
+html.bbV184 body.bbHostMusicStep::before,
+html.bbV184 body.bbHostMusicStep::after,
+html.bbV184 .bbMusicExact::before,
+html.bbV184 .bbMusicExact::after,
+html.bbV184 .bbMusicBody::before,
+html.bbV184 .bbMusicBody::after,
+html.bbV184 .bbMusicRow::before,
+html.bbV184 .bbMusicRow::after{
+  pointer-events:none!important;
+}
+
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact{
+  isolation:isolate!important;
+}
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact button,
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact select{
+  position:relative!important;
+  z-index:40!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact button:not(:disabled){
+  cursor:pointer!important;
+}
+
+/* Alleen de knop tonen die bij de echte Spotify-status hoort. */
+html.bbV184 #loginBtn,
+html.bbV184 #logoutBtn{
+  display:none!important;
+}
+html.bbV184 body.bbSpotifyLoggedOut #loginBtn,
+html.bbV184 body.bbSpotifyLoggedIn #logoutBtn{
+  display:block!important;
+}
+
+/* Zoeken is verwijderd: playlists worden rechtstreeks uit het Spotify-account geladen. */
+html.bbV184 .bbPlaylistSearch{
+  display:none!important;
+}
+
+/* Categorieën: geen pictogrammen, maar duidelijke kleurstalen. */
+html.bbV184 .bbFixedQuestionCategories{
+  flex:0 0 190px!important;
+  height:190px!important;
+  min-height:190px!important;
+  max-height:190px!important;
+  grid-template-rows:repeat(5,34px)!important;
+  gap:5px!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow{
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  padding:3px 9px!important;
+  grid-template-columns:24px minmax(0,1fr) 47px!important;
+  gap:8px!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbCategoryIcon{
+  width:18px!important;
+  height:18px!important;
+  min-width:18px!important;
+  min-height:18px!important;
+  display:block!important;
+  border:2px solid color-mix(in srgb,var(--row-color) 80%,white)!important;
+  border-radius:50%!important;
+  color:transparent!important;
+  background:var(--row-color)!important;
+  box-shadow:0 0 10px color-mix(in srgb,var(--row-color) 55%,transparent)!important;
+  font-size:0!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow>div{
+  display:flex!important;
+  align-items:baseline!important;
+  gap:7px!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow strong{
+  font-size:9.5px!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow small{
+  font-size:7px!important;
+}
+html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow em{
+  width:47px!important;
+  font-size:7.5px!important;
+  text-align:right!important;
+}
+
+/* Volgende staat altijd ná de categorieën en kan nergens overheen vallen. */
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact .bbMusicBody{
+  position:relative!important;
+  z-index:2!important;
+}
+html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact button.bbMusicNext{
+  position:relative!important;
+  inset:auto!important;
+  z-index:50!important;
+  flex:0 0 44px!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:7px 0 0!important;
+  transform:none!important;
+}
+
+@media (max-height:760px){
+  html.bbV184 .bbFixedQuestionCategories{
+    flex-basis:158px!important;
+    height:158px!important;
+    min-height:158px!important;
+    max-height:158px!important;
+    grid-template-rows:repeat(5,29px)!important;
+    gap:3px!important;
+  }
+  html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow{
+    height:29px!important;
+    min-height:29px!important;
+    max-height:29px!important;
+    grid-template-columns:21px minmax(0,1fr) 39px!important;
+    gap:6px!important;
+  }
+  html.bbV184 .bbFixedQuestionCategories .bbCategoryIcon{
+    width:16px!important;
+    height:16px!important;
+    min-width:16px!important;
+    min-height:16px!important;
+  }
+  html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow strong{font-size:8px!important}
+  html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow small{font-size:5.8px!important}
+  html.bbV184 .bbFixedQuestionCategories .bbMusicCategoryRow em{width:39px!important;font-size:6px!important}
+  html.bbV184 body.bbHostMusicStep #hostApp .bbMusicExact button.bbMusicNext{
+    flex-basis:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    margin-top:4px!important;
+  }
+}

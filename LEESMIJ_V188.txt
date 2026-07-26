@@ -1,0 +1,12 @@
+BINGO BEATS V188
+
+- Spotify-login wordt nog maar één keer afgehandeld en geeft geen foutmelding meer door dubbele callback-code.
+- De beveiligde Spotify-login bewaart de PKCE-code ook voor de terugkeer op iPhone.
+- Na inloggen worden de eigen Spotify-playlists geladen.
+- Een andere playlist blijft geselecteerd en kan daarna worden geïmporteerd.
+- De Spotify-speler wordt na import automatisch geactiveerd.
+- Categorieën staan alleen nog op het muziekscherm, niet opnieuw bij Instellingen.
+- Muziek, Kamer en Instellingen passen binnen één mobiel scherm.
+- De kamerstap toont QR-code, spelcode, link, spelers en volgende knop tegelijk.
+- Na deelname verdwijnt het oude meedoen-scherm volledig en verschijnt alleen de compacte lobby.
+- Oude V180/V184/V186 hulplagen worden niet meer geladen, zodat schermen en Spotify-status elkaar niet meer overschrijven.

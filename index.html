@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="bbV177 bbV178 bbV179 bbV180 bbV181 bbV182 bbV183 bbV184 bbV185 bbV186 bbV187">
+<html lang="nl" class="bbV177 bbV178 bbV179 bbV180 bbV181 bbV182 bbV183 bbV184 bbV185 bbV186 bbV187 bbV188">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -10,18 +10,19 @@
   <meta name="screen-orientation" content="portrait">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1870">
-  <link rel="stylesheet" href="style-v176.css?v=1870">
-  <link rel="stylesheet" href="style-v177.css?v=1870">
-  <link rel="stylesheet" href="style-v178.css?v=1870">
-  <link rel="stylesheet" href="style-v179.css?v=1870">
-  <link rel="stylesheet" href="style-v180.css?v=1870">
-  <link rel="stylesheet" href="style-v181.css?v=1870">
-  <link rel="stylesheet" href="style-v182.css?v=1870">
-  <link rel="stylesheet" href="style-v183.css?v=1870">
-  <link rel="stylesheet" href="style-v184.css?v=1870">
-  <link rel="stylesheet" href="style-v185.css?v=1870">
-  <link rel="stylesheet" href="style-v187.css?v=1870">
+  <link rel="stylesheet" href="style.css?v=1880">
+  <link rel="stylesheet" href="style-v176.css?v=1880">
+  <link rel="stylesheet" href="style-v177.css?v=1880">
+  <link rel="stylesheet" href="style-v178.css?v=1880">
+  <link rel="stylesheet" href="style-v179.css?v=1880">
+  <link rel="stylesheet" href="style-v180.css?v=1880">
+  <link rel="stylesheet" href="style-v181.css?v=1880">
+  <link rel="stylesheet" href="style-v182.css?v=1880">
+  <link rel="stylesheet" href="style-v183.css?v=1880">
+  <link rel="stylesheet" href="style-v184.css?v=1880">
+  <link rel="stylesheet" href="style-v185.css?v=1880">
+  <link rel="stylesheet" href="style-v187.css?v=1880">
+  <link rel="stylesheet" href="style-v188.css?v=1880">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -30,7 +31,7 @@
 <div class="app">
   <section id="licenseScreen" class="licenseScreen">
     <div class="licenseCard">
-      <img id="licenseLogo" src="bb_logo_gold.webp?v=1870" class="bbLogoHero bbLogoGold" alt="Bingo Beats">
+      <img id="licenseLogo" src="bb_logo_gold.webp?v=1880" class="bbLogoHero bbLogoGold" alt="Bingo Beats">
       
       <h2>Licentie activeren</h2>
       <p class="small">Voer je licentiecode in om verder te gaan.</p>
@@ -121,6 +122,11 @@
         <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met je muziek-app en laad daarna je playlists.</p>
 
         <h2 class="bbMusicSectionTitle bbCategoryTitle">VASTE CATEGORIEËN</h2>
+        <input type="hidden" id="cat-yellow" value="Voor of na 2001">
+        <input type="hidden" id="cat-pink" value="Naam van artiest">
+        <input type="hidden" id="cat-purple" value="Decennium">
+        <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
+        <input type="hidden" id="cat-green" value="Titel van track">
         <div class="bbMusicCategoryList bbFixedQuestionCategories" aria-label="Vaste spelcategorieën">
           <div class="bbMusicCategoryRow bbCatGold">
             <span class="bbCategoryIcon" aria-hidden="true"></span>
@@ -198,20 +204,6 @@
         <label class="check bbSwitchRow"><span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span><input type="checkbox" id="randomStart" checked></label>
         <label class="check bbSwitchRow"><span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span><input type="checkbox" id="noRepeat" checked></label>
 
-      </section>
-
-      <section class="panel bbHostCard bbFixedCategories">
-        <div class="bbSectionHead"><span class="bbSectionIcon">◆</span><div><small>VASTE SPELCATEGORIEËN</small><h2>Categorieën</h2><p>Iedere kleur heeft tijdens het hele spel dezelfde opdracht.</p></div></div>
-        <input type="hidden" id="cat-yellow" value="Voor of na 2001">
-        <input type="hidden" id="cat-pink" value="Naam van artiest">
-        <input type="hidden" id="cat-purple" value="Decennium">
-        <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
-        <input type="hidden" id="cat-green" value="Titel van track">
-        <div class="bbCategoryRow yellow"><b>⭐ Goud</b><span>Voor of na 2001</span></div>
-        <div class="bbCategoryRow aqua"><b>💧 Aqua</b><span>Naam van artiest</span></div>
-        <div class="bbCategoryRow orange"><b>◉ Oranje</b><span>Decennium</span></div>
-        <div class="bbCategoryRow lime"><b>▣ Lime</b><span>Jaartal +/- 2</span></div>
-        <div class="bbCategoryRow coral"><b>♫ Koraal</b><span>Titel van track</span></div>
       </section>
 
       <button type="button" class="bbHostNext" data-host-go="4">VOLGENDE: SPELEN →</button>
@@ -404,17 +396,15 @@
   </div>
 </div>
 
-<script src="app.js?v=1870"></script>
-<script src="app-v176.js?v=1870"></script>
-<script src="app-v177.js?v=1870"></script>
-<script src="app-v178.js?v=1870"></script>
-<script src="app-v180.js?v=1870"></script>
-<script src="app-v181.js?v=1870"></script>
-<script src="app-v182.js?v=1870"></script>
-<script src="app-v183.js?v=1870"></script>
-<script src="app-v184.js?v=1870"></script>
-<script src="app-v186.js?v=1870"></script>
-<script src="app-v187.js?v=1870"></script>
+<script src="app.js?v=1880"></script>
+<script src="app-v176.js?v=1880"></script>
+<script src="app-v177.js?v=1880"></script>
+<script src="app-v178.js?v=1880"></script>
+<script src="app-v181.js?v=1880"></script>
+<script src="app-v182.js?v=1880"></script>
+<script src="app-v183.js?v=1880"></script>
+<script src="app-v187.js?v=1880"></script>
+<script src="app-v188.js?v=1880"></script>
 
 <div id="newGameModal" class="modalOverlay hidden">
   <div class="modalCard">
@@ -439,4 +429,4 @@
 </body>
 </html>
 
-<!-- Bingo Beats V187 - alle zichtbare knoppen zijn weer aanraakbaar -->
+<!-- Bingo Beats V188 - Spotify, playlists en mobiele schermen hersteld -->

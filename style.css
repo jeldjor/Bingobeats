@@ -445,18 +445,13 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   gap:6px;
   color:#929b94;
 }
-.preflightChecklist li>span{
+.preflightChecklist li>input{
   width:16px;
   height:16px;
   flex:0 0 16px;
-  display:grid;
-  place-items:center;
-  border:1px solid rgba(255,255,255,.25);
-  border-radius:5px;
-  color:#071008;
-  background:#111711;
-  font-size:11px;
-  font-weight:950;
+  margin:0;
+  accent-color:var(--lime);
+  opacity:1;
 }
 .preflightChecklist li>strong{
   min-width:0;
@@ -467,10 +462,8 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   text-overflow:ellipsis;
 }
 .preflightChecklist li.done{color:#e9f1ea}
-.preflightChecklist li.done>span{
-  border-color:var(--lime);
-  background:var(--lime);
-  box-shadow:0 0 9px rgba(147,245,0,.3);
+.preflightChecklist li.done>input{
+  filter:drop-shadow(0 0 5px rgba(147,245,0,.45));
 }
 .controlCard{padding:8px;display:flex;flex-direction:column;gap:5px}
 .roundHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -717,7 +710,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .rowColor{width:24px;height:24px}.outlineButton{height:31px}
   .musicContent .testCard{min-height:105px;padding:6px 7px}
   .preflightChecklist{gap:3px 6px}
-  .preflightChecklist li>span{width:14px;height:14px;flex-basis:14px;font-size:9px}
+  .preflightChecklist li>input{width:14px;height:14px;flex-basis:14px}
   .preflightChecklist li>strong{font-size:7px}
   .categorySettings .categoryList{grid-template-rows:repeat(5,minmax(24px,1fr));gap:2px}
   .categoryRow{padding-top:2px;padding-bottom:2px}.categoryRow i{width:16px;height:16px}

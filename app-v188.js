@@ -455,26 +455,34 @@
     return Number(document.querySelector('[data-host-step-panel].active')?.dataset.hostStepPanel || 1);
   }
 
+  function setClass(element,name,enabled){
+    if(!element) return;
+    const has = element.classList.contains(name);
+    if(has !== !!enabled) element.classList.toggle(name,!!enabled);
+  }
+
   function syncScreenState(){
     const host = q('hostApp');
     const hostVisible = !!host && !host.classList.contains('hidden') &&
       !document.body.classList.contains('playerMode') &&
       !document.body.classList.contains('bbHostPlayerMode');
     const step = currentHostStep();
-    document.body.classList.toggle('bbHostWizardOpen', hostVisible);
-    document.body.classList.toggle('bbHostMusicStep', hostVisible && step===1);
-    document.body.dataset.bbHostStep = hostVisible ? String(step) : '';
+    setClass(document.body,'bbHostWizardOpen',hostVisible);
+    setClass(document.body,'bbHostMusicStep',hostVisible && step===1);
+    const stepValue = hostVisible ? String(step) : '';
+    if(document.body.dataset.bbHostStep !== stepValue) document.body.dataset.bbHostStep = stepValue;
 
     const dashboard = q('screenDashboard');
     const joined = !!dashboard && !dashboard.classList.contains('hidden');
-    document.body.classList.toggle('bbPlayerJoined', joined);
-    if(joined) q('screenJoin')?.classList.add('hidden');
+    setClass(document.body,'bbPlayerJoined',joined);
+    if(joined && !q('screenJoin')?.classList.contains('hidden')) q('screenJoin')?.classList.add('hidden');
 
     const activePlayers = q('bbMusicActivePlayers');
     if(activePlayers){
       const count = qa('#hostPlayers .bbV160HostChip,#hostPlayers .playerRow').length;
       const headerCount = Number((q('bbHostHeaderPlayers')?.textContent?.match(/\d+/)||[])[0]||0);
-      activePlayers.textContent = String(Math.max(count,headerCount));
+      const value = String(Math.max(count,headerCount));
+      if(activePlayers.textContent !== value) activePlayers.textContent = value;
     }
   }
 
@@ -566,10 +574,23 @@
   }
 
   function observeScreens(){
-    const observer = new MutationObserver(syncScreenState);
-    [document.body,q('hostApp'),q('playerApp'),q('screenJoin'),q('screenDashboard'),q('hostPlayers'),q('bbHostHeaderPlayers')]
+    let scheduled = false;
+    const scheduleSync = ()=>{
+      if(scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(()=>{
+        scheduled = false;
+        syncScreenState();
+      });
+    };
+    const classObserver = new MutationObserver(scheduleSync);
+    [q('hostApp'),q('playerApp'),q('screenJoin'),q('screenDashboard')]
       .filter(Boolean)
-      .forEach(element=>observer.observe(element,{attributes:true,childList:true,subtree:true,attributeFilter:['class']}));
+      .forEach(element=>classObserver.observe(element,{attributes:true,attributeFilter:['class']}));
+    const contentObserver = new MutationObserver(scheduleSync);
+    [q('hostPlayers'),q('bbHostHeaderPlayers')]
+      .filter(Boolean)
+      .forEach(element=>contentObserver.observe(element,{childList:true,subtree:true,characterData:true}));
   }
 
   function initV188(){

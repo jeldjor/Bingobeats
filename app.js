@@ -533,8 +533,8 @@
     $$('[data-preflight]').forEach(item => {
       const done = !!checks[item.dataset.preflight];
       item.classList.toggle('done',done);
-      const box = item.querySelector('span');
-      if(box) box.textContent = done ? '✓' : '';
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      if(checkbox) checkbox.checked = done;
     });
   }
 

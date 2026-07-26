@@ -1,0 +1,6 @@
+BINGO BEATS V186
+
+- De activatie met TEST-2026 opent de app direct.
+- De pagina wordt na activeren niet meer opnieuw geladen.
+- Een geldige licentie wordt in opslag en als veilige browsercookie bewaard.
+- Oude iPhone/PWA-cache wordt vervangen door bingo-beats-v186.

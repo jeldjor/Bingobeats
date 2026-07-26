@@ -1,4 +1,4 @@
-BINGO BEATS CLEAN V202
+BINGO BEATS CLEAN V203
 
 Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
 
@@ -29,3 +29,5 @@ Aanwezig:
 - groter logo zonder scheidingslijn eronder op elk hostscherm
 - grotere, gecentreerde QR-code met de deelbare link eronder
 - onderste navigatieknoppen zonder pijltje
+- logo op alle vier hostschermen ongeveer tweemaal zo groot
+- Kamer als één groot venster zonder genest deelvenster rond spelcode, QR en link

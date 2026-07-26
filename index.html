@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2000">
+  <link rel="stylesheet" href="style.css?v=2010">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -18,17 +18,26 @@
 <body>
   <main id="hostApp" class="appShell hidden">
     <section class="hostStep musicStep active" data-step="1">
-      <header class="brandHeader">
-        <img src="bb_logo.png" alt="Bingo Beats">
-        <div class="hostMeta">
-          <strong>♛ HOST</strong>
-          <span><b data-player-count>0</b> actieve spelers</span>
+      <header class="hostFlowHeader">
+        <nav class="stepper" aria-label="Hoststappen">
+          <button type="button" class="stepNode" data-step-target="1" data-go="1"><b>1</b><span>MUZIEK</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="2" data-go="2"><b>2</b><span>KAMER</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="3" data-go="3"><b>3</b><span>INSTELLINGEN</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="4" data-go="4"><b>4</b><span>SPELEN</span></button>
+        </nav>
+        <div class="flowBrand">
+          <span class="flowRole">♛ HOST</span>
+          <img src="bb_logo_lime.webp" alt="Bingo Beats">
+          <span class="flowPlayers"><b data-player-count>0</b> spelers</span>
         </div>
       </header>
 
       <div class="stepIntro">
-        <h1>MUZIEK &amp; CATEGORIE</h1>
-        <p>Kies je muziek en categorieën</p>
+        <h1>MUZIEK</h1>
+        <p>Kies en test je Spotify-playlist</p>
       </div>
 
       <div class="musicContent">
@@ -63,44 +72,32 @@
 
         <p id="musicStatus" class="statusLine" aria-live="polite">Log in met Spotify en kies daarna een playlist.</p>
 
-        <h2 class="categoryHeading">VASTE CATEGORIEËN</h2>
-        <div class="categoryList" aria-label="Vaste categorieën">
-          <article class="categoryRow gold">
-            <i aria-hidden="true"></i>
-            <div><strong>Voor of na 2001</strong><small>Is het nummer uitgebracht vóór of na 2001?</small></div>
-            <em>GOUD</em>
-          </article>
-          <article class="categoryRow aqua">
-            <i aria-hidden="true"></i>
-            <div><strong>Naam van artiest</strong><small>Welke artiest hoor je?</small></div>
-            <em>AQUA</em>
-          </article>
-          <article class="categoryRow orange">
-            <i aria-hidden="true"></i>
-            <div><strong>Decennium</strong><small>Uit welk decennium komt deze track?</small></div>
-            <em>ORANJE</em>
-          </article>
-          <article class="categoryRow lime">
-            <i aria-hidden="true"></i>
-            <div><strong>Jaartal ± 2</strong><small>Noem het jaartal; twee jaar verschil telt goed.</small></div>
-            <em>LIME</em>
-          </article>
-          <article class="categoryRow coral">
-            <i aria-hidden="true"></i>
-            <div><strong>Titel van track</strong><small>Hoe heet deze track?</small></div>
-            <em>KORAAL</em>
-          </article>
-        </div>
+        <section class="screenCard testCard">
+          <div><small>GELUIDSCONTROLE</small><h2>Test voor je begint</h2></div>
+          <button id="soundTestButton" type="button" class="secondaryButton">TEST</button>
+          <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
+        </section>
       </div>
 
       <button type="button" class="nextButton" data-go="2"><span>VOLGENDE</span><b>›</b></button>
     </section>
 
     <section class="hostStep roomStep" data-step="2">
-      <header class="simpleHeader">
-        <img src="bb_logo_lime.webp" alt="Bingo Beats">
-        <div><small>HOST</small><h1>KAMER</h1></div>
-        <span><b data-player-count>0</b> spelers</span>
+      <header class="hostFlowHeader">
+        <nav class="stepper" aria-label="Hoststappen">
+          <button type="button" class="stepNode" data-step-target="1" data-go="1"><b>1</b><span>MUZIEK</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="2" data-go="2"><b>2</b><span>KAMER</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="3" data-go="3"><b>3</b><span>INSTELLINGEN</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="4" data-go="4"><b>4</b><span>SPELEN</span></button>
+        </nav>
+        <div class="flowBrand">
+          <span class="flowRole">♛ HOST</span>
+          <img src="bb_logo_lime.webp" alt="Bingo Beats">
+          <span class="flowPlayers"><b data-player-count>0</b> spelers</span>
+        </div>
       </header>
 
       <div class="screenCard roomCard">
@@ -136,16 +133,58 @@
     </section>
 
     <section class="hostStep settingsStep" data-step="3">
-      <header class="simpleHeader">
-        <img src="bb_logo_lime.webp" alt="Bingo Beats">
-        <div><small>HOST</small><h1>INSTELLINGEN</h1></div>
-        <span><b data-player-count>0</b> spelers</span>
+      <header class="hostFlowHeader">
+        <nav class="stepper" aria-label="Hoststappen">
+          <button type="button" class="stepNode" data-step-target="1" data-go="1"><b>1</b><span>MUZIEK</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="2" data-go="2"><b>2</b><span>KAMER</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="3" data-go="3"><b>3</b><span>INSTELLINGEN</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="4" data-go="4"><b>4</b><span>SPELEN</span></button>
+        </nav>
+        <div class="flowBrand">
+          <span class="flowRole">♛ HOST</span>
+          <img src="bb_logo_lime.webp" alt="Bingo Beats">
+          <span class="flowPlayers"><b data-player-count>0</b> spelers</span>
+        </div>
       </header>
 
       <div class="screenCard settingsCard">
         <div class="cardTitle">
           <div><small>SPELTEMPO</small><h2>Ronde-instellingen</h2></div>
         </div>
+
+        <fieldset class="categorySettings">
+          <legend>VASTE CATEGORIEËN</legend>
+          <div class="categoryList" aria-label="Vaste categorieën">
+            <article class="categoryRow gold">
+              <i aria-hidden="true"></i>
+              <div><strong>Voor of na 2001</strong><small>Is het nummer uitgebracht vóór of na 2001?</small></div>
+              <em>GOUD</em>
+            </article>
+            <article class="categoryRow aqua">
+              <i aria-hidden="true"></i>
+              <div><strong>Naam van artiest</strong><small>Welke artiest hoor je?</small></div>
+              <em>AQUA</em>
+            </article>
+            <article class="categoryRow orange">
+              <i aria-hidden="true"></i>
+              <div><strong>Decennium</strong><small>Uit welk decennium komt deze track?</small></div>
+              <em>ORANJE</em>
+            </article>
+            <article class="categoryRow lime">
+              <i aria-hidden="true"></i>
+              <div><strong>Jaartal ± 2</strong><small>Noem het jaartal; twee jaar verschil telt goed.</small></div>
+              <em>LIME</em>
+            </article>
+            <article class="categoryRow coral">
+              <i aria-hidden="true"></i>
+              <div><strong>Titel van track</strong><small>Hoe heet deze track?</small></div>
+              <em>KORAAL</em>
+            </article>
+          </div>
+        </fieldset>
 
         <fieldset>
           <legend>FRAGMENTDUUR</legend>
@@ -176,19 +215,24 @@
     </section>
 
     <section class="hostStep playStep" data-step="4">
-      <header class="simpleHeader">
-        <img src="bb_logo_lime.webp" alt="Bingo Beats">
-        <div><small>HOST</small><h1>SPELEN</h1></div>
-        <span><b data-player-count>0</b> spelers</span>
+      <header class="hostFlowHeader">
+        <nav class="stepper" aria-label="Hoststappen">
+          <button type="button" class="stepNode" data-step-target="1" data-go="1"><b>1</b><span>MUZIEK</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="2" data-go="2"><b>2</b><span>KAMER</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="3" data-go="3"><b>3</b><span>INSTELLINGEN</span></button>
+          <i aria-hidden="true"></i>
+          <button type="button" class="stepNode" data-step-target="4" data-go="4"><b>4</b><span>SPELEN</span></button>
+        </nav>
+        <div class="flowBrand">
+          <span class="flowRole">♛ HOST</span>
+          <img src="bb_logo_lime.webp" alt="Bingo Beats">
+          <span class="flowPlayers"><b data-player-count>0</b> spelers</span>
+        </div>
       </header>
 
       <div class="playLayout">
-        <section class="screenCard testCard">
-          <div><small>GELUIDSCONTROLE</small><h2>Test voor je begint</h2></div>
-          <button id="soundTestButton" type="button" class="secondaryButton">TEST</button>
-          <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
-        </section>
-
         <section class="screenCard controlCard">
           <div class="roundHead">
             <div><small>LIVE SPELREGIE</small><h2 id="roundTitle">Klaar om te spelen</h2></div>
@@ -223,7 +267,6 @@
         </section>
       </div>
 
-      <button type="button" class="floatingBack" data-go="3">‹ INSTELLINGEN</button>
     </section>
   </main>
 
@@ -259,6 +302,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2000"></script>
+  <script src="app.js?v=2010"></script>
 </body>
 </html>

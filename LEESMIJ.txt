@@ -1,4 +1,4 @@
-BINGO BEATS CLEAN V200
+BINGO BEATS CLEAN V201
 
 Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
 
@@ -13,6 +13,9 @@ Aanwezig:
 - knop KIES met een eigen mobiele playlistkiezer
 - playlist importeren
 - Muziek -> Kamer -> Instellingen -> Spelen
+- dezelfde 1-2-3-4-stappenbalk en een groter gecentreerd logo op elk hostscherm
+- geluidstest bij Muziek
+- vaste categorieën bij Instellingen
 - automatisch een kamer met QR-code en deelbare link
 - host doet automatisch mee
 - compacte lobby met dierenavatars
@@ -21,3 +24,4 @@ Aanwezig:
 - punten, vakje kiezen en bingocontrole
 - geen licentiescherm
 - geen oude startoverlays
+- compact host-lobbyscherm met de volledige 6x6-kaart in beeld

@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V200
+/* Bingo Beats Clean V201
    Eén applicatiebestand: Spotify, Firebase, hoststappen en spelersscherm. */
 (() => {
   'use strict';
@@ -123,6 +123,13 @@
     $$('.hostStep').forEach(panel => {
       panel.classList.toggle('active',Number(panel.dataset.step)===requested);
     });
+    $$('[data-step-target]').forEach(node => {
+      const nodeStep = Number(node.dataset.stepTarget);
+      node.classList.toggle('active',nodeStep===requested);
+      node.classList.toggle('complete',nodeStep<requested);
+      if(nodeStep===requested) node.setAttribute('aria-current','step');
+      else node.removeAttribute('aria-current');
+    });
     if(requested===2) ensureRoom().catch(showRoomError);
     if(requested===4) renderHost(state.room);
   }
@@ -183,6 +190,7 @@
 
   async function init(){
     bindInterface();
+    setStep(1);
     registerWorker();
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     state.db = firebase.database();
@@ -1300,7 +1308,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2000',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2010',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

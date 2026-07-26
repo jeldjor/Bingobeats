@@ -1,0 +1,23 @@
+BINGO BEATS CLEAN V200
+
+Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
+
+De website laadt alleen:
+- index.html
+- style.css
+- app.js
+- sw.js
+
+Aanwezig:
+- Spotify PKCE-login met één callbackverwerking
+- knop KIES met een eigen mobiele playlistkiezer
+- playlist importeren
+- Muziek -> Kamer -> Instellingen -> Spelen
+- automatisch een kamer met QR-code en deelbare link
+- host doet automatisch mee
+- compacte lobby met dierenavatars
+- 6x6 bingokaart zonder gratis middenvak
+- antwoorden, timer, automatische beoordeling en host-overrule
+- punten, vakje kiezen en bingocontrole
+- geen licentiescherm
+- geen oude startoverlays

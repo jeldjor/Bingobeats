@@ -1,47 +1,39 @@
-const CACHE='bingo-beats-v189';
-const CORE=[
+const CACHE = 'bingo-beats-clean-v200';
+const CORE = [
   './',
   './index.html',
-  './style.css?v=1890',
-  './style-v176.css?v=1890',
-  './style-v177.css?v=1890',
-  './style-v178.css?v=1890',
-  './style-v179.css?v=1890',
-  './style-v180.css?v=1890',
-  './style-v181.css?v=1890',
-  './style-v182.css?v=1890',
-  './style-v183.css?v=1890',
-  './style-v184.css?v=1890',
-  './style-v188.css?v=1890',
-  './style-v189.css?v=1890',
-  './app.js?v=1890',
-  './app-v176.js?v=1890',
-  './app-v177.js?v=1890',
-  './app-v178.js?v=1890',
-  './app-v181.js?v=1890',
-  './app-v182.js?v=1890',
-  './app-v183.js?v=1890',
-  './app-v188.js?v=1890',
-  './app-v189.js?v=1890',
-  './bb_logo_lime.webp',
-  './bb_logo_aqua.webp',
-  './bb_logo_gold.webp',
+  './style.css?v=2000',
+  './app.js?v=2000',
+  './manifest.json',
   './bb_logo.png',
+  './bb_logo_lime.webp',
+  './bb_logo_orange.png',
   './bb_mascot_dj.png',
   './app-icon.png',
   './app-icon-192.png'
 ];
-self.addEventListener('install',event=>event.waitUntil(
-  caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())
-));
-self.addEventListener('activate',event=>event.waitUntil(
-  caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
-));
-self.addEventListener('fetch',event=>{
+
+self.addEventListener('install',event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate',event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key!==CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch',event => {
   if(event.request.method!=='GET') return;
-  event.respondWith(fetch(event.request).then(response=>{
-    const copy=response.clone();
-    caches.open(CACHE).then(cache=>cache.put(event.request,copy));
-    return response;
-  }).catch(()=>caches.match(event.request).then(found=>found||caches.match('./index.html'))));
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(event.request,copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request).then(found => found || caches.match('./index.html')))
+  );
 });

@@ -1,419 +1,264 @@
 <!doctype html>
-<html lang="nl" class="bbV177 bbV178 bbV179 bbV180 bbV181 bbV182 bbV183 bbV184 bbV188 bbV189">
+<html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#020402">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="screen-orientation" content="portrait">
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <meta name="theme-color" content="#020402">
-  <meta name="screen-orientation" content="portrait">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=1890">
-  <link rel="stylesheet" href="style-v176.css?v=1890">
-  <link rel="stylesheet" href="style-v177.css?v=1890">
-  <link rel="stylesheet" href="style-v178.css?v=1890">
-  <link rel="stylesheet" href="style-v179.css?v=1890">
-  <link rel="stylesheet" href="style-v180.css?v=1890">
-  <link rel="stylesheet" href="style-v181.css?v=1890">
-  <link rel="stylesheet" href="style-v182.css?v=1890">
-  <link rel="stylesheet" href="style-v183.css?v=1890">
-  <link rel="stylesheet" href="style-v184.css?v=1890">
-  <link rel="stylesheet" href="style-v188.css?v=1890">
-  <link rel="stylesheet" href="style-v189.css?v=1890">
+  <link rel="stylesheet" href="style.css?v=2000">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
 </head>
 <body>
-<div class="app">
-  <header id="mainHeader" class="hidden">
-    <div class="bbHostBrand">
-      <img src="bb_logo_lime.png" class="bbLogoHeader bbLogoLime" alt="Bingo Beats">
-      <div class="bbHostWordmark">
-        <strong>BINGO BEATS</strong>
-        <span id="modeText">HOST</span>
-      </div>
-    </div>
-    <div class="bbHostHeaderMeta">
-      <span id="bbHostHeaderPlayers">👥 0</span>
-    </div>
-  </header>
-
-  <main id="hostApp" class="hidden bbHostWizard">
-    <nav class="bbHostProgress" aria-label="Hoststappen">
-      <button type="button" class="bbHostStepTab active" data-host-step="1"><span>1</span><small>Muziek</small></button>
-      <i></i>
-      <button type="button" class="bbHostStepTab" data-host-step="2"><span>2</span><small>Kamer</small></button>
-      <i></i>
-      <button type="button" class="bbHostStepTab" data-host-step="3"><span>3</span><small>Instellingen</small></button>
-      <i></i>
-      <button type="button" class="bbHostStepTab" data-host-step="4"><span>4</span><small>Spelen</small></button>
-    </nav>
-
-    <section class="bbHostStep active bbMusicExact" data-host-step-panel="1">
-      <div class="bbMusicTop">
-        <span class="bbMusicBackMark" aria-hidden="true">←</span>
-        <img src="bb_logo.png" class="bbMusicLogo" alt="Bingo Beats">
-        <div class="bbMusicHostMeta">
-          <div class="bbMusicHostBadge" aria-label="Host"><span>♛</span><strong>HOST</strong></div>
-          <div class="bbMusicHostPlayers"><span id="bbMusicActivePlayers">0</span> actieve spelers</div>
+  <main id="hostApp" class="appShell hidden">
+    <section class="hostStep musicStep active" data-step="1">
+      <header class="brandHeader">
+        <img src="bb_logo.png" alt="Bingo Beats">
+        <div class="hostMeta">
+          <strong>♛ HOST</strong>
+          <span><b data-player-count>0</b> actieve spelers</span>
         </div>
-      </div>
+      </header>
 
-      <div class="bbMusicIntro">
+      <div class="stepIntro">
         <h1>MUZIEK &amp; CATEGORIE</h1>
         <p>Kies je muziek en categorieën</p>
       </div>
 
-      <div class="bbMusicBody">
-        <h2 class="bbMusicSectionTitle">MUZIEK-APP</h2>
+      <div class="musicContent">
+        <h2>MUZIEK-APP</h2>
 
-        <section class="bbMusicRow bbSpotifyAccountRow">
-          <div class="bbMusicRowIcon bbSpotifyIcon" aria-hidden="true">●</div>
-          <div class="bbMusicRowCopy">
-            <small id="bbSpotifyCaption">Spotify-account</small>
-            <strong id="loginStatus">Nog niet ingelogd.</strong>
+        <article class="setupRow spotifyRow">
+          <span class="rowColor spotifyColor" aria-hidden="true"></span>
+          <div class="rowText">
+            <small id="spotifyCaption">Spotify-account</small>
+            <strong id="spotifyName">Nog niet ingelogd</strong>
           </div>
-          <div class="bbMusicRowActions">
-            <button id="loginBtn" type="button">INLOGGEN</button>
-            <button id="logoutBtn" type="button" class="secondary">UITLOGGEN</button>
-          </div>
-          <button id="activateBtn" type="button" class="bbAutoSpotifyAction" disabled>Activeer Spotify-speler</button>
-        </section>
+          <button id="spotifyButton" type="button" class="outlineButton">INLOGGEN</button>
+        </article>
 
-        <section class="bbMusicRow bbPlaylistRow">
-          <div class="bbMusicRowIcon bbPlaylistIcon" aria-hidden="true">♫</div>
-          <label class="bbMusicRowCopy" for="playlistSelect">
+        <article class="setupRow playlistRow">
+          <span class="rowColor purpleColor" aria-hidden="true"></span>
+          <div class="rowText">
             <small>Kies playlist</small>
-            <select id="playlistSelect" aria-label="Muziekplaylist" disabled>
-              <option value="">Nog geen playlist geladen</option>
-            </select>
-          </label>
-          <button id="loadPlaylistsBtn" type="button" class="bbMusicOutlineButton">LADEN</button>
-        </section>
+            <strong id="playlistName">Nog geen playlist gekozen</strong>
+          </div>
+          <button id="choosePlaylistButton" type="button" class="outlineButton" disabled>KIES</button>
+        </article>
 
-        <div id="playlistImportBox" class="bbPlaylistImportBox">
-          <section class="bbMusicRow bbTrackCountRow">
-            <div class="bbMusicRowIcon bbTrackCountIcon" aria-hidden="true">≡</div>
-            <div class="bbMusicRowCopy">
-              <small>Aantal nummers</small>
-              <strong id="bbPlaylistCountValue">0 nummers</strong>
-            </div>
-            <button id="importPlaylistBtn" type="button" class="bbMusicOutlineButton" disabled>IMPORTEREN</button>
-          </section>
-        </div>
+        <article class="setupRow countRow">
+          <span class="rowColor purpleColor" aria-hidden="true"></span>
+          <div class="rowText">
+            <small>Aantal nummers</small>
+            <strong id="playlistCount">0 nummers</strong>
+          </div>
+          <button id="importPlaylistButton" type="button" class="outlineButton" disabled>IMPORTEREN</button>
+        </article>
 
-        <div id="playlistPreview" class="playlistPreview hidden"></div>
-        <p id="playlistStatus" class="bbMusicStatus" aria-live="polite">Log in met je muziek-app en laad daarna je playlists.</p>
+        <p id="musicStatus" class="statusLine" aria-live="polite">Log in met Spotify en kies daarna een playlist.</p>
 
-        <h2 class="bbMusicSectionTitle bbCategoryTitle">VASTE CATEGORIEËN</h2>
-        <input type="hidden" id="cat-yellow" value="Voor of na 2001">
-        <input type="hidden" id="cat-pink" value="Naam van artiest">
-        <input type="hidden" id="cat-purple" value="Decennium">
-        <input type="hidden" id="cat-blue" value="Jaartal +/- 2">
-        <input type="hidden" id="cat-green" value="Titel van track">
-        <div class="bbMusicCategoryList bbFixedQuestionCategories" aria-label="Vaste spelcategorieën">
-          <div class="bbMusicCategoryRow bbCatGold">
-            <span class="bbCategoryIcon" aria-hidden="true"></span>
+        <h2 class="categoryHeading">VASTE CATEGORIEËN</h2>
+        <div class="categoryList" aria-label="Vaste categorieën">
+          <article class="categoryRow gold">
+            <i aria-hidden="true"></i>
             <div><strong>Voor of na 2001</strong><small>Is het nummer uitgebracht vóór of na 2001?</small></div>
             <em>GOUD</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatAqua">
-            <span class="bbCategoryIcon" aria-hidden="true"></span>
+          </article>
+          <article class="categoryRow aqua">
+            <i aria-hidden="true"></i>
             <div><strong>Naam van artiest</strong><small>Welke artiest hoor je?</small></div>
             <em>AQUA</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatOrange">
-            <span class="bbCategoryIcon" aria-hidden="true"></span>
+          </article>
+          <article class="categoryRow orange">
+            <i aria-hidden="true"></i>
             <div><strong>Decennium</strong><small>Uit welk decennium komt deze track?</small></div>
             <em>ORANJE</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatLime">
-            <span class="bbCategoryIcon" aria-hidden="true"></span>
+          </article>
+          <article class="categoryRow lime">
+            <i aria-hidden="true"></i>
             <div><strong>Jaartal ± 2</strong><small>Noem het jaartal; twee jaar verschil telt goed.</small></div>
             <em>LIME</em>
-          </div>
-          <div class="bbMusicCategoryRow bbCatCoral">
-            <span class="bbCategoryIcon" aria-hidden="true"></span>
+          </article>
+          <article class="categoryRow coral">
+            <i aria-hidden="true"></i>
             <div><strong>Titel van track</strong><small>Hoe heet deze track?</small></div>
             <em>KORAAL</em>
+          </article>
+        </div>
+      </div>
+
+      <button type="button" class="nextButton" data-go="2"><span>VOLGENDE</span><b>›</b></button>
+    </section>
+
+    <section class="hostStep roomStep" data-step="2">
+      <header class="simpleHeader">
+        <img src="bb_logo_lime.webp" alt="Bingo Beats">
+        <div><small>HOST</small><h1>KAMER</h1></div>
+        <span><b data-player-count>0</b> spelers</span>
+      </header>
+
+      <div class="screenCard roomCard">
+        <div class="cardTitle">
+          <div><small>SPELERS UITNODIGEN</small><h2>Maak je kamer</h2></div>
+        </div>
+
+        <label class="fieldLabel">NAAM HOST
+          <input id="hostNameInput" type="text" maxlength="24" placeholder="Bijv. Georgio" autocomplete="nickname">
+        </label>
+        <button id="newRoomButton" type="button" class="secondaryButton">NIEUWE KAMER</button>
+
+        <div id="roomShare" class="roomShare empty">
+          <div class="qrWrap"><img id="roomQr" alt="QR-code voor de kamer"></div>
+          <div class="roomDetails">
+            <small>SPELCODE</small>
+            <strong id="roomCode">----</strong>
+            <label for="roomLink">DEEL DE LINK</label>
+            <input id="roomLink" readonly value="">
+            <button id="copyLinkButton" type="button">KOPIEER LINK</button>
           </div>
         </div>
+
+        <div class="playersHeading"><span>SPELERS</span><strong id="readyCount">0 READY</strong></div>
+        <div id="hostPlayers" class="playerList"><p>Nog geen spelers.</p></div>
+        <p id="roomStatus" class="statusLine">Je kamer wordt klaargezet.</p>
       </div>
 
-      <button type="button" class="bbHostNext bbMusicNext" data-host-go="2"><span>VOLGENDE</span><b aria-hidden="true">›</b></button>
+      <div class="bottomActions">
+        <button type="button" class="backButton" data-go="1">TERUG</button>
+        <button type="button" class="nextButton compact" data-go="3">VOLGENDE <b>›</b></button>
+      </div>
     </section>
 
-    <section class="bbHostStep" data-host-step-panel="2">
-      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>KAMER</span></div>
-      <section class="panel bbHostCard bbRoomCard">
-        <div class="bbSectionHead bbRoomTitle"><span class="bbSectionIcon">#</span><div><small>SPELERS UITNODIGEN</small><h2>Kamer</h2><p>Maak de kamer, deel de QR-code en controleer wie er binnen is.</p></div></div>
-        <label class="bbHostNameField">NAAM HOST
-          <input id="bbHostNameInput" type="text" maxlength="24" placeholder="Bijv. Georgio" autocomplete="nickname">
+    <section class="hostStep settingsStep" data-step="3">
+      <header class="simpleHeader">
+        <img src="bb_logo_lime.webp" alt="Bingo Beats">
+        <div><small>HOST</small><h1>INSTELLINGEN</h1></div>
+        <span><b data-player-count>0</b> spelers</span>
+      </header>
+
+      <div class="screenCard settingsCard">
+        <div class="cardTitle">
+          <div><small>SPELTEMPO</small><h2>Ronde-instellingen</h2></div>
+        </div>
+
+        <fieldset>
+          <legend>FRAGMENTDUUR</legend>
+          <div class="durationGrid">
+            <button type="button" data-duration="10">10 sec</button>
+            <button type="button" data-duration="20" class="active">20 sec</button>
+            <button type="button" data-duration="30">30 sec</button>
+            <button type="button" data-duration="40">40 sec</button>
+            <button type="button" data-duration="50">50 sec</button>
+            <button type="button" data-duration="60">60 sec</button>
+          </div>
+        </fieldset>
+
+        <label class="switchRow">
+          <span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span>
+          <input id="randomStart" type="checkbox" checked>
         </label>
-        <div class="bbRoomActions">
-          <button id="newRoomBtn">＋ Nieuwe kamer maken</button>
-          <button id="newGameBtn" class="secondary">▶ Nieuw spel starten</button>
-        </div>
-        <div id="roomBox" class="box hidden"></div>
-        <h3>SPELERS</h3>
-        <div id="hostPlayers" class="list">Nog geen spelers.</div>
-        <p id="hostStatus" class="small">Maak een kamer.</p>
-      </section>
-
-      <button type="button" class="bbHostNext" data-host-go="3">VOLGENDE: INSTELLINGEN →</button>
-    </section>
-
-    <section class="bbHostStep" data-host-step-panel="3">
-      <div class="bbV178ScreenBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>INSTELLINGEN</span></div>
-      <section class="panel bbHostCard bbSettingsCard">
-        <div class="bbSectionHead"><span class="bbSectionIcon">◷</span><div><small>SPELTEMPO</small><h2>Ronde-instellingen</h2><p>Deze instellingen gelden voor iedere normale ronde.</p></div></div>
-        <label class="bbDurationLabel">FRAGMENTDUUR
-          <select id="duration" class="srOnly" aria-label="Fragmentduur">
-            <option value="10">10 seconden</option>
-            <option value="20" selected>20 seconden</option>
-            <option value="30">30 seconden</option>
-            <option value="40">40 seconden</option>
-            <option value="50">50 seconden</option>
-            <option value="60">60 seconden</option>
-          </select>
+        <label class="switchRow">
+          <span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span>
+          <input id="noRepeat" type="checkbox" checked>
         </label>
-        <div class="bbDurationChoices" aria-label="Kies fragmentduur">
-          <button type="button" data-duration="10">10 sec</button>
-          <button type="button" data-duration="20" class="active">20 sec</button>
-          <button type="button" data-duration="30">30 sec</button>
-          <button type="button" data-duration="40">40 sec</button>
-          <button type="button" data-duration="50">50 sec</button>
-          <button type="button" data-duration="60">60 sec</button>
-        </div>
-        <label class="check bbSwitchRow"><span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span><input type="checkbox" id="randomStart" checked></label>
-        <label class="check bbSwitchRow"><span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span><input type="checkbox" id="noRepeat" checked></label>
+      </div>
 
-      </section>
-
-      <button type="button" class="bbHostNext" data-host-go="4">VOLGENDE: SPELEN →</button>
+      <div class="bottomActions">
+        <button type="button" class="backButton" data-go="2">TERUG</button>
+        <button type="button" class="nextButton compact" data-go="4">NAAR SPELEN <b>›</b></button>
+      </div>
     </section>
 
-    <section class="bbHostStep" data-host-step-panel="4">
-      <div class="bbV178ScreenBrand bbV178PlayBrand" aria-hidden="true"><img src="bb_logo_lime.webp" alt=""><span>SPELEN</span></div>
-      <section class="panel bbHostReadyCard">
-        <div class="bbReadyTitle"><span>✓</span><div><small>CONTROLE VOLTOOID</small><h2>Klaar om te spelen</h2></div></div>
-        <div class="bbReadySummary">
-          <span>✓ Spotify</span><span>✓ Playlist</span><span>✓ Kamer</span><span>✓ Spelers</span><span>✓ Instellingen</span>
-        </div>
-      </section>
+    <section class="hostStep playStep" data-step="4">
+      <header class="simpleHeader">
+        <img src="bb_logo_lime.webp" alt="Bingo Beats">
+        <div><small>HOST</small><h1>SPELEN</h1></div>
+        <span><b data-player-count>0</b> spelers</span>
+      </header>
 
-      <section id="bbPreGameTestBlock" class="panel bbHostCard bbPreGameTestBlock">
-        <div class="bbTestMark">🔊</div>
-        <div class="bbTestCopy"><h2>Geluidstest</h2><p class="small">Controleer Spotify en het afspelen voordat je de eerste ronde start.</p></div>
-        <button id="bbPreGameTestBtn" type="button" class="secondary bbPreGameTestBtn">🔊 TEST VOOR JE BEGINT</button>
-        <button id="resetUsedBtn" type="button" class="secondary">Gespeelde nummers resetten</button>
-        <p id="bbPreGameTestStatus" class="small">Maak eerst een kamer en laad een Spotify-playlist.</p>
-      </section>
+      <div class="playLayout">
+        <section class="screenCard testCard">
+          <div><small>GELUIDSCONTROLE</small><h2>Test voor je begint</h2></div>
+          <button id="soundTestButton" type="button" class="secondaryButton">TEST</button>
+          <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
+        </section>
 
-      <section class="panel stage bbHostPlayCard">
-        <div class="bbPlayHead"><div><small>LIVE SPELREGIE</small><h2>Ronde bedienen</h2></div><span class="bbLiveBadge">● LIVE</span></div>
-        <div class="bbV176RoundMeta"><span id="bbV176RoundType">NORMALE RONDE</span><strong id="bbV176RoundProgress">Ronde 1 van 5</strong></div>
-        <div id="hostPickerArea" class="pickerIntro">🎮<br>Klaar om te spelen</div>
-        <button id="startRoundBtn">▶ START RONDE</button>
-        <div class="bbTransportRow">
-          <button id="playBtn" disabled>▶<small>Speel verborgen nummer</small></button>
-          <button id="stopBtn" disabled class="secondary">■<small>Stop</small></button>
-          <button id="showAnswerBtn" disabled>◉<small>Toon antwoord</small></button>
-        </div>
-        <div id="hostAnswerArea"></div>
-      </section>
+        <section class="screenCard controlCard">
+          <div class="roundHead">
+            <div><small>LIVE SPELREGIE</small><h2 id="roundTitle">Klaar om te spelen</h2></div>
+            <span id="liveBadge">WACHT</span>
+          </div>
+          <div id="hostRoundDisplay" class="hostRoundDisplay">
+            <strong>Maak iedereen READY</strong>
+            <span>Start daarna de eerste ronde.</span>
+          </div>
+          <button id="startRoundButton" type="button" disabled>START RONDE</button>
+          <div class="transport">
+            <button id="playTrackButton" type="button" disabled>▶<small>AFSPELEN</small></button>
+            <button id="stopTrackButton" type="button" disabled>■<small>STOP</small></button>
+            <button id="showAnswerButton" type="button" disabled>◉<small>ANTWOORD</small></button>
+          </div>
+          <div id="hostAnswerForm" class="hostAnswerForm hidden">
+            <input id="hostAnswerInput" type="text" placeholder="Jouw antwoord" autocomplete="off">
+            <button id="hostAnswerButton" type="button">VERSTUUR</button>
+          </div>
+          <div id="hostAnswerReveal" class="answerReveal hidden"></div>
+        </section>
 
-      <section id="hostScorePanel" class="panel hidden bbHostScoreCard">
-        <h2>🏆 SCOREBORD</h2>
-        <p id="hostRoundInfo" class="small"></p>
-        <div id="hostScoreboard" class="scoreBoard"></div>
-        <button id="lockBtn" class="secondary">Antwoorden vergrendelen</button>
-        <button id="publishBtn">Resultaten naar spelers sturen</button>
-      </section>
+        <section id="hostScoreSection" class="screenCard scoreCardSection hidden">
+          <div class="roundHead"><div><small>ANTWOORDEN</small><h2>Beoordeling</h2></div></div>
+          <div id="hostScoreboard" class="scoreboard"></div>
+          <button id="publishResultsButton" type="button">RESULTATEN TONEN</button>
+        </section>
 
-      <section id="hostBingoPanel" class="panel hidden">
-        <div id="hostBingoMessage" class="winner">🏆</div>
-      </section>
+        <section class="screenCard hostCardSection">
+          <div class="roundHead"><div><small>HOST DOET MEE</small><h2>Jouw bingokaart</h2></div></div>
+          <div id="hostBingoCard" class="bingoCard mini"></div>
+        </section>
+      </div>
+
+      <button type="button" class="floatingBack" data-go="3">‹ INSTELLINGEN</button>
     </section>
   </main>
 
-  
-  <main id="playerApp" class="hidden">
-    <section id="screenJoin" class="joinPanel">
-      <img src="bb_logo_lime.webp" class="bbJoinLogo" alt="Bingo Beats">
-      <span class="bbJoinEyebrow">MUZIEKBINGO</span>
-      <h2>Doe mee met de kamer</h2>
-      <p>Spelcode: <strong id="playerRoomCode"></strong></p>
-      <input id="playerNameInput" placeholder="Jouw naam">
-      <button id="joinBtn">Meedoen</button>
-      <p id="joinStatus" class="small"></p>
+  <main id="playerApp" class="appShell hidden">
+    <section id="joinScreen" class="playerScreen joinScreen">
+      <img src="bb_logo.png" alt="Bingo Beats" class="joinLogo">
+      <small>MUZIEKBINGO</small>
+      <h1>Doe mee</h1>
+      <p>Spelcode <strong id="joinRoomCode">----</strong></p>
+      <input id="playerNameInput" type="text" maxlength="24" placeholder="Jouw naam" autocomplete="nickname">
+      <button id="joinButton" type="button">MEEDOEN</button>
+      <p id="joinStatus" class="statusLine"></p>
     </section>
 
-    <section id="screenDashboard" class="compactDashboard hidden">
-      <div class="dashTop">
-        <div class="dashPill"><span id="dashRoundNo">Speler</span></div>
-        <div class="dashPill timerPill">⏱️ <span id="dashTimer">--</span></div>
-        <div class="dashPill">👥 <span id="dashPlayerCount">0</span></div>
-      </div>
-
-      <div class="dashGrid">
-        <section class="dashPanel answerPanel" id="dashAnswerPanel">
-          <div class="panelTitle">✍️ ANTWOORD</div>
-          <div id="dashAnswerBlock"></div>
-        </section>
-
-        <section class="dashPanel scorePanel">
-          <div class="panelTitle">📊 SCOREBORD</div>
-          <div id="dashScoreboard" class="compactScoreboard"></div>
-        </section>
-
-        <section class="dashPanel cardPanel">
-          <div class="panelTitle">🎯 BINGOKAART</div>
-          <div id="dashCardHint" class="dashHint">Wachten op beoordeling...</div>
-          <div id="dashOwnCard" class="compactBingoCard"></div>
-          <div id="dashCardStatus" class="dashStatus">Nog geen vakje gekozen</div>
-        </section>
-
-        <section class="dashPanel pickerPanel">
-          <div class="panelTitle">🎨 KLEUR & CATEGORIE</div>
-          <div id="dashPickerArea" class="dashPicker">Wachten op host...</div>
-        </section>
-      </div>
-
-      <div id="winnerPanel" class="hidden">
-        <div id="winnerMessage" class="winner">🏆</div>
-      </div>
+    <section id="playerGameScreen" class="playerScreen gameScreen hidden">
+      <header class="playerTopbar">
+        <strong><span id="playerAvatar">🎵</span> <span id="playerDisplayName">Speler</span></strong>
+        <span id="playerTimer">--</span>
+        <span>👥 <b data-player-count>0</b></span>
+      </header>
+      <div id="playerGameContent" class="playerGameContent"></div>
     </section>
   </main>
-</div>
 
-
-<div id="hbHostStartOverlay" class="hbHostStartOverlay hidden">
-  <div class="hbHostStartModal">
-    <img src="bb_logo_lime.png" class="bbLogoPopup bbLogoLime" alt="Bingo Beats">
-    <h2>🎵 Voor je begint</h2>
-    <p class="small">Controleer dit even voordat je de ronde start.</p>
-
-    <div id="hbLastRoomLine" class="hbLastRoomLine hidden">
-      Laatste kamer: <strong id="hbLastRoomCode"></strong>
-    </div>
-
-    <div class="hbChecklist">
-      <div>🐵 Zorg dat je Spotify-app geopend is</div>
-      <div>🐵 Zorg dat Spotify niet actief is op een ander apparaat</div>
-      <div>🐵 Kies Spotify of controleer je eigen muzieklijst</div>
-    </div>
-
-    <div class="hbStartButtons">
-      <button id="hbResumeRoomBtn" class="hbResumeBtn" disabled>🔄 Hervat kamer</button>
-      <button id="hbNewRoomModalBtn" class="hbNewBtn">🎫 Nieuwe kamer</button>
-      <button id="hbCloseModalBtn" class="secondary">Sluiten</button>
-    </div>
-
-    <p class="small">
-      Spotify login, apparaat activeren en een playlist laden mogen de kamer niet verbreken.
-      Alleen “Nieuwe kamer” maakt bewust een nieuwe spelcode.
-    </p>
+  <div id="playlistModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="playlistModalTitle">
+    <section class="modalCard playlistModalCard">
+      <header><div><small>SPOTIFY</small><h2 id="playlistModalTitle">Kies playlist</h2></div><button type="button" data-close-modal="playlistModal" aria-label="Sluiten">×</button></header>
+      <div id="playlistOptions" class="playlistOptions"></div>
+    </section>
   </div>
-</div>
 
-
-<div id="bbV176RulesOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176RulesTitle">
-  <div class="bbV176Modal bbV176RulesModal">
-    <button id="bbV176RulesCloseX" type="button" class="bbV176ModalClose" aria-label="Sluiten">×</button>
-    <img src="bb_logo_lime.webp" class="bbV176ModalLogo" alt="Bingo Beats">
-    <span class="bbV176Eyebrow">WELKOM IN DE LOBBY</span>
-    <h2 id="bbV176RulesTitle">Zo speel je Bingo Beats</h2>
-    <div class="bbV176RuleGrid">
-      <div><b>1</b><span><strong>Luister & antwoord</strong>Goed antwoord: +100. Snelste goede antwoord: +50 extra.</span></div>
-      <div><b>2</b><span><strong>Kies een kleurvak</strong>Na een goed antwoord kies je één vak in de gekozen kleur.</span></div>
-      <div><b>💣</b><span><strong>Verborgen Beat Bomb</strong>Een bom wist je aangevinkte vakken, tenzij je Engineer actief is.</span></div>
-      <div><b>👷</b><span><strong>Verborgen Beat Engineer</strong>De Engineer repareert je kaart één keer na een explosie.</span></div>
-      <div class="wide"><b>★</b><span><strong>Elke vijfde ronde: BingoBeats Round</strong>Beantwoord vijf categorieën in 60 seconden. Met minimaal 4 goed kies je ieder vrij vak.</span></div>
-    </div>
-    <button id="bbV176RulesClose" type="button" class="bbV176Primary">Begrepen, ik ben klaar</button>
+  <div id="winnerOverlay" class="winnerOverlay hidden">
+    <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
-</div>
 
-<div id="bbV176SpecialOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176SpecialTitle">
-  <div class="bbV176Modal bbV176SpecialModal">
-    <button id="bbV176SpecialCloseX" type="button" class="bbV176ModalClose" aria-label="Sluiten">×</button>
-    <div class="bbV176SpecialStar">★</div>
-    <span class="bbV176Eyebrow">RONDE 5 VAN 5</span>
-    <h2 id="bbV176SpecialTitle">BingoBeats Round</h2>
-    <p>Één nummer. Vijf categorieën. Zestig seconden.</p>
-    <div class="bbV176SpecialRules">
-      <span>✓ Elk goed antwoord is <strong>100 punten</strong></span>
-      <span>✓ Minimaal <strong>4 van 5 goed</strong> geeft een vrij vak</span>
-      <span>✓ Je vrije keuze kan de <strong>Beat Bomb</strong> of <strong>Engineer</strong> onthullen</span>
-    </div>
-    <button id="bbV176SpecialStart" type="button" class="bbV176Primary">Start BingoBeats Round</button>
-    <button id="bbV176SpecialPlayerClose" type="button" class="secondary hidden">Begrepen</button>
-  </div>
-</div>
-
-<div id="bbV176AdvantageOverlay" class="bbV176Overlay hidden" role="dialog" aria-modal="true" aria-labelledby="bbV176AdvantageTitle">
-  <div class="bbV176Modal bbV176AdvantageModal">
-    <div class="bbV176Trophy">🏆</div>
-    <span class="bbV176Eyebrow">BLOKWINNAAR</span>
-    <h2 id="bbV176AdvantageTitle">Kies jouw voordeel</h2>
-    <p id="bbV176AdvantageText">Je won dit blok. Kies één voordeel voor het volgende blok.</p>
-    <div class="bbV176AdvantageGrid">
-      <button type="button" data-bb-advantage="timePressure"><b>⏱️ Time Pressure</b><small>Tegenstanders krijgen 5 seconden minder.</small></button>
-      <button type="button" data-bb-advantage="doubleTrouble"><b>💣 Double Trouble</b><small>Tegenstanders krijgen een tweede Beat Bomb.</small></button>
-      <button type="button" data-bb-advantage="engineer"><b>👷 Engineer Unlock</b><small>Start het volgende blok met Engineer actief.</small></button>
-      <button type="button" data-bb-advantage="extraTime"><b>+5 Extra Time</b><small>Jij krijgt 5 seconden extra per ronde.</small></button>
-      <button type="button" data-bb-advantage="joker"><b>🃏 Joker</b><small>Gebruik hem vóór een nummer; alleen jouw antwoord telt.</small></button>
-    </div>
-  </div>
-</div>
-
-
-<div id="bingoFullOverlay" class="bingoFullOverlay hidden">
-  <div class="bingoFullCard">
-    <img src="bb_logo_orange.png" class="bbLogoBingo bbLogoOrange" alt="Bingo Beats">
-    <div class="bingoFullCrown">✅</div>
-    <div class="bingoFullTitle">BINGO!</div>
-    <div id="bingoFullName" class="bingoFullName">Speler</div>
-    <div class="bingoFullSub">HEEFT GEWONNEN</div>
-    <div class="bingoFullCup">🏆</div>
-  </div>
-</div>
-
-<script src="app.js?v=1890"></script>
-<script src="app-v176.js?v=1890"></script>
-<script src="app-v177.js?v=1890"></script>
-<script src="app-v178.js?v=1890"></script>
-<script src="app-v181.js?v=1890"></script>
-<script src="app-v182.js?v=1890"></script>
-<script src="app-v183.js?v=1890"></script>
-<script src="app-v188.js?v=1890"></script>
-<script src="app-v189.js?v=1890"></script>
-
-<div id="newGameModal" class="modalOverlay hidden">
-  <div class="modalCard">
-    <img src="bb_logo_aqua.png" class="bbLogoModal bbLogoAqua" alt="Bingo Beats">
-    <h2>Nieuw spel starten?</h2>
-    <p>Weet je het zeker?</p>
-    <ul>
-      <li>Alle spelers blijven in dezelfde kamer.</li>
-      <li>Alle spelers krijgen een nieuwe bingokaart.</li>
-      <li>Huidige bingo’s worden gewist.</li>
-      <li>De winnaar wordt gewist.</li>
-      <li>De kamercode blijft hetzelfde.</li>
-      <li>Gespeelde nummers blijven onthouden.</li>
-    </ul>
-    <div class="modalActions">
-      <button id="cancelNewGameBtn" class="secondary">Annuleren</button>
-      <button id="confirmNewGameBtn">Ja, nieuw spel starten</button>
-    </div>
-  </div>
-</div>
-
+  <script src="app.js?v=2000"></script>
 </body>
 </html>
-
-<!-- Bingo Beats V188 - Spotify, playlists en mobiele schermen hersteld -->

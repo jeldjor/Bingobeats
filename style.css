@@ -72,9 +72,9 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .hostStep.active{display:grid}
 .hostFlowHeader{
   min-width:0;
-  height:108px;
+  height:174px;
   display:grid;
-  grid-template-rows:34px 74px;
+  grid-template-rows:34px 140px;
 }
 .stepper{
   width:min(100%,440px);
@@ -134,7 +134,11 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   display:grid;
   place-items:center;
 }
-.flowBrand img{width:132px;height:76px;object-fit:contain}
+.flowBrand img{
+  width:clamp(240px,64vw,264px);
+  height:138px;
+  object-fit:contain;
+}
 .flowRole,.flowPlayers{
   position:absolute;
   top:50%;
@@ -152,7 +156,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .stepIntro p{margin:5px 0 0;color:#d5dbd6;font-size:11px;font-weight:700}
 
 /* Muziekscherm */
-.musicStep{grid-template-rows:108px 34px minmax(0,1fr) 48px}
+.musicStep{grid-template-rows:174px 34px minmax(0,1fr) 48px}
 .musicContent{min-height:0;display:flex;flex-direction:column;gap:5px;overflow:hidden}
 .musicContent h2{
   flex:0 0 auto;
@@ -294,7 +298,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roomCard{
   display:grid;
   grid-template-columns:minmax(0,1fr) 118px;
-  grid-template-rows:auto auto minmax(258px,1fr) auto minmax(54px,.42fr) auto;
+  grid-template-rows:auto auto minmax(0,1fr) auto minmax(45px,.34fr) auto;
   grid-template-areas:
     "title title"
     "name new"
@@ -317,18 +321,15 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:6px;
-  padding:8px 10px;
-  border:1px solid var(--window-line);
-  border-radius:15px;
-  background:#030603;
+  gap:5px;
+  padding:2px 4px;
 }
 .roomShare.empty{opacity:.42}
 .roomCodeBlock{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
 .roomCodeBlock>small,.roomDetails>label{color:var(--lime);font-size:8px;font-weight:900;letter-spacing:.1em}
 .roomCodeBlock>strong{font-size:clamp(30px,8vw,43px);line-height:1;letter-spacing:.12em}
 .qrWrap{width:100%;min-width:0;display:grid;place-items:center}
-.qrWrap img{width:min(48vw,190px);aspect-ratio:1;object-fit:contain;padding:5px;border-radius:13px;background:#fff}
+.qrWrap img{width:min(46vw,180px);aspect-ratio:1;object-fit:contain;padding:5px;border-radius:10px;background:#fff}
 .roomShare.empty .qrWrap img{visibility:hidden}
 .roomDetails{width:min(100%,390px);min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 105px;gap:4px 6px}
 .roomDetails>label{grid-column:1/-1;text-align:center}
@@ -372,7 +373,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 #roomStatus{grid-area:status}
 
 /* Instellingen */
-.roomStep,.settingsStep{grid-template-rows:108px minmax(0,1fr) 46px}
+.roomStep,.settingsStep{grid-template-rows:174px minmax(0,1fr) 46px}
 .settingsCard{padding:11px;display:flex;flex-direction:column;justify-content:center;gap:7px;overflow:hidden}
 .settingsCard fieldset{margin:0;padding:0;border:0}
 .settingsCard legend{margin-bottom:5px;color:var(--lime);font-size:8px;font-weight:900;letter-spacing:.08em}
@@ -414,7 +415,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .switchRow input{width:42px;height:23px;accent-color:var(--lime)}
 
 /* Host spelen */
-.playStep{grid-template-rows:108px minmax(0,1fr)}
+.playStep{grid-template-rows:174px minmax(0,1fr)}
 .playLayout{
   min-height:0;
   display:grid;
@@ -651,19 +652,19 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .setupRow{grid-template-columns:31px minmax(0,1fr) 92px;gap:6px;padding-left:7px;padding-right:7px}
   .outlineButton{width:92px;font-size:9px}
   .stepper{grid-template-columns:48px minmax(8px,1fr) 48px minmax(8px,1fr) 62px minmax(8px,1fr) 48px}
-  .flowBrand img{width:124px}
+  .flowBrand img{width:248px}
   .categoryRow{grid-template-columns:25px minmax(0,1fr) 48px;gap:6px;padding-left:7px;padding-right:7px}
   .categoryRow small{display:none}
   .playerList,.lobbyPlayers{grid-template-columns:1fr}
 }
 
 @media(max-height:720px){
-  .hostFlowHeader{height:92px;grid-template-rows:31px 61px}
-  .flowBrand img{width:110px;height:64px}
+  .hostFlowHeader{height:151px;grid-template-rows:31px 120px}
+  .flowBrand img{width:220px;height:118px}
   .stepNode{height:31px;grid-template-rows:22px 9px}
   .stepNode b{width:22px;height:22px;font-size:10px}
   .stepper>i{margin-top:11px}
-  .musicStep{grid-template-rows:92px 30px minmax(0,1fr) 41px;gap:4px}
+  .musicStep{grid-template-rows:151px 30px minmax(0,1fr) 41px;gap:4px}
   .stepIntro p{display:none}.stepIntro h1{font-size:20px}
   .setupRow{flex-basis:42px;height:42px;padding-top:3px;padding-bottom:3px}
   .rowColor{width:24px;height:24px}.outlineButton{height:31px}
@@ -672,15 +673,15 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .categoryRow{padding-top:2px;padding-bottom:2px}.categoryRow i{width:16px;height:16px}
   .categoryRow small{display:none}
   .nextButton{height:43px;font-size:17px}
-  .roomStep,.settingsStep{grid-template-rows:92px minmax(0,1fr) 41px;gap:4px}
-  .roomCard{grid-template-rows:auto auto minmax(215px,1fr) auto minmax(36px,.25fr) auto;gap:4px;padding:8px}
-  .roomShare{gap:3px;padding:5px 8px}
-  .qrWrap img{width:min(39vw,150px)}
+  .roomStep,.settingsStep{grid-template-rows:151px minmax(0,1fr) 41px;gap:4px}
+  .roomCard{grid-template-rows:auto auto minmax(0,1fr) auto minmax(31px,.22fr) auto;gap:4px;padding:8px}
+  .roomShare{gap:2px;padding:0 4px}
+  .qrWrap img{width:min(35vw,132px)}
   .roomCodeBlock>strong{font-size:27px}
   .roomDetails{grid-template-columns:minmax(0,1fr) 94px}
   .roomDetails input,.roomDetails button{height:27px}
   .playerList{grid-auto-rows:31px}
-  .playStep{grid-template-rows:92px minmax(0,1fr);gap:4px}
+  .playStep{grid-template-rows:151px minmax(0,1fr);gap:4px}
   .bottomActions button{height:44px!important}
   .settingsCard{gap:4px;padding:8px}
   .settingsCard .cardTitle h2{font-size:16px}

@@ -1,0 +1,55 @@
+/* Bingo Beats V185 — zichtbaar logo en compacte, betrouwbare licentiekaart. */
+html.bbV185 #licenseScreen{
+  min-height:100dvh!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+
+html.bbV185 #licenseScreen .licenseCard{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  width:min(92vw,390px)!important;
+  max-height:calc(100dvh - max(32px,env(safe-area-inset-top)) - max(32px,env(safe-area-inset-bottom)))!important;
+  padding:clamp(18px,4vw,28px)!important;
+  box-sizing:border-box!important;
+}
+
+html.bbV185 #licenseScreen #licenseLogo{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  width:clamp(128px,36vw,180px)!important;
+  height:auto!important;
+  max-height:180px!important;
+  margin:0 auto 4px!important;
+  object-fit:contain!important;
+  flex:0 1 auto!important;
+}
+
+html.bbV185 #licenseScreen .licenseCard h2,
+html.bbV185 #licenseScreen .licenseCard p,
+html.bbV185 #licenseScreen .licenseCard input,
+html.bbV185 #licenseScreen .licenseCard button{
+  margin:0!important;
+}
+
+html.bbV185 #licenseScreen #licenseInput{
+  margin-top:6px!important;
+}
+
+html.bbV185 #licenseScreen #licenseStatus:empty{
+  display:none!important;
+}
+
+html.bbV185 #licenseScreen #licenseStatus:not(:empty){
+  display:block!important;
+  min-height:18px!important;
+}
+
+@media(max-height:700px){
+  html.bbV185 #licenseScreen .licenseCard{gap:7px!important;padding:14px!important}
+  html.bbV185 #licenseScreen #licenseLogo{width:112px!important;max-height:112px!important}
+}

@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2030">
+  <link rel="stylesheet" href="style.css?v=2040">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -35,8 +35,7 @@
         </div>
       </header>
 
-      <div class="stepIntro">
-        <h1>MUZIEK</h1>
+      <div class="stepIntro musicIntro">
         <p>Kies en test je Spotify-playlist</p>
       </div>
 
@@ -75,6 +74,12 @@
         <section class="screenCard testCard">
           <div><small>GELUIDSCONTROLE</small><h2>Test voor je begint</h2></div>
           <button id="soundTestButton" type="button" class="secondaryButton">TEST</button>
+          <ul class="preflightChecklist" aria-label="Controle voor je begint">
+            <li data-preflight="spotify"><span aria-hidden="true"></span><strong>Goed ingelogd</strong></li>
+            <li data-preflight="playlist"><span aria-hidden="true"></span><strong>Playlist gekozen en geladen</strong></li>
+            <li data-preflight="import"><span aria-hidden="true"></span><strong>Playlist goed geïmporteerd</strong></li>
+            <li data-preflight="test"><span aria-hidden="true"></span><strong>Geluidstest geslaagd</strong></li>
+          </ul>
           <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
         </section>
       </div>
@@ -244,7 +249,10 @@
             <strong>Maak iedereen READY</strong>
             <span>Start daarna de eerste ronde.</span>
           </div>
-          <button id="startRoundButton" type="button" disabled>START RONDE</button>
+          <div class="lobbyActions">
+            <button id="hostReadyButton" type="button">IK BEN READY</button>
+            <button id="startRoundButton" type="button" disabled>WACHTEN OP READY</button>
+          </div>
           <div class="transport">
             <button id="playTrackButton" type="button" disabled>▶<small>AFSPELEN</small></button>
             <button id="stopTrackButton" type="button" disabled>■<small>STOP</small></button>
@@ -304,6 +312,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2030"></script>
+  <script src="app.js?v=2040"></script>
 </body>
 </html>

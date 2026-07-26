@@ -1,61 +1,148 @@
-@import url("https://cdn.jsdelivr.net/gh/jeldjor/Bingobeats@968f7f69eefe3d78ac7322a10aa85f89c0fdaff6/style.css");
+@import url("https://cdn.jsdelivr.net/gh/jeldjor/Bingobeats@968f7f69eefe3d78ac7322a10aa85f89c0fdaff6/style.css?v=1870");
 
-/* Bingo Beats V186 */
-.setupRow,.spotifyRow,.playlistRow,.countRow,.screenCard,.roomShare,
-.playerTopbar,.playerHero,.playerPanel,.switchRow,.hostRoundDisplay,
-.scoreRow,.playerChip{border-color:rgba(147,245,0,.32)}
+/* Bingo Beats V187 */
 
-.playlistRow,.countRow{border-color:rgba(147,245,0,.32)}
-
-.hostFlowHeader{
-  height:118px;
-  grid-template-rows:34px 84px;
-  border-bottom:0;
-}
-.flowBrand img{width:132px;height:84px}
-.musicStep{grid-template-rows:118px 34px minmax(0,1fr) 48px}
-.roomStep,.settingsStep{grid-template-rows:118px minmax(0,1fr) 46px}
-.playStep{grid-template-rows:118px minmax(0,1fr)}
-
-.roomShare{
-  grid-template-columns:minmax(0,1fr);
-  grid-template-rows:auto auto;
-  justify-items:center;
-  align-content:center;
-  gap:7px;
-  padding:9px 12px;
-}
-.qrWrap{width:100%}
-.qrWrap img{
-  width:min(52vw,205px);
-  max-height:205px;
-  padding:6px;
-}
-.roomDetails{
-  width:min(100%,430px);
-  align-items:center;
-  gap:4px;
-  text-align:center;
-}
-.roomDetails>strong{font-size:clamp(27px,8vw,42px)}
-.roomDetails>label,.roomDetails input,.roomDetails button{width:100%}
-.roomDetails input{text-align:center}
-
-.nextButton b{display:none!important}
-.nextButton{gap:0}
-
-@media(max-width:390px){
-  .flowBrand img{width:124px;height:82px}
-  .roomShare{grid-template-columns:minmax(0,1fr);gap:6px}
-  .qrWrap img{width:min(50vw,190px)}
+/* Alle vensters dezelfde groene lijnkleur */
+.setupRow,
+.spotifyRow,
+.playlistRow,
+.countRow,
+.screenCard,
+.roomShare,
+.playerTopbar,
+.playerHero,
+.playerPanel,
+.switchRow,
+.hostRoundDisplay,
+.scoreRow,
+.playerChip {
+  border-color: rgba(147,245,0,.38) !important;
 }
 
-@media(max-height:720px){
-  .hostFlowHeader{height:96px;grid-template-rows:31px 65px}
-  .flowBrand img{width:108px;height:65px}
-  .musicStep{grid-template-rows:96px 30px minmax(0,1fr) 41px}
-  .roomStep,.settingsStep{grid-template-rows:96px minmax(0,1fr) 41px}
-  .playStep{grid-template-rows:96px minmax(0,1fr)}
-  .qrWrap img{width:min(38vw,150px)}
-  .roomDetails>strong{font-size:29px}
+/* Paarse vensterlijnen verwijderen */
+.playlistRow,
+.countRow {
+  border-color: rgba(147,245,0,.38) !important;
+}
+
+/* Logo op elk hostscherm groter, geen lijn eronder */
+.hostFlowHeader {
+  height: 118px !important;
+  grid-template-rows: 34px 84px !important;
+  border-bottom: 0 !important;
+}
+
+.flowBrand img {
+  width: 136px !important;
+  height: 86px !important;
+}
+
+.musicStep {
+  grid-template-rows: 118px 34px minmax(0,1fr) 48px !important;
+}
+
+.roomStep,
+.settingsStep {
+  grid-template-rows: 118px minmax(0,1fr) 46px !important;
+}
+
+.playStep {
+  grid-template-rows: 118px minmax(0,1fr) !important;
+}
+
+/* Kamer: QR centraal, groter, link eronder */
+.roomShare {
+  grid-template-columns: minmax(0,1fr) !important;
+  grid-template-rows: auto auto !important;
+  justify-items: center !important;
+  align-content: center !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+}
+
+.qrWrap {
+  width: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.qrWrap img {
+  width: min(54vw,215px) !important;
+  max-width: 215px !important;
+  max-height: 215px !important;
+  padding: 6px !important;
+}
+
+.roomDetails {
+  width: min(100%,430px) !important;
+  align-items: center !important;
+  gap: 4px !important;
+  text-align: center !important;
+}
+
+.roomDetails > strong {
+  font-size: clamp(28px,8vw,42px) !important;
+}
+
+.roomDetails > label,
+.roomDetails input,
+.roomDetails button {
+  width: 100% !important;
+}
+
+.roomDetails input {
+  text-align: center !important;
+}
+
+/* Geen pijltje in onderste knoppen */
+.nextButton b {
+  display: none !important;
+}
+
+.nextButton {
+  gap: 0 !important;
+}
+
+@media (max-width:390px) {
+  .flowBrand img {
+    width: 128px !important;
+    height: 84px !important;
+  }
+
+  .roomShare {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+
+  .qrWrap img {
+    width: min(52vw,198px) !important;
+  }
+}
+
+@media (max-height:720px) {
+  .hostFlowHeader {
+    height: 96px !important;
+    grid-template-rows: 31px 65px !important;
+  }
+
+  .flowBrand img {
+    width: 110px !important;
+    height: 65px !important;
+  }
+
+  .musicStep {
+    grid-template-rows: 96px 30px minmax(0,1fr) 41px !important;
+  }
+
+  .roomStep,
+  .settingsStep {
+    grid-template-rows: 96px minmax(0,1fr) 41px !important;
+  }
+
+  .playStep {
+    grid-template-rows: 96px minmax(0,1fr) !important;
+  }
+
+  .qrWrap img {
+    width: min(40vw,158px) !important;
+  }
 }

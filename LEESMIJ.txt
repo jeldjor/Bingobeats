@@ -1,27 +1,13 @@
-BINGO BEATS CLEAN V201
+Bingo Beats V186
 
-Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
+Aangepast:
+- Paarse lijnen verwijderd.
+- Alle vensters hebben dezelfde groene lijnkleur.
+- QR-code centraal en groter.
+- Link en kopieerknop onder de QR-code.
+- Logo op ieder hostscherm groter.
+- Lijn onder het logo verwijderd.
+- Pijltje uit de onderste knoppen verwijderd.
+- Responsive regels behouden voor kleinere en lagere schermen.
 
-De website laadt alleen:
-- index.html
-- style.css
-- app.js
-- sw.js
-
-Aanwezig:
-- Spotify PKCE-login met één callbackverwerking
-- knop KIES met een eigen mobiele playlistkiezer
-- playlist importeren
-- Muziek -> Kamer -> Instellingen -> Spelen
-- dezelfde 1-2-3-4-stappenbalk en een groter gecentreerd logo op elk hostscherm
-- geluidstest bij Muziek
-- vaste categorieën bij Instellingen
-- automatisch een kamer met QR-code en deelbare link
-- host doet automatisch mee
-- compacte lobby met dierenavatars
-- 6x6 bingokaart zonder gratis middenvak
-- antwoorden, timer, automatische beoordeling en host-overrule
-- punten, vakje kiezen en bingocontrole
-- geen licentiescherm
-- geen oude startoverlays
-- compact host-lobbyscherm met de volledige 6x6-kaart in beeld
+Plaats style.css in de hoofdmap van de bestaande Bingo Beats-versie en vervang het huidige bestand.

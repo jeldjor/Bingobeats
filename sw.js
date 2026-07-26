@@ -1,9 +1,9 @@
-const CACHE = 'bingo-beats-clean-v202';
+const CACHE = 'bingo-beats-clean-v203';
 const CORE = [
   './',
   './index.html',
-  './style.css?v=2020',
-  './app.js?v=2020',
+  './style.css?v=2030',
+  './app.js?v=2030',
   './manifest.json',
   './bb_logo.png',
   './bb_logo_lime.webp',

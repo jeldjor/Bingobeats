@@ -1308,7 +1308,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2010',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2020',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

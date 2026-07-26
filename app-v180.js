@@ -65,10 +65,11 @@
         .replace(/^Ingelogd\.?$/i,'Muziekgebruiker')
         .replace(/\s+—\s+speler actief\.?$/i,'')
         .trim();
-      status.textContent=name||'Muziekgebruiker';
+      const shown=name||'Muziekgebruiker';
+      if(status.textContent!==shown) status.textContent=shown;
     }else{
       if(caption) caption.textContent='Spotify-account';
-      status.textContent='Nog niet ingelogd';
+      if(status.textContent!=='Nog niet ingelogd') status.textContent='Nog niet ingelogd';
     }
     loginSyncing=false;
   }

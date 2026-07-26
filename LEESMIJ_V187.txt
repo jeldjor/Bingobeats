@@ -1,0 +1,7 @@
+BINGO BEATS V187
+
+- Opgelost: nergens op kunnen drukken op iPhone.
+- De oneindige Spotify-statuslus is verwijderd.
+- Het licentiescherm wordt na activatie volledig uit de pagina verwijderd.
+- Oude start-overlays kunnen de zichtbare knoppen niet meer blokkeren.
+- De hoststappen hebben een extra bedieningsvangnet.

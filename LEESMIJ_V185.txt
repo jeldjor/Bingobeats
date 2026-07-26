@@ -1,9 +1,0 @@
-BINGO BEATS V185
-
-Opgelost:
-- Het licentiescherm reageert weer betrouwbaar op Activeren en Enter.
-- Beschadigde oude playlist- of licentiegegevens kunnen het opstarten niet meer blokkeren.
-- Het Bingo Beats-logo is zichtbaar en passend op het licentiescherm.
-- Na een geldige code herstart de app schoon en opent Bingo Beats automatisch.
-
-Testcode: TEST-2026

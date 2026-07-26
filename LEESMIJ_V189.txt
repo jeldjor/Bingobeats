@@ -1,7 +1,0 @@
-BINGO BEATS V189
-
-- Het licentiescherm is volledig uit de startpagina en laadvolgorde verwijderd.
-- De app opent direct in host- of spelermodus.
-- Een oude licentiestatus kan geen onzichtbare laag meer boven de knoppen zetten.
-- De serviceworker en alle cacheverwijzingen zijn verhoogd naar V189.
-- De functionele en mobiele V188-aanpassingen blijven behouden.

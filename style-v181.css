@@ -1,7 +1,0 @@
-/* Bingo Beats V181 — de verouderde host-startpopup wordt niet meer gebruikt. */
-html.bbV181 #hbHostStartOverlay,
-html.bbV181 #hbHostStartOverlay:not(.hidden){
-  display:none!important;
-  visibility:hidden!important;
-  pointer-events:none!important;
-}

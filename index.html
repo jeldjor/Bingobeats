@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2010">
+  <link rel="stylesheet" href="style.css?v=2020">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -53,7 +53,7 @@
         </article>
 
         <article class="setupRow playlistRow">
-          <span class="rowColor purpleColor" aria-hidden="true"></span>
+          <span class="rowColor playlistColor" aria-hidden="true"></span>
           <div class="rowText">
             <small>Kies playlist</small>
             <strong id="playlistName">Nog geen playlist gekozen</strong>
@@ -62,7 +62,7 @@
         </article>
 
         <article class="setupRow countRow">
-          <span class="rowColor purpleColor" aria-hidden="true"></span>
+          <span class="rowColor playlistColor" aria-hidden="true"></span>
           <div class="rowText">
             <small>Aantal nummers</small>
             <strong id="playlistCount">0 nummers</strong>
@@ -79,7 +79,7 @@
         </section>
       </div>
 
-      <button type="button" class="nextButton" data-go="2"><span>VOLGENDE</span><b>›</b></button>
+      <button type="button" class="nextButton" data-go="2">VOLGENDE</button>
     </section>
 
     <section class="hostStep roomStep" data-step="2">
@@ -111,10 +111,12 @@
         <button id="newRoomButton" type="button" class="secondaryButton">NIEUWE KAMER</button>
 
         <div id="roomShare" class="roomShare empty">
-          <div class="qrWrap"><img id="roomQr" alt="QR-code voor de kamer"></div>
-          <div class="roomDetails">
+          <div class="roomCodeBlock">
             <small>SPELCODE</small>
             <strong id="roomCode">----</strong>
+          </div>
+          <div class="qrWrap"><img id="roomQr" alt="QR-code voor de kamer"></div>
+          <div class="roomDetails">
             <label for="roomLink">DEEL DE LINK</label>
             <input id="roomLink" readonly value="">
             <button id="copyLinkButton" type="button">KOPIEER LINK</button>
@@ -128,7 +130,7 @@
 
       <div class="bottomActions">
         <button type="button" class="backButton" data-go="1">TERUG</button>
-        <button type="button" class="nextButton compact" data-go="3">VOLGENDE <b>›</b></button>
+        <button type="button" class="nextButton compact" data-go="3">VOLGENDE</button>
       </div>
     </section>
 
@@ -210,7 +212,7 @@
 
       <div class="bottomActions">
         <button type="button" class="backButton" data-go="2">TERUG</button>
-        <button type="button" class="nextButton compact" data-go="4">NAAR SPELEN <b>›</b></button>
+        <button type="button" class="nextButton compact" data-go="4">NAAR SPELEN</button>
       </div>
     </section>
 
@@ -302,6 +304,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2010"></script>
+  <script src="app.js?v=2020"></script>
 </body>
 </html>

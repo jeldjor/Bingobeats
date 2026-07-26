@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V201
+/* Bingo Beats Clean V204
    Eén applicatiebestand: Spotify, Firebase, hoststappen en spelersscherm. */
 (() => {
   'use strict';
@@ -162,6 +162,7 @@
       if(event.key==='Enter') event.preventDefault();
     });
     $('soundTestButton')?.addEventListener('click',runSoundTest);
+    $('hostReadyButton')?.addEventListener('click',markHostReady);
     $('startRoundButton')?.addEventListener('click',startRound);
     $('playTrackButton')?.addEventListener('click',playRoundTrack);
     $('stopTrackButton')?.addEventListener('click',stopSpotify);
@@ -210,6 +211,7 @@
     $('hostNameInput').value = localStorage.getItem('bb_host_name') || 'Georgio';
     await handleSpotifyCallback();
     await syncSpotify();
+    updatePreflightChecks();
     await restoreRoom();
     setStep(1);
   }
@@ -364,6 +366,8 @@
       $('choosePlaylistButton').disabled = true;
       $('importPlaylistButton').disabled = true;
       if(!state.tracks.length) setStatus('musicStatus','Log in met Spotify en kies daarna een playlist.');
+    }finally{
+      updatePreflightChecks();
     }
   }
 
@@ -381,6 +385,7 @@
       state.spotifyDeviceId = '';
     }
     if(update) syncSpotify();
+    updatePreflightChecks();
   }
 
   async function fetchAllSpotifyPages(url){
@@ -422,6 +427,7 @@
     const count = selected?.tracks?.total ?? (saved?.id===selected?.id ? saved.count : 0) ?? 0;
     $('playlistCount').textContent = `${count} ${Number(count)===1?'nummer':'nummers'}`;
     $('importPlaylistButton').disabled = !selected;
+    updatePreflightChecks();
   }
 
   async function openPlaylistPicker(){
@@ -445,6 +451,7 @@
       root.querySelectorAll('[data-playlist]').forEach(button => {
         button.addEventListener('click',() => {
           state.selectedPlaylist = state.playlists.find(item => item.id===button.dataset.playlist) || null;
+          sessionStorage.removeItem('bb_sound_test_ok');
           renderPlaylistSelection();
           $('playlistModal').classList.add('hidden');
           setStatus('musicStatus','Playlist gekozen. Tik nu op IMPORTEREN.','ok');
@@ -502,6 +509,7 @@
         id:playlist.id,name:playlist.name,count:state.tracks.length,importedAt:new Date().toISOString()
       }));
       $('playlistCount').textContent = `${state.tracks.length} nummers`;
+      sessionStorage.removeItem('bb_sound_test_ok');
       setStatus('musicStatus',`${state.tracks.length} nummers geïmporteerd. Klaar voor de kamer.`,'ok');
       await ensureSpotifyPlayer().catch(()=>{});
       renderHost(state.room);
@@ -510,7 +518,24 @@
     }finally{
       button.textContent = 'IMPORTEREN';
       button.disabled = !state.selectedPlaylist;
+      updatePreflightChecks();
     }
+  }
+
+  function updatePreflightChecks(){
+    const imported = readJson('bb_imported_playlist',null);
+    const checks = {
+      spotify:!!state.spotifyProfile,
+      playlist:!!state.selectedPlaylist,
+      import:!!state.selectedPlaylist && imported?.id===state.selectedPlaylist.id && state.tracks.length>0,
+      test:sessionStorage.getItem('bb_sound_test_ok')==='1'
+    };
+    $$('[data-preflight]').forEach(item => {
+      const done = !!checks[item.dataset.preflight];
+      item.classList.toggle('done',done);
+      const box = item.querySelector('span');
+      if(box) box.textContent = done ? '✓' : '';
+    });
   }
 
   window.onSpotifyWebPlaybackSDKReady = () => {};
@@ -567,6 +592,7 @@
     }finally{
       button.disabled = false;
       button.textContent = 'TEST';
+      updatePreflightChecks();
     }
   }
 
@@ -659,7 +685,7 @@
       emoji:existing.emoji || playerAnimal(state.hostPlayerId,existing),
       isHost:true,
       online:true,
-      ready:existing.ready ?? true,
+      ready:existing.ready ?? false,
       score:Number(existing.score)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
@@ -685,7 +711,7 @@
     $('roomShare').classList.remove('empty');
     $('roomCode').textContent = state.roomCode;
     $('roomLink').value = joinUrl.href;
-    $('roomQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(joinUrl.href)}`;
+    $('roomQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl.href)}`;
     $('roomQr').alt = `QR-code voor kamer ${state.roomCode}`;
   }
 
@@ -731,12 +757,21 @@
     const round = room.currentRound || {};
     const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
     const canStart = allReady && !!state.tracks.length && !['picking','ready','answering','locked'].includes(round.status);
+    const host = room.players?.[state.hostPlayerId];
+    const hostReady = host?.ready===true;
+    const lobby = !round.id;
+    $('hostReadyButton').classList.toggle('done',hostReady);
+    $('hostReadyButton').disabled = hostReady;
+    $('hostReadyButton').textContent = hostReady ? 'HOST READY ✓' : 'IK BEN READY';
     $('startRoundButton').disabled = !canStart;
     $('startRoundButton').textContent = canStart ? 'START RONDE' : allReady ? 'IMPORTEER EERST MUZIEK' : 'WACHTEN OP READY';
+    document.querySelector('.playLayout')?.classList.toggle('lobbyMode',lobby);
+    document.querySelector('.transport')?.classList.toggle('hidden',lobby);
     $('testStatus').textContent = sessionStorage.getItem('bb_sound_test_ok')==='1'
       ? 'Geluidstest geslaagd.'
       : state.tracks.length ? 'Test Spotify voordat je start.' : 'Importeer eerst een playlist.';
     $('testStatus').classList.toggle('ok',sessionStorage.getItem('bb_sound_test_ok')==='1');
+    updatePreflightChecks();
 
     renderHostRound(room,round);
     renderHostCard(room,round);
@@ -1011,6 +1046,11 @@
     $('hostAnswerInput').value = '';
   }
 
+  async function markHostReady(){
+    if(!state.roomCode || !state.hostPlayerId) return;
+    await state.db.ref(`rooms/${state.roomCode}/players/${state.hostPlayerId}/ready`).set(true);
+  }
+
   /* Speler */
   async function preparePlayerJoin(){
     if(!state.roomCode){
@@ -1049,7 +1089,7 @@
       name,
       emoji:existing.emoji || playerAnimal(state.playerId,existing),
       online:true,
-      ready:true,
+      ready:false,
       score:Number(existing.score)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
@@ -1308,7 +1348,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2030',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2040',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

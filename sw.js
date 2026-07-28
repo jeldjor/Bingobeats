@@ -1,9 +1,9 @@
-const CACHE = 'bingo-beats-clean-v205';
+const CACHE = 'bingo-beats-clean-v206';
 const CORE = [
   './',
   './index.html',
-  './style.css?v=2050',
-  './app.js?v=2050',
+  './style.css?v=2060',
+  './app.js?v=2060',
   './manifest.json',
   './bb_logo.png',
   './bb_logo_lime.webp',
@@ -28,7 +28,7 @@ self.addEventListener('activate',event => {
 self.addEventListener('fetch',event => {
   if(event.request.method!=='GET') return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request,{cache:'no-store'})
       .then(response => {
         const copy = response.clone();
         caches.open(CACHE).then(cache => cache.put(event.request,copy));

@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V204
+/* Bingo Beats Clean V208
    Eén applicatiebestand: Spotify, Firebase, hoststappen en spelersscherm. */
 (() => {
   'use strict';
@@ -30,6 +30,16 @@
     {key:'green',name:'KORAAL',hex:'#ff6173',category:'Titel van track'}
   ];
   const ANIMALS = ['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
+  const MUSIC_FACTS = [
+    'Een liedje dat in je hoofd blijft hangen heet een oorwurm.',
+    'Muziek kan herinneringen sneller oproepen dan veel andere prikkels.',
+    'De eerste commerciële cd verscheen in 1982.',
+    'Een standaard piano heeft 88 toetsen.',
+    'De muziekvideo van “Video Killed the Radio Star” opende MTV.',
+    'Een octaaf bestaat in de westerse muziek uit twaalf halve tonen.',
+    'Vinylplaten draaien meestal op 33⅓ of 45 toeren per minuut.',
+    'Het applaus na een optreden heet ook wel een ovatie.'
+  ];
   const $ = id => document.getElementById(id);
   const $$ = selector => Array.from(document.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -58,7 +68,10 @@
     currentTrack:null,
     timer:null,
     stopTimer:null,
+    autoStarting:false,
+    judgingRound:'',
     lastPlayerRender:'',
+    lastHostRender:'',
     winnerKey:localStorage.getItem('bb_last_winner_key') || ''
   };
 
@@ -131,7 +144,13 @@
       else node.removeAttribute('aria-current');
     });
     if(requested===2) ensureRoom().catch(showRoomError);
-    if(requested===4) renderHost(state.room);
+    if(requested===4){
+      renderHost(state.room);
+      maybeStartRound().catch(error => {
+        state.autoStarting = false;
+        showGameError(error);
+      });
+    }
   }
 
   function bindInterface(){
@@ -162,18 +181,15 @@
       if(event.key==='Enter') event.preventDefault();
     });
     $('soundTestButton')?.addEventListener('click',runSoundTest);
-    $('hostReadyButton')?.addEventListener('click',markHostReady);
-    $('startRoundButton')?.addEventListener('click',startRound);
-    $('playTrackButton')?.addEventListener('click',playRoundTrack);
-    $('stopTrackButton')?.addEventListener('click',stopSpotify);
-    $('showAnswerButton')?.addEventListener('click',lockAndJudgeRound);
-    $('hostAnswerButton')?.addEventListener('click',submitHostAnswer);
-    $('hostAnswerInput')?.addEventListener('keydown',event => {
+    $('hostGameContent')?.addEventListener('click',handleHostGameClick);
+    $('hostGameContent')?.addEventListener('keydown',event => {
       if(event.key==='Enter') event.preventDefault();
     });
-    $('publishResultsButton')?.addEventListener('click',publishResults);
+    $('playerGameContent')?.addEventListener('click',handlePlayerGameClick);
+    $('playerGameContent')?.addEventListener('keydown',event => {
+      if(event.key==='Enter') event.preventDefault();
+    });
     $('hostScoreboard')?.addEventListener('click',handleHostJudgement);
-    $('hostBingoCard')?.addEventListener('click',handleHostCardPick);
     $$('[data-close-modal]').forEach(button => {
       button.addEventListener('click',() => $(button.dataset.closeModal)?.classList.add('hidden'));
     });
@@ -600,7 +616,6 @@
     try{
       await spotifyApi('https://api.spotify.com/v1/me/player/pause',{method:'PUT'});
     }catch(_error){}
-    $('stopTrackButton').disabled = true;
   }
 
   /* Kamer en host */
@@ -736,85 +751,100 @@
       if(!state.room) return;
       updatePlayerCounts();
       if(isPlayerPage()) renderPlayer();
-      else renderHost();
+      else{
+        renderHost();
+        maybeStartRound().catch(error => {
+          state.autoStarting = false;
+          showGameError(error);
+        });
+      }
     });
     listenForWinner(code);
   }
 
   function renderHost(room=state.room){
     if(!room) return;
-    const players = activePlayers(room);
-    const ready = players.filter(([,player]) => player.ready===true).length;
-    if($('readyCount')) $('readyCount').textContent = `${ready} / ${players.length} READY`;
-    if($('hostPlayers')){
-      $('hostPlayers').innerHTML = players.length ? players.map(([id,player]) => `
-        <article class="playerChip ${player.ready?'ready':''}">
-          <span>${playerAnimal(id,player)}</span>
-          <strong>${escapeHtml(player.name || 'Speler')}</strong>
-          <i>${player.ready?'READY ✓':'WACHT'}</i>
-        </article>`).join('') : '<p>Nog geen spelers.</p>';
-    }
-
     const round = room.currentRound || {};
-    const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
-    const canStart = allReady && !!state.tracks.length && !['picking','ready','answering','locked'].includes(round.status);
     const host = room.players?.[state.hostPlayerId];
-    const hostReady = host?.ready===true;
-    const roundStatuses = ['picking','ready','answering','locked','judged'];
-    const lobby = !round.id || !roundStatuses.includes(round.status);
-    $('hostReadyButton').classList.toggle('done',hostReady);
-    $('hostReadyButton').disabled = hostReady;
-    $('hostReadyButton').textContent = hostReady ? 'HOST READY ✓' : 'IK BEN READY';
-    $('startRoundButton').disabled = !canStart;
-    $('startRoundButton').textContent = canStart ? 'START RONDE' : allReady ? 'IMPORTEER EERST MUZIEK' : 'WACHTEN OP READY';
-    document.querySelector('.playLayout')?.classList.toggle('lobbyMode',lobby);
-    document.querySelector('.transport')?.classList.toggle('hidden',lobby);
+    if(!host) return;
+    $('hostAvatar').textContent = playerAnimal(state.hostPlayerId,host);
+    $('hostDisplayName').textContent = host.name || hostName();
+    updateGameTimer($('hostTimer'),round);
+    scheduleRoundDeadline(round);
     $('testStatus').textContent = sessionStorage.getItem('bb_sound_test_ok')==='1'
       ? 'Geluidstest geslaagd.'
       : state.tracks.length ? 'Test Spotify voordat je start.' : 'Importeer eerst een playlist.';
     $('testStatus').classList.toggle('ok',sessionStorage.getItem('bb_sound_test_ok')==='1');
     updatePreflightChecks();
-
-    renderHostRound(room,round);
-    renderHostCard(room,round);
+    renderHostPlayerExperience(room,round,host);
   }
 
-  function renderHostRound(room,round){
-    const display = $('hostRoundDisplay');
-    const answer = round.correctAnswer;
-    $('hostScoreSection').classList.toggle('hidden',!round.id || !['locked','judged'].includes(round.status));
-    $('hostAnswerForm').classList.toggle('hidden',round.status!=='answering' || !!room.answers?.[round.id]?.[state.hostPlayerId]);
-    $('hostAnswerReveal').classList.toggle('hidden',!answer);
-    if(answer){
-      $('hostAnswerReveal').innerHTML = `<strong>${escapeHtml(answer.track)}</strong><span>${escapeHtml(answer.artist)} · ${escapeHtml(answer.year)}</span>`;
-    }
+  function renderHostPlayerExperience(room,round,host){
+    const ownAnswer = round.id ? room.answers?.[round.id]?.[state.hostPlayerId] : null;
+    const ownCorrect = round.id ? room.correct?.[round.id]?.[state.hostPlayerId] : undefined;
+    const renderKey = `${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!host.ready}:${host.lastPickedRound||''}:${activePlayers(room).map(([id,p])=>`${id}:${!!p.ready}:${p.score||0}`).join('|')}`;
+    if(renderKey===state.lastHostRender && round.status==='answering' && !ownAnswer) return;
+    state.lastHostRender = renderKey;
 
+    const root = $('hostGameContent');
     if(!round.id){
-      $('roundTitle').textContent = 'Klaar om te spelen';
-      $('liveBadge').textContent = 'WACHT';
-      $('liveBadge').classList.remove('live');
-      display.innerHTML = '<strong>Maak iedereen READY</strong><span>Start daarna de eerste ronde.</span>';
-      $('playTrackButton').disabled = true;
-      $('stopTrackButton').disabled = true;
-      $('showAnswerButton').disabled = true;
+      root.innerHTML = playerLobbyMarkup(room,host,true);
+    }else if(round.status==='picking'){
+      root.innerHTML = waitingMarkup('Categorie wordt gekozen…','Daarna starten de muziek en timer automatisch.');
+    }else if(round.status==='ready'){
+      root.innerHTML = questionReadyMarkup(round);
+    }else if(round.status==='answering'){
+      root.innerHTML = ownAnswer
+        ? waitingMarkup('Antwoord ingeleverd','Wacht tot de timer op 0 staat.')
+        : answerStateMarkup(round,'host');
+    }else if(round.status==='judging'){
+      root.innerHTML = lockedMarkup(round,'De antwoorden worden automatisch beoordeeld.');
+    }else if(round.status==='judged'){
+      root.innerHTML = resultStateMarkup(room,round,host,ownCorrect,true);
+      renderHostScoreboard(room,round);
+    }else if(round.status==='error'){
+      root.innerHTML = gameErrorMarkup(round.error || 'De ronde kon niet automatisch starten.');
+    }else{
+      root.innerHTML = playerLobbyMarkup(room,host,true);
+    }
+  }
+
+  function handleHostGameClick(event){
+    const readyButton = event.target.closest('[data-host-ready]');
+    if(readyButton) return markHostReady();
+
+    const answerButton = event.target.closest('[data-host-answer]');
+    if(answerButton) return submitHostAnswer();
+
+    const cell = event.target.closest('.bingoCell.pickable');
+    if(cell) return pickBingoCell(state.hostPlayerId,Number(cell.dataset.index));
+
+    const juryButton = event.target.closest('[data-open-jury]');
+    if(juryButton){
+      renderHostScoreboard(state.room,state.room?.currentRound || {});
+      $('juryModal').classList.remove('hidden');
       return;
     }
 
-    $('roundTitle').textContent = `Ronde ${round.number || room.roundNumber || 1}`;
-    $('liveBadge').textContent = ['answering','picking','ready'].includes(round.status) ? '● LIVE' : 'UITSLAG';
-    $('liveBadge').classList.toggle('live',['answering','picking','ready'].includes(round.status));
-    const color = COLORS.find(item => item.key===round.colorKey);
-    if(round.status==='picking'){
-      display.innerHTML = '<strong>Categorie wordt gekozen…</strong><span>De kleuren lopen rond.</span>';
-    }else{
-      display.innerHTML = `<span class="questionColor" style="--round-color:${color?.hex || '#93f500'}"></span>
-        <strong>${escapeHtml(round.category || 'Categorie')}</strong>
-        <span>${escapeHtml(round.colorName || '')}</span>`;
+    const retryButton = event.target.closest('[data-retry-round]');
+    if(retryButton){
+      state.db.ref(`rooms/${state.roomCode}/currentRound`).remove()
+        .then(() => markHostReady())
+        .catch(showGameError);
     }
-    $('playTrackButton').disabled = round.status!=='ready';
-    $('stopTrackButton').disabled = round.status!=='answering';
-    $('showAnswerButton').disabled = !['answering','ready'].includes(round.status);
-    if(['locked','judged'].includes(round.status)) renderHostScoreboard(room,round);
+  }
+
+  function showGameError(error){
+    const message = error?.message || String(error || 'Onbekende fout');
+    const root = $('hostGameContent');
+    if(root) root.innerHTML = gameErrorMarkup(message);
+  }
+
+  function scheduleRoundDeadline(round){
+    if(round?.status!=='answering' || !round.deadlineMs) return;
+    clearTimeout(state.stopTimer);
+    const remaining = Math.max(0,Number(round.deadlineMs)-Date.now());
+    state.stopTimer = setTimeout(() => lockAndJudgeRound(),remaining);
   }
 
   function renderHostScoreboard(room,round){
@@ -844,11 +874,21 @@
     const player = state.room.players?.[playerId] || {};
     const awarded = Number(state.room.points?.[roundId]?.[playerId] || 0);
     const replacement = value ? 100 : 0;
-    await state.db.ref(`rooms/${state.roomCode}`).update({
+    const updates = {
       [`correct/${roundId}/${playerId}`]:value,
       [`points/${roundId}/${playerId}`]:replacement,
-      [`players/${playerId}/score`]:Math.max(0,Number(player.score||0)-awarded+replacement)
-    });
+      [`players/${playerId}/score`]:Math.max(0,Number(player.score||0)-awarded+replacement),
+      [`players/${playerId}/ready`]:false
+    };
+    if(!value && player.lastPickedRound===roundId){
+      const marked = {...(player.marked || {})};
+      const pickedIndex = Number(player.lastPickedIndex);
+      if(Number.isInteger(pickedIndex)) delete marked[pickedIndex];
+      updates[`players/${playerId}/marked`] = marked;
+      updates[`players/${playerId}/lastPickedRound`] = null;
+      updates[`players/${playerId}/lastPickedIndex`] = null;
+    }
+    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
   }
 
   function showRoomError(error){
@@ -870,14 +910,42 @@
     return track;
   }
 
+  async function maybeStartRound(){
+    if(isPlayerPage() || !state.roomCode || !state.room || state.currentStep!==4 || state.autoStarting) return;
+    const round = state.room.currentRound || {};
+    if(round.status==='picking' && round.id && round.trackId){
+      state.autoStarting = true;
+      return continueRoundSetup(round.id);
+    }
+    if(round.status==='ready' && round.id && round.trackId){
+      state.autoStarting = true;
+      return playRoundTrack();
+    }
+    if(round.id && round.status!=='judged' && round.status!=='error') return;
+    const players = activePlayers();
+    const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
+    if(!allReady) return;
+    if(!state.tracks.length){
+      showGameError('Importeer eerst een Spotify-playlist bij Muziek.');
+      return;
+    }
+    state.autoStarting = true;
+    return startRound();
+  }
+
   async function startRound(){
     if(!state.roomCode || !state.room) return;
     const players = activePlayers();
     if(!players.length || !players.every(([,player]) => player.ready===true)){
-      return alert('Nog niet iedereen is READY.');
+      state.autoStarting = false;
+      return;
     }
     state.currentTrack = chooseTrack();
-    if(!state.currentTrack) return alert('Importeer eerst een Spotify-playlist.');
+    if(!state.currentTrack){
+      state.autoStarting = false;
+      return showGameError('Importeer eerst een Spotify-playlist bij Muziek.');
+    }
+    const color = randomItem(COLORS);
     const number = Number(state.room.roundNumber || 0)+1;
     const roundId = `r_${Date.now()}`;
     const updates = {
@@ -888,7 +956,12 @@
         number,
         status:'picking',
         startedAt:firebase.database.ServerValue.TIMESTAMP,
-        seconds:currentSettings().duration
+        seconds:currentSettings().duration,
+        trackId:state.currentTrack.id,
+        colorKey:color.key,
+        colorName:color.name,
+        colorHex:color.hex,
+        category:color.category
       }
     };
     players.forEach(([id]) => {
@@ -896,22 +969,41 @@
       updates[`players/${id}/lastPickedRound`] = null;
     });
     await state.db.ref(`rooms/${state.roomCode}`).update(updates);
-    await wait(1800);
-    const color = randomItem(COLORS);
-    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
-      status:'ready',
-      colorKey:color.key,
-      colorName:color.name,
-      colorHex:color.hex,
-      category:color.category
-    });
+    await continueRoundSetup(roundId);
+  }
+
+  async function continueRoundSetup(roundId){
+    try{
+      await wait(1800);
+      const snapshot = await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value');
+      const round = snapshot.val() || {};
+      if(round.id!==roundId) return;
+      if(round.status==='picking'){
+        await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({status:'ready'});
+      }
+      await wait(900);
+      await playRoundTrack();
+    }finally{
+      if(state.room?.currentRound?.status!=='answering') state.autoStarting = false;
+    }
   }
 
   async function playRoundTrack(){
-    const round = state.room?.currentRound;
-    if(!round?.id || !state.currentTrack) return;
-    const button = $('playTrackButton');
-    button.disabled = true;
+    let round = state.room?.currentRound;
+    if(round?.status!=='ready' && state.roomCode){
+      round = (await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value')).val() || round;
+    }
+    if(!round?.id || round.status!=='ready'){
+      state.autoStarting = false;
+      return;
+    }
+    state.currentTrack = state.currentTrack?.id===round.trackId
+      ? state.currentTrack
+      : state.tracks.find(track => track.id===round.trackId) || null;
+    if(!state.currentTrack){
+      state.autoStarting = false;
+      return showGameError('Het gekozen nummer staat niet meer in de geïmporteerde playlist.');
+    }
     try{
       const deviceId = await ensureSpotifyPlayer();
       const duration = Number(round.seconds || currentSettings().duration)*1000;
@@ -931,9 +1023,14 @@
       });
       clearTimeout(state.stopTimer);
       state.stopTimer = setTimeout(() => lockAndJudgeRound(),duration);
+      state.autoStarting = false;
     }catch(error){
-      alert(`Afspelen mislukt: ${error.message}`);
-      button.disabled = false;
+      state.autoStarting = false;
+      await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+        status:'error',
+        error:`Muziek starten mislukt: ${error.message}`
+      }).catch(()=>{});
+      showGameError(`Muziek starten mislukt: ${error.message}`);
     }
   }
 
@@ -992,12 +1089,20 @@
 
   async function lockAndJudgeRound(){
     const round = state.room?.currentRound;
-    if(!round?.id || ['locked','judged'].includes(round.status)) return;
+    if(!round?.id || ['judging','judged'].includes(round.status) || state.judgingRound===round.id) return;
+    state.judgingRound = round.id;
     clearTimeout(state.stopTimer);
     await stopSpotify();
+    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+      status:'judging',
+      deadlineMs:Date.now()
+    }).catch(()=>{});
     const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
     const room = snapshot.val() || {};
     const latestRound = room.currentRound || round;
+    state.currentTrack = state.currentTrack?.id===latestRound.trackId
+      ? state.currentTrack
+      : state.tracks.find(track => track.id===latestRound.trackId) || state.currentTrack;
     const correctAnswer = answerForTrack(state.currentTrack);
     const answers = room.answers?.[latestRound.id] || {};
     const correct = {};
@@ -1011,11 +1116,13 @@
     goodTimes.sort((a,b) => a.time-b.time);
     const fastest = goodTimes[0]?.id || '';
     const updates = {
-      [`currentRound/status`]:'locked',
+      [`currentRound/status`]:'judged',
       [`currentRound/correctAnswer`]:correctAnswer,
+      [`currentRound/fact`]:MUSIC_FACTS[(Number(latestRound.number || 1)-1)%MUSIC_FACTS.length],
       [`correct/${latestRound.id}`]:correct
     };
     activePlayers(room).forEach(([id,player]) => {
+      updates[`players/${id}/ready`] = false;
       if(correct[id]){
         const points = id===fastest ? 150 : 100;
         updates[`points/${latestRound.id}/${id}`] = points;
@@ -1024,28 +1131,20 @@
         updates[`points/${latestRound.id}/${id}`] = 0;
       }
     });
-    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
-  }
-
-  async function publishResults(){
-    const round = state.room?.currentRound;
-    if(!round?.id) return;
-    const correct = state.room.correct?.[round.id] || {};
-    const updates = {'currentRound/status':'judged'};
-    activePlayers().forEach(([id]) => {
-      if(correct[id]!==true) updates[`players/${id}/ready`] = true;
-    });
-    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+    try{
+      await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+    }finally{
+      state.judgingRound = '';
+    }
   }
 
   async function submitHostAnswer(){
     const round = state.room?.currentRound;
-    const answer = $('hostAnswerInput').value.trim();
+    const answer = $('hostGameContent')?.querySelector('#hostAnswerInput')?.value.trim() || '';
     if(!round?.id || round.status!=='answering') return;
     await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${state.hostPlayerId}`).set({
       answer,submittedAt:firebase.database.ServerValue.TIMESTAMP
     });
-    $('hostAnswerInput').value = '';
   }
 
   async function markHostReady(){
@@ -1118,29 +1217,33 @@
     $('playerGameScreen').classList.remove('hidden');
     $('playerAvatar').textContent = playerAnimal(state.playerId,me);
     $('playerDisplayName').textContent = me.name || state.playerName;
-    updatePlayerTimer(round);
+    updateGameTimer($('playerTimer'),round);
 
     const ownAnswer = round.id ? room.answers?.[round.id]?.[state.playerId] : null;
     const ownCorrect = round.id ? room.correct?.[round.id]?.[state.playerId] : undefined;
-    const renderKey = `${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}`;
+    const renderKey = `${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${activePlayers(room).map(([id,p])=>`${id}:${!!p.ready}:${p.score||0}`).join('|')}`;
     if(renderKey===state.lastPlayerRender && round.status==='answering' && !ownAnswer) return;
     state.lastPlayerRender = renderKey;
 
+    const root = $('playerGameContent');
     if(!round.id){
-      renderPlayerLobby(room,me,'Wachten op de host','Iedereen klaar? Dan kan de eerste ronde starten.');
+      root.innerHTML = playerLobbyMarkup(room,me,false);
     }else if(round.status==='picking'){
-      renderWaitingState('Categorie wordt gekozen…','De kleuren lopen rond.');
+      root.innerHTML = waitingMarkup('Categorie wordt gekozen…','Daarna starten de muziek en timer automatisch.');
     }else if(round.status==='ready'){
-      renderQuestionReady(round);
+      root.innerHTML = questionReadyMarkup(round);
     }else if(round.status==='answering'){
-      if(ownAnswer) renderWaitingState('Antwoord ingeleverd','Wacht tot de tijd voorbij is.');
-      else renderAnswerState(round);
-    }else if(round.status==='locked'){
-      renderLockedState(round);
+      root.innerHTML = ownAnswer
+        ? waitingMarkup('Antwoord ingeleverd','Wacht tot de timer op 0 staat.')
+        : answerStateMarkup(round,'player');
+    }else if(round.status==='judging'){
+      root.innerHTML = lockedMarkup(round,'De antwoorden worden automatisch beoordeeld.');
     }else if(round.status==='judged'){
-      renderResultState(room,round,me,ownCorrect);
+      root.innerHTML = resultStateMarkup(room,round,me,ownCorrect,false);
+    }else if(round.status==='error'){
+      root.innerHTML = gameErrorMarkup('De host herstelt de ronde.',false);
     }else{
-      renderPlayerLobby(room,me,'Wachten op de host','De volgende ronde komt eraan.');
+      root.innerHTML = playerLobbyMarkup(room,me,false);
     }
   }
 
@@ -1153,26 +1256,28 @@
       </article>`).join('');
   }
 
-  function renderPlayerLobby(room,me,title,subtitle){
+  function playerLobbyMarkup(room,me,isHost){
     const players = activePlayers(room);
     const ready = players.filter(([,player]) => player.ready===true).length;
-    $('playerGameContent').innerHTML = `<div class="playerState">
-      <section class="playerHero">
+    return `<div class="playerState lobbyState">
+      <section class="playerHero compactHero">
         <img src="bb_logo_lime.webp" alt="Bingo Beats">
-        <h1>${escapeHtml(title)}</h1>
-        <p>${escapeHtml(subtitle)}</p>
+        <div><h1>Klaar voor de start?</h1><p>De ronde begint automatisch zodra iedereen READY is.</p></div>
       </section>
-      <section class="playerPanel">
+      <section class="playerPanel gameLobbyPanel">
         <div class="readySummary"><span>SPELERS</span><strong>${ready} / ${players.length} READY</strong></div>
         <div class="lobbyPlayers">${playerListHtml(room)}</div>
+        <div class="lobbyCardWrap">
+          <small>JOUW BINGOKAART</small>
+          <div class="bingoCard lobbyCard">${bingoCardHtml(me,null,false)}</div>
+        </div>
       </section>
-      <button type="button" class="readyButton ${me.ready?'done':''}" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY'}</button>
+      <button type="button" class="readyButton ${me.ready?'done':''}" ${isHost?'data-host-ready':'data-player-ready'} ${me.ready?'disabled':''}>${me.ready?'READY ✓':'IK BEN READY'}</button>
     </div>`;
-    $('playerGameContent').querySelector('.readyButton')?.addEventListener('click',markPlayerReady);
   }
 
-  function renderWaitingState(title,subtitle){
-    $('playerGameContent').innerHTML = `<section class="playerPanel waitingCard">
+  function waitingMarkup(title,subtitle){
+    return `<section class="playerPanel waitingCard">
       <img src="bb_mascot_dj.png" alt="Bingo Beats DJ">
       <h1>${escapeHtml(title)}</h1>
       <p>${escapeHtml(subtitle)}</p>
@@ -1183,19 +1288,20 @@
     return COLORS.find(color => color.key===round.colorKey) || COLORS[0];
   }
 
-  function renderQuestionReady(round){
+  function questionReadyMarkup(round){
     const color = colorForRound(round);
-    $('playerGameContent').innerHTML = `<section class="playerPanel waitingCard" style="--round-color:${color.hex}">
+    return `<section class="playerPanel waitingCard categoryReveal" style="--round-color:${color.hex}">
       <span class="questionColor"></span>
       <small style="color:${color.hex};font-weight:900">${escapeHtml(color.name)}</small>
       <h1>${escapeHtml(round.category)}</h1>
-      <p>De muziek kan ieder moment starten.</p>
+      <p>Muziek en timer starten automatisch.</p>
     </section>`;
   }
 
-  function renderAnswerState(round){
+  function answerStateMarkup(round,role){
     const color = colorForRound(round);
-    $('playerGameContent').innerHTML = `<div class="playerState answerState" style="--round-color:${color.hex}">
+    const isHost = role==='host';
+    return `<div class="playerState answerState" style="--round-color:${color.hex}">
       <section class="playerPanel questionCard">
         <div class="questionColor"></div>
         <small>${escapeHtml(color.name)}</small>
@@ -1204,62 +1310,103 @@
       <section class="playerPanel waitingCard">
         <img src="bb_mascot_dj.png" alt="Luister naar het nummer">
         <h1>Luister goed</h1>
-        <p>Timer, vraag en antwoord blijven zichtbaar.</p>
+        <p>Geef je antwoord voordat de timer op 0 staat.</p>
       </section>
       <div class="playerPanel answerForm">
-        <input id="playerAnswerInput" type="text" maxlength="100" placeholder="Typ je antwoord" autocomplete="off">
-        <button id="submitAnswerButton" type="button">VERSTUUR</button>
+        <input id="${isHost?'hostAnswerInput':'playerAnswerInput'}" type="text" maxlength="100" placeholder="Typ je antwoord" autocomplete="off">
+        <button type="button" ${isHost?'data-host-answer':'data-player-answer'}>VERSTUUR</button>
       </div>
     </div>`;
-    $('submitAnswerButton').addEventListener('click',submitPlayerAnswer);
-    $('playerAnswerInput').addEventListener('keydown',event => {
-      if(event.key==='Enter') event.preventDefault();
-    });
   }
 
-  function renderLockedState(round){
+  function lockedMarkup(round,subtitle){
     const answer = round.correctAnswer || {};
-    $('playerGameContent').innerHTML = `<section class="playerPanel waitingCard">
+    return `<section class="playerPanel waitingCard">
       <span style="font-size:38px">🎵</span>
-      <h1>Juiste antwoord</h1>
-      <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
-      <p>De host controleert de uitslag.</p>
+      <h1>Timer afgelopen</h1>
+      ${answer.track?`<div class="trackAnswer"><strong>${escapeHtml(answer.track)}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>`:''}
+      <p>${escapeHtml(subtitle)}</p>
     </section>`;
   }
 
-  function renderResultState(room,round,me,good){
+  function resultStateMarkup(room,round,me,good,isHost){
     const picked = me.lastPickedRound===round.id;
     const canPick = good===true && !picked;
+    if(me.ready && !canPick) return betweenRoundMarkup(room,round,me,isHost);
     const resultClass = good===true ? 'good' : 'bad';
     const resultTitle = good===true ? 'GOED ANTWOORD!' : 'HELAAS';
     const answer = round.correctAnswer || {};
-    $('playerGameContent').innerHTML = `<div class="playerState resultState">
+    return `<div class="playerState resultState">
       <section class="playerPanel resultCard ${resultClass}">
         <span>${good===true?'😎':'🙈'}</span>
         <h1>${resultTitle}</h1>
-        <p>${canPick?`Kies één ${escapeHtml(round.colorName)} vakje.`:'Maak je klaar voor de volgende ronde.'}</p>
+        <p>${canPick?`Kies één vrij ${escapeHtml(round.colorName)} vakje.`:'Klik op READY voor de volgende ronde.'}</p>
         <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
       </section>
-      <section class="playerPanel">
+      <section class="playerPanel bingoPanel">
         <div class="bingoCard">${bingoCardHtml(me,round,canPick)}</div>
       </section>
-      <button type="button" class="readyButton ${me.ready?'done':''}" ${canPick||me.ready?'disabled':''}>${canPick?'KIES EERST EEN VAK':me.ready?'READY ✓':'READY'}</button>
+      <div class="resultActions ${isHost?'withJury':''}">
+        ${isHost?'<button type="button" class="juryOpenButton" data-open-jury>JURY CONTROLEREN</button>':''}
+        <button type="button" class="readyButton" ${isHost?'data-host-ready':'data-player-ready'} ${canPick?'disabled':''}>${canPick?'KIES EERST EEN VAK':'IK BEN READY'}</button>
+      </div>
     </div>`;
-    $('playerGameContent').querySelectorAll('.bingoCell.pickable').forEach(button => {
-      button.addEventListener('click',() => pickBingoCell(state.playerId,Number(button.dataset.index)));
-    });
-    $('playerGameContent').querySelector('.readyButton')?.addEventListener('click',markPlayerReady);
   }
 
-  function updatePlayerTimer(round){
+  function betweenRoundMarkup(room,round,me,isHost){
+    const fact = round.fact || MUSIC_FACTS[(Number(round.number || 1)-1)%MUSIC_FACTS.length];
+    return `<div class="playerState betweenState">
+      <section class="playerPanel betweenHeader">
+        <span>READY ✓</span>
+        <div><h1>Klaar voor de volgende?</h1><p>De volgende ronde start zodra iedereen READY is.</p></div>
+      </section>
+      <section class="playerPanel betweenContent">
+        <div class="miniStanding">
+          <div class="readySummary"><span>TUSSENSTAND</span><strong>RONDE ${Number(round.number || 1)}</strong></div>
+          <div class="scoreMini">${standingHtml(room)}</div>
+        </div>
+        <div class="factCard"><small>WIST JE DAT?</small><strong>${escapeHtml(fact)}</strong></div>
+        <div class="bingoCard betweenCard">${bingoCardHtml(me,round,false)}</div>
+      </section>
+      ${isHost?'<button type="button" class="juryOpenButton full" data-open-jury>JURY CONTROLEREN</button>':''}
+    </div>`;
+  }
+
+  function standingHtml(room){
+    return activePlayers(room)
+      .sort(([,a],[,b]) => Number(b.score||0)-Number(a.score||0))
+      .map(([id,player],index) => `<article class="scoreRow">
+        <span>${playerAnimal(id,player)}</span>
+        <div class="scoreWho"><strong>${index+1}. ${escapeHtml(player.name || 'Speler')}</strong></div>
+        <b>${Number(player.score || 0)}</b>
+      </article>`).join('');
+  }
+
+  function gameErrorMarkup(message,canRetry=true){
+    return `<section class="playerPanel waitingCard gameError">
+      <span>⚠️</span>
+      <h1>Ronde niet gestart</h1>
+      <p>${escapeHtml(message)}</p>
+      ${canRetry?'<button type="button" data-retry-round>OPNIEUW PROBEREN</button>':''}
+    </section>`;
+  }
+
+  function handlePlayerGameClick(event){
+    if(event.target.closest('[data-player-ready]')) return markPlayerReady();
+    if(event.target.closest('[data-player-answer]')) return submitPlayerAnswer();
+    const cell = event.target.closest('.bingoCell.pickable');
+    if(cell) return pickBingoCell(state.playerId,Number(cell.dataset.index));
+  }
+
+  function updateGameTimer(element,round){
     clearInterval(state.timer);
-    const element = $('playerTimer');
+    if(!element) return;
     const tick = () => {
       if(round.status==='answering' && round.deadlineMs){
         const left = Math.max(0,Math.ceil((round.deadlineMs-Date.now())/1000));
         element.textContent = `00:${String(left).padStart(2,'0')}`;
       }else{
-        element.textContent = ['locked','judged'].includes(round.status) ? '00:00' : '--';
+        element.textContent = ['judging','judged'].includes(round.status) ? '00:00' : '--';
       }
     };
     tick();
@@ -1291,19 +1438,6 @@
     }).join('');
   }
 
-  function renderHostCard(room,round){
-    const host = room?.players?.[state.hostPlayerId];
-    if(!host) return;
-    const good = round?.id ? room.correct?.[round.id]?.[state.hostPlayerId] : undefined;
-    const canPick = round?.status==='judged' && good===true && host.lastPickedRound!==round.id;
-    $('hostBingoCard').innerHTML = bingoCardHtml(host,round,canPick);
-  }
-
-  function handleHostCardPick(event){
-    const cell = event.target.closest('.bingoCell.pickable');
-    if(cell) pickBingoCell(state.hostPlayerId,Number(cell.dataset.index));
-  }
-
   async function pickBingoCell(playerId,index){
     const round = state.room?.currentRound;
     const player = state.room?.players?.[playerId];
@@ -1314,7 +1448,8 @@
       marked,
       bingo,
       lastPickedRound:round.id,
-      ready:true
+      lastPickedIndex:index,
+      ready:false
     });
     if(bingo){
       await state.db.ref(`rooms/${state.roomCode}/bingos`).push({
@@ -1350,7 +1485,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2060',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2080',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

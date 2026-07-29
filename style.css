@@ -419,32 +419,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .switchRow strong{font-size:11px;line-height:1.05}
 .switchRow input{width:30px;height:22px;flex:0 0 30px;accent-color:var(--lime)}
 
-/* Host spelen */
-.playStep{grid-template-rows:284px minmax(0,1fr)}
-.playLayout{
-  min-height:0;
-  display:grid;
-  grid-template-columns:minmax(0,1fr);
-  grid-template-rows:auto minmax(0,1fr);
-  gap:6px;
-  overflow:hidden;
-}
-.playLayout.lobbyMode{
-  grid-template-rows:auto minmax(0,1fr);
-}
-.playLayout.lobbyMode .controlCard{
-  padding:10px;
-  gap:7px;
-}
-.playLayout.lobbyMode .hostRoundDisplay{
-  min-height:54px;
-}
-.playLayout.lobbyMode .hostCardSection{
-  padding:10px;
-}
-.playLayout.lobbyMode .bingoCard.mini{
-  width:min(100%,270px);
-}
+/* Muziektest */
 .testCard{min-height:170px;flex:1 1 170px;display:grid;grid-template-columns:minmax(0,1fr) 104px;align-items:center;gap:9px 11px;padding:14px}
 .testCard button{height:48px;font-size:15px}
 .testCard .statusLine{grid-column:1/-1}
@@ -453,8 +428,8 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   margin:0;
   padding:0;
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:5px 8px;
+  grid-template-columns:1fr;
+  gap:3px;
   list-style:none;
 }
 .preflightChecklist li{
@@ -474,57 +449,26 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 }
 .preflightChecklist li>strong{
   min-width:0;
-  overflow:hidden;
   font-size:12px;
   line-height:1.15;
-  white-space:nowrap;
-  text-overflow:ellipsis;
+  white-space:normal;
 }
 .preflightChecklist li.done{color:#e9f1ea}
 .preflightChecklist li.done>input{
   filter:drop-shadow(0 0 5px rgba(147,245,0,.45));
 }
-.controlCard{padding:8px;display:flex;flex-direction:column;gap:5px}
-.roundHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#liveBadge{padding:7px 10px;border-radius:999px;color:#96a099;background:#182018;font-size:11px;font-weight:900}
-#liveBadge.live{color:#071008;background:var(--lime)}
-.hostRoundDisplay{
-  min-height:59px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:3px;
-  padding:7px;
-  border:1px solid rgba(255,255,255,.11);
-  border-radius:14px;
-  text-align:center;
-  background:#030603;
-}
-.hostRoundDisplay strong{font-size:20px}
-.hostRoundDisplay span{color:var(--muted);font-size:12px}
-.lobbyActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.lobbyActions button{height:46px;padding:0 7px;font-size:14px}
-#hostReadyButton.done{color:#071008;background:var(--lime);opacity:.7}
-.transport{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.transport button{height:43px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px}
-.transport small{font-size:10px;letter-spacing:.08em}
-.hostAnswerForm{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:6px}
-.hostAnswerForm input{height:43px;padding:0 11px}
-.hostAnswerForm button{height:43px;font-size:9px}
-.answerReveal{padding:10px;border:1px solid rgba(255,204,51,.45);border-radius:13px;background:#1c1704}
-.answerReveal strong{display:block;font-size:17px}
-.answerReveal span{display:block;margin-top:3px;color:#e7dfc7;font-size:10px}
-.scoreCardSection,.hostCardSection{padding:8px}
-.hostCardSection{
+
+/* Host speelt op hetzelfde scherm als de spelers */
+.playStep{grid-template-rows:284px minmax(0,1fr)}
+.hostGameShell{
   min-height:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
+  display:grid;
+  grid-template-rows:54px minmax(0,1fr);
+  gap:7px;
   overflow:hidden;
 }
-.hostCardSection .roundHead{width:100%}
-.scoreboard{display:flex;flex-direction:column;gap:5px;margin:8px 0;max-height:240px;overflow-y:auto}
+.hostPlayerTopbar{height:54px}
+.scoreboard{min-height:0;display:flex;flex-direction:column;gap:6px;padding:10px;overflow-y:auto}
 .scoreRow{
   display:grid;
   grid-template-columns:30px minmax(0,1fr) auto;
@@ -540,7 +484,18 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .scoreWho{min-width:0}.scoreWho strong,.scoreWho small{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .scoreWho strong{font-size:12px}.scoreWho small{color:var(--muted);font-size:10px}
 .scoreMark{font-size:16px}
-#publishResultsButton{width:100%;height:44px}
+.judgeActions{display:grid;grid-template-columns:42px 42px;gap:5px}
+.judgeActions button{height:38px;padding:0;font-size:20px}
+.juryHelp{margin:0;padding:10px 14px 0;color:var(--muted);font-size:12px;line-height:1.35}
+.juryModalCard{height:min(72dvh,620px)}
+.juryOpenButton{
+  height:50px;
+  border-color:rgba(255,255,255,.18);
+  color:#f4f7f4;
+  background:#101610;
+  font-size:12px;
+}
+.juryOpenButton.full{width:100%}
 .floatingBack{
   position:absolute;
   z-index:5;
@@ -652,9 +607,38 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .playerHero img{width:74px;height:70px;object-fit:contain}
 .playerHero h1{margin:2px 0;font-size:clamp(22px,7vw,31px);text-transform:uppercase}
 .playerHero p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.compactHero{
+  min-height:66px;
+  display:grid;
+  grid-template-columns:62px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  text-align:left;
+}
+.compactHero img{width:60px;height:58px}
+.compactHero h1{font-size:clamp(18px,5.4vw,25px)}
+.compactHero p{font-size:11px;line-height:1.25}
 .playerPanel{padding:10px;overflow:hidden}
 .readySummary{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;color:var(--lime);font-size:11px;font-weight:900}
 .lobbyPlayers{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:38px;gap:5px;overflow-y:auto}
+.gameLobbyPanel{
+  display:grid;
+  grid-template-rows:auto minmax(38px,1fr) auto;
+  gap:5px;
+}
+.gameLobbyPanel .readySummary{margin-bottom:0}
+.lobbyCardWrap{
+  min-height:0;
+  display:grid;
+  grid-template-columns:70px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  padding-top:5px;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.lobbyCardWrap>small{color:var(--lime);font-size:9px;font-weight:900;line-height:1.2}
+.bingoCard.lobbyCard{width:min(100%,188px);justify-self:center;gap:3px}
 .readyButton{width:100%;height:52px;font-size:18px}
 .readyButton.done{opacity:.68}
 .answerState{grid-template-rows:auto minmax(0,1fr) auto}
@@ -676,6 +660,8 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .resultCard h1{margin:3px 0;font-size:27px}.resultCard p{margin:3px 0;color:var(--muted);font-size:10px}
 .trackAnswer{margin-top:8px;padding:8px;border-radius:11px;background:#141b14}
 .trackAnswer strong,.trackAnswer small{display:block}.trackAnswer small{margin-top:3px;color:#c7cec8}
+.bingoPanel{display:grid;place-items:center}
+.bingoPanel .bingoCard{width:min(100%,210px)}
 .bingoCard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
 .bingoCell{
   aspect-ratio:1;
@@ -691,8 +677,32 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .bingoCell.pickable{animation:pulseCell 1s infinite;cursor:pointer}
 .bingoCell span{font-size:12px}
 .bingoCard.mini{width:min(100%,252px);margin:auto;gap:4px}
+.resultActions{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.resultActions.withJury{grid-template-columns:118px minmax(0,1fr)}
+.resultActions .readyButton{min-width:0}
+.betweenState{grid-template-rows:auto minmax(0,1fr) auto}
+.betweenHeader{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+}
+.betweenHeader>span{padding:8px;border-radius:10px;color:#071008;background:var(--lime);font-size:12px;font-weight:950}
+.betweenHeader h1{margin:0;font-size:20px}
+.betweenHeader p{margin:2px 0 0;color:var(--muted);font-size:10px}
+.betweenContent{display:grid;grid-template-rows:minmax(72px,1fr) auto minmax(0,180px);gap:7px}
+.miniStanding{min-height:0;display:flex;flex-direction:column}
+.miniStanding .readySummary{margin-bottom:5px}
 .scoreMini{min-height:0;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
-.scoreMini .scoreRow{grid-template-columns:28px minmax(0,1fr) auto}
+.scoreMini .scoreRow{grid-template-columns:28px minmax(0,1fr) auto;padding:5px 7px}
+.factCard{padding:8px 10px;border:1px solid rgba(147,245,0,.3);border-radius:12px;background:#0a1208}
+.factCard small{display:block;color:var(--lime);font-size:9px;font-weight:950;letter-spacing:.1em}
+.factCard strong{display:block;margin-top:3px;font-size:11px;line-height:1.25}
+.bingoCard.betweenCard{height:100%;max-height:180px;aspect-ratio:1;justify-self:center}
+.categoryReveal .questionColor{width:50px;height:50px}
+.gameError>span{font-size:38px}
+.gameError button{width:min(100%,320px);height:50px;margin-top:12px}
 .winnerOverlay{
   position:fixed;
   z-index:1100;
@@ -714,7 +724,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .flowBrand img{width:242px}
   .categoryRow{grid-template-columns:25px minmax(0,1fr) 48px;gap:6px;padding-left:7px;padding-right:7px}
   .categoryRow small{display:none}
-  .playerList,.lobbyPlayers{grid-template-columns:1fr}
+  .playerList{grid-template-columns:1fr}
 }
 
 @media(max-height:720px){
@@ -752,10 +762,41 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .switchRow{min-height:36px;padding:4px 7px}
   .switchRow strong{font-size:10px}
   .switchRow input{width:27px;height:20px;flex-basis:27px}
-  .controlCard{gap:4px;padding:7px}
-  .hostRoundDisplay{min-height:52px;padding:5px}
-  .lobbyActions button{height:38px}
-  .transport button{height:34px}
-  .bingoCard.mini{width:min(100%,224px)}
-  .playLayout.lobbyMode .bingoCard.mini{width:min(100%,220px)}
+  .hostGameShell{grid-template-rows:46px minmax(0,1fr);gap:4px}
+  .hostPlayerTopbar{height:46px}
+  .playerState{gap:4px}
+  .compactHero{min-height:52px;grid-template-columns:48px minmax(0,1fr);padding:4px 8px}
+  .compactHero img{width:46px;height:44px}
+  .compactHero h1{font-size:18px}
+  .compactHero p{margin-top:1px;font-size:9px}
+  .gameLobbyPanel{padding:7px;gap:3px}
+  .lobbyPlayers{grid-auto-rows:31px;gap:3px}
+  .lobbyPlayers .playerChip{grid-template-columns:24px minmax(0,1fr) auto;padding:2px 5px}
+  .lobbyPlayers .playerChip span{font-size:16px}
+  .lobbyPlayers .playerChip strong{font-size:11px}
+  .lobbyPlayers .playerChip i{font-size:8px}
+  .lobbyCardWrap{grid-template-columns:58px minmax(0,1fr);padding-top:3px}
+  .bingoCard.lobbyCard{width:min(100%,142px);gap:2px}
+  .readyButton{height:43px;font-size:15px}
+  .waitingCard{padding:10px}
+  .waitingCard img{width:84px;height:80px}
+  .waitingCard h1{font-size:23px}
+  .questionCard{padding:7px}
+  .questionCard h1{font-size:22px}
+  .answerForm{padding:7px}
+  .answerForm input,.answerForm button{height:43px}
+  .resultCard{padding:7px}
+  .resultCard>span{font-size:28px}
+  .resultCard h1{font-size:22px}
+  .trackAnswer{margin-top:4px;padding:5px}
+  .bingoPanel{padding:6px}
+  .bingoPanel .bingoCard{width:min(100%,210px)}
+  .resultActions.withJury{grid-template-columns:104px minmax(0,1fr)}
+  .juryOpenButton{height:43px;font-size:10px}
+  .betweenHeader{padding:6px 8px}
+  .betweenHeader h1{font-size:17px}
+  .betweenContent{grid-template-rows:minmax(54px,1fr) auto minmax(0,132px);gap:4px;padding:6px}
+  .scoreMini .scoreRow{padding:3px 5px}
+  .factCard{padding:5px 7px}
+  .bingoCard.betweenCard{max-height:132px}
 }

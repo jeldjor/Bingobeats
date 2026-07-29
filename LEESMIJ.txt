@@ -1,4 +1,4 @@
-BINGO BEATS CLEAN V207
+BINGO BEATS CLEAN V208
 
 Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
 
@@ -17,7 +17,7 @@ Aanwezig:
 - geluidstest bij Muziek
 - vaste categorieën bij Instellingen
 - automatisch een kamer met QR-code en deelbare link
-- host doet automatisch mee
+- host speelt automatisch mee als gewone speler
 - compacte lobby met dierenavatars
 - 6x6 bingokaart zonder gratis middenvak
 - antwoorden, timer, automatische beoordeling en host-overrule
@@ -42,5 +42,13 @@ Aanwezig:
 - categorieën tonen alleen hun duidelijke vetgedrukte naam
 - onderste twee instellingen staan compact naast elkaar
 - spelerslijst verwijderd uit Kamer; QR-code groter gemaakt
-- lobby toont vóór de eerste ronde alleen de benodigde READY-bediening
-- cachevernieuwing naar V207 met netwerk-eerst laden
+- host en spelers gebruiken tijdens het spel dezelfde spelweergave
+- geen knoppen voor ronde starten, afspelen, stoppen of antwoord tonen
+- ronde start automatisch zodra host en alle spelers READY zijn
+- categorie wordt automatisch gekozen en daarna starten muziek en timer vanzelf
+- muziek stopt bij 0 en antwoorden worden automatisch beoordeeld
+- na een goed antwoord kiest de speler één vrij vak in de categoriekleur
+- iedereen klikt na de uitslag opnieuw op READY
+- alleen de host kan via Jury controleren een beoordeling corrigeren
+- compacte tussenstand met dierenavatars en echte muziekweetjes
+- cachevernieuwing naar V208 met netwerk-eerst laden

@@ -1,4 +1,4 @@
-BINGO BEATS CLEAN V206
+BINGO BEATS CLEAN V207
 
 Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
 
@@ -38,4 +38,9 @@ Aanwezig:
 - compactere beginlobby met de volledige 6x6-hostkaart zichtbaar
 - normale, goed leesbare schaal voor logo, teksten, vensters en knoppen
 - korte Safari-schermen hebben een eigen passende indeling zonder afgedekte onderdelen
-- cachevernieuwing naar V206 met netwerk-eerst laden
+- playlistkiezer toont alleen playlistnamen, zonder onbetrouwbare aantallen
+- categorieën tonen alleen hun duidelijke vetgedrukte naam
+- onderste twee instellingen staan compact naast elkaar
+- spelerslijst verwijderd uit Kamer; QR-code groter gemaakt
+- lobby toont vóór de eerste ronde alleen de benodigde READY-bediening
+- cachevernieuwing naar V207 met netwerk-eerst laden

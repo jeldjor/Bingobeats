@@ -301,13 +301,11 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roomCard{
   display:grid;
   grid-template-columns:minmax(0,1fr) 118px;
-  grid-template-rows:auto auto minmax(0,1fr) auto minmax(40px,.25fr) auto;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
   grid-template-areas:
     "title title"
     "name new"
     "share share"
-    "players-head players-head"
-    "players players"
     "status status";
   gap:7px;
   padding:12px;
@@ -332,7 +330,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roomCodeBlock>small,.roomDetails>label{color:var(--lime);font-size:11px;font-weight:900;letter-spacing:.1em}
 .roomCodeBlock>strong{font-size:clamp(31px,8.4vw,42px);line-height:1;letter-spacing:.12em}
 .qrWrap{width:100%;min-width:0;display:grid;place-items:center}
-.qrWrap img{width:min(31vw,120px);aspect-ratio:1;object-fit:contain;padding:5px;border-radius:10px;background:#fff}
+.qrWrap img{width:min(39vw,150px);aspect-ratio:1;object-fit:contain;padding:5px;border-radius:10px;background:#fff}
 .roomShare.empty .qrWrap img{visibility:hidden}
 .roomDetails{width:min(100%,390px);min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 105px;gap:4px 6px}
 .roomDetails>label{grid-column:1/-1;text-align:center}
@@ -396,26 +394,30 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 }
 .categorySettings .categoryRow i{width:16px;height:16px;border-radius:5px}
 .categorySettings .categoryRow strong{font-size:13px}
-.categorySettings .categoryRow small{font-size:10px}
 .categorySettings .categoryRow em{font-size:10px}
 .durationGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .durationGrid button{height:42px;border-color:rgba(255,255,255,.14);color:#fff;background:#101610;font-size:14px}
 .durationGrid button.active{border-color:var(--lime);color:#071008;background:linear-gradient(180deg,#a8ff20,#6dca00)}
+.settingsToggles{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
 .switchRow{
-  min-height:43px;
+  min-width:0;
+  min-height:42px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:10px;
-  padding:7px 10px;
+  gap:7px;
+  padding:6px 8px;
   border:1px solid var(--window-line);
   border-radius:14px;
   background:#0a100a;
 }
 .switchRow span{display:flex;flex-direction:column;gap:2px}
-.switchRow strong{font-size:13px}
-.switchRow small{color:var(--muted);font-size:11px}
-.switchRow input{width:42px;height:23px;accent-color:var(--lime)}
+.switchRow strong{font-size:11px;line-height:1.05}
+.switchRow input{width:30px;height:22px;flex:0 0 30px;accent-color:var(--lime)}
 
 /* Host spelen */
 .playStep{grid-template-rows:284px minmax(0,1fr)}
@@ -426,6 +428,22 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   grid-template-rows:auto minmax(0,1fr);
   gap:6px;
   overflow:hidden;
+}
+.playLayout.lobbyMode{
+  grid-template-rows:auto minmax(0,1fr);
+}
+.playLayout.lobbyMode .controlCard{
+  padding:10px;
+  gap:7px;
+}
+.playLayout.lobbyMode .hostRoundDisplay{
+  min-height:54px;
+}
+.playLayout.lobbyMode .hostCardSection{
+  padding:10px;
+}
+.playLayout.lobbyMode .bingoCard.mini{
+  width:min(100%,270px);
 }
 .testCard{min-height:170px;flex:1 1 170px;display:grid;grid-template-columns:minmax(0,1fr) 104px;align-items:center;gap:9px 11px;padding:14px}
 .testCard button{height:48px;font-size:15px}
@@ -578,8 +596,8 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   text-align:left;
 }
 .playlistChoice.active{border-color:var(--lime);background:#14220e}
-.playlistChoice span{min-width:0}.playlistChoice strong,.playlistChoice small{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.playlistChoice strong{font-size:13px}.playlistChoice small{margin-top:3px;color:var(--muted);font-size:9px}
+.playlistChoice span{min-width:0}.playlistChoice strong{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.playlistChoice strong{font-size:15px}
 .playlistChoice b{color:var(--lime);font-size:20px}
 .playlistEmpty{padding:30px 15px;color:var(--muted);text-align:center}
 
@@ -719,9 +737,9 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .categoryRow small{display:none}
   .nextButton{height:43px;font-size:17px}
   .roomStep,.settingsStep{grid-template-rows:190px minmax(0,1fr) 45px;gap:4px}
-  .roomCard{grid-template-rows:auto auto minmax(0,1fr) auto minmax(31px,.22fr) auto;gap:3px;padding:7px}
+  .roomCard{grid-template-rows:auto auto minmax(0,1fr) auto;gap:3px;padding:7px}
   .roomShare{gap:2px;padding:0 4px}
-  .qrWrap img{width:min(23vw,86px)}
+  .qrWrap img{width:min(31vw,112px)}
   .roomCodeBlock>strong{font-size:29px}
   .roomDetails{grid-template-columns:minmax(0,1fr) 94px}
   .roomDetails input,.roomDetails button{height:29px}
@@ -731,10 +749,13 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .settingsCard{gap:4px;padding:8px}
   .settingsCard .cardTitle h2{font-size:18px}
   .durationGrid button{height:30px}
-  .switchRow{min-height:37px;padding:5px 8px}
+  .switchRow{min-height:36px;padding:4px 7px}
+  .switchRow strong{font-size:10px}
+  .switchRow input{width:27px;height:20px;flex-basis:27px}
   .controlCard{gap:4px;padding:7px}
   .hostRoundDisplay{min-height:52px;padding:5px}
   .lobbyActions button{height:38px}
   .transport button{height:34px}
   .bingoCard.mini{width:min(100%,224px)}
+  .playLayout.lobbyMode .bingoCard.mini{width:min(100%,220px)}
 }

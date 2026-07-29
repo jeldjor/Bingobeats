@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2060">
+  <link rel="stylesheet" href="style.css?v=2070">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -128,8 +128,6 @@
           </div>
         </div>
 
-        <div class="playersHeading"><span>SPELERS</span><strong id="readyCount">0 READY</strong></div>
-        <div id="hostPlayers" class="playerList"><p>Nog geen spelers.</p></div>
         <p id="roomStatus" class="statusLine">Je kamer wordt klaargezet.</p>
       </div>
 
@@ -167,27 +165,27 @@
           <div class="categoryList" aria-label="Vaste categorieën">
             <article class="categoryRow gold">
               <i aria-hidden="true"></i>
-              <div><strong>Voor of na 2001</strong><small>Is het nummer uitgebracht vóór of na 2001?</small></div>
+              <div><strong>Voor of na 2001</strong></div>
               <em>GOUD</em>
             </article>
             <article class="categoryRow aqua">
               <i aria-hidden="true"></i>
-              <div><strong>Naam van artiest</strong><small>Welke artiest hoor je?</small></div>
+              <div><strong>Naam van artiest</strong></div>
               <em>AQUA</em>
             </article>
             <article class="categoryRow orange">
               <i aria-hidden="true"></i>
-              <div><strong>Decennium</strong><small>Uit welk decennium komt deze track?</small></div>
+              <div><strong>Decennium</strong></div>
               <em>ORANJE</em>
             </article>
             <article class="categoryRow lime">
               <i aria-hidden="true"></i>
-              <div><strong>Jaartal ± 2</strong><small>Noem het jaartal; twee jaar verschil telt goed.</small></div>
+              <div><strong>Jaartal ± 2</strong></div>
               <em>LIME</em>
             </article>
             <article class="categoryRow coral">
               <i aria-hidden="true"></i>
-              <div><strong>Titel van track</strong><small>Hoe heet deze track?</small></div>
+              <div><strong>Titel van track</strong></div>
               <em>KORAAL</em>
             </article>
           </div>
@@ -205,14 +203,16 @@
           </div>
         </fieldset>
 
-        <label class="switchRow">
-          <span><strong>RANDOM STARTPUNT</strong><small>Start op een willekeurig punt in het nummer.</small></span>
-          <input id="randomStart" type="checkbox" checked>
-        </label>
-        <label class="switchRow">
-          <span><strong>GEEN HERHALING</strong><small>Speel elk nummer maar één keer.</small></span>
-          <input id="noRepeat" type="checkbox" checked>
-        </label>
+        <div class="settingsToggles">
+          <label class="switchRow">
+            <span><strong>RANDOM STARTPUNT</strong></span>
+            <input id="randomStart" type="checkbox" checked>
+          </label>
+          <label class="switchRow">
+            <span><strong>GEEN HERHALING</strong></span>
+            <input id="noRepeat" type="checkbox" checked>
+          </label>
+        </div>
       </div>
 
       <div class="bottomActions">
@@ -312,6 +312,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2060"></script>
+  <script src="app.js?v=2070"></script>
 </body>
 </html>

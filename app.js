@@ -442,9 +442,8 @@
     }else{
       root.innerHTML = state.playlists.map(item => {
         const active = item.id===state.selectedPlaylist?.id;
-        const count = Number(item.tracks?.total)||0;
         return `<button type="button" class="playlistChoice ${active?'active':''}" data-playlist="${escapeHtml(item.id)}">
-          <span><strong>${escapeHtml(item.name || 'Naamloze playlist')}</strong><small>${count} ${count===1?'nummer':'nummers'}</small></span>
+          <span><strong>${escapeHtml(item.name || 'Naamloze playlist')}</strong></span>
           <b>${active?'✓':'›'}</b>
         </button>`;
       }).join('');
@@ -746,20 +745,23 @@
     if(!room) return;
     const players = activePlayers(room);
     const ready = players.filter(([,player]) => player.ready===true).length;
-    $('readyCount').textContent = `${ready} / ${players.length} READY`;
-    $('hostPlayers').innerHTML = players.length ? players.map(([id,player]) => `
-      <article class="playerChip ${player.ready?'ready':''}">
-        <span>${playerAnimal(id,player)}</span>
-        <strong>${escapeHtml(player.name || 'Speler')}</strong>
-        <i>${player.ready?'READY ✓':'WACHT'}</i>
-      </article>`).join('') : '<p>Nog geen spelers.</p>';
+    if($('readyCount')) $('readyCount').textContent = `${ready} / ${players.length} READY`;
+    if($('hostPlayers')){
+      $('hostPlayers').innerHTML = players.length ? players.map(([id,player]) => `
+        <article class="playerChip ${player.ready?'ready':''}">
+          <span>${playerAnimal(id,player)}</span>
+          <strong>${escapeHtml(player.name || 'Speler')}</strong>
+          <i>${player.ready?'READY ✓':'WACHT'}</i>
+        </article>`).join('') : '<p>Nog geen spelers.</p>';
+    }
 
     const round = room.currentRound || {};
     const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
     const canStart = allReady && !!state.tracks.length && !['picking','ready','answering','locked'].includes(round.status);
     const host = room.players?.[state.hostPlayerId];
     const hostReady = host?.ready===true;
-    const lobby = !round.id;
+    const roundStatuses = ['picking','ready','answering','locked','judged'];
+    const lobby = !round.id || !roundStatuses.includes(round.status);
     $('hostReadyButton').classList.toggle('done',hostReady);
     $('hostReadyButton').disabled = hostReady;
     $('hostReadyButton').textContent = hostReady ? 'HOST READY ✓' : 'IK BEN READY';

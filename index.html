@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2070">
+  <link rel="stylesheet" href="style.css?v=2080">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -80,7 +80,7 @@
             <li data-preflight="import"><input type="checkbox" disabled aria-label="Playlist goed geïmporteerd"><strong>Playlist goed geïmporteerd</strong></li>
             <li data-preflight="test"><input type="checkbox" disabled aria-label="Geluidstest geslaagd"><strong>Geluidstest geslaagd</strong></li>
           </ul>
-          <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
+          <p id="testStatus" class="statusLine hidden" aria-live="polite">Importeer eerst een playlist.</p>
         </section>
       </div>
 
@@ -239,44 +239,14 @@
         </div>
       </header>
 
-      <div class="playLayout">
-        <section class="screenCard controlCard">
-          <div class="roundHead">
-            <div><small>LIVE SPELREGIE</small><h2 id="roundTitle">Klaar om te spelen</h2></div>
-            <span id="liveBadge">WACHT</span>
-          </div>
-          <div id="hostRoundDisplay" class="hostRoundDisplay">
-            <strong>Maak iedereen READY</strong>
-            <span>Start daarna de eerste ronde.</span>
-          </div>
-          <div class="lobbyActions">
-            <button id="hostReadyButton" type="button">IK BEN READY</button>
-            <button id="startRoundButton" type="button" disabled>WACHTEN OP READY</button>
-          </div>
-          <div class="transport">
-            <button id="playTrackButton" type="button" disabled>▶<small>AFSPELEN</small></button>
-            <button id="stopTrackButton" type="button" disabled>■<small>STOP</small></button>
-            <button id="showAnswerButton" type="button" disabled>◉<small>ANTWOORD</small></button>
-          </div>
-          <div id="hostAnswerForm" class="hostAnswerForm hidden">
-            <input id="hostAnswerInput" type="text" placeholder="Jouw antwoord" autocomplete="off">
-            <button id="hostAnswerButton" type="button">VERSTUUR</button>
-          </div>
-          <div id="hostAnswerReveal" class="answerReveal hidden"></div>
-        </section>
-
-        <section id="hostScoreSection" class="screenCard scoreCardSection hidden">
-          <div class="roundHead"><div><small>ANTWOORDEN</small><h2>Beoordeling</h2></div></div>
-          <div id="hostScoreboard" class="scoreboard"></div>
-          <button id="publishResultsButton" type="button">RESULTATEN TONEN</button>
-        </section>
-
-        <section class="screenCard hostCardSection">
-          <div class="roundHead"><div><small>HOST DOET MEE</small><h2>Jouw bingokaart</h2></div></div>
-          <div id="hostBingoCard" class="bingoCard mini"></div>
-        </section>
+      <div class="hostGameShell">
+        <header class="playerTopbar hostPlayerTopbar">
+          <strong><span id="hostAvatar">🎵</span> <span id="hostDisplayName">Host</span></strong>
+          <span id="hostTimer">--</span>
+          <span>👥 <b data-player-count>0</b></span>
+        </header>
+        <div id="hostGameContent" class="playerGameContent"></div>
       </div>
-
     </section>
   </main>
 
@@ -308,10 +278,21 @@
     </section>
   </div>
 
+  <div id="juryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="juryModalTitle">
+    <section class="modalCard juryModalCard">
+      <header>
+        <div><small>ALLEEN VOOR DE HOST</small><h2 id="juryModalTitle">Jury controleren</h2></div>
+        <button type="button" data-close-modal="juryModal" aria-label="Sluiten">×</button>
+      </header>
+      <p class="juryHelp">Pas alleen een antwoord aan als de automatische jury het verkeerd heeft beoordeeld.</p>
+      <div id="hostScoreboard" class="scoreboard"></div>
+    </section>
+  </div>
+
   <div id="winnerOverlay" class="winnerOverlay hidden">
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2070"></script>
+  <script src="app.js?v=2080"></script>
 </body>
 </html>

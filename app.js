@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V211
+/* Bingo Beats Clean V212
    Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
    scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
@@ -2162,7 +2162,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2110',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2120',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

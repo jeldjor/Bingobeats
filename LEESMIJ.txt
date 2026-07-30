@@ -1,6 +1,6 @@
-BINGO BEATS CLEAN V210
+BINGO BEATS CLEAN V211
 
-Dit is de schone V210-versie met één indexbestand, één stylesheet en één hoofdscript.
+Dit is de schone V211-versie met één indexbestand, één stylesheet en één hoofdscript.
 
 Vaste spelwerking
 -----------------
@@ -26,7 +26,7 @@ Nieuwe vaste regels
 - Daarna verschijnt het blokscorebord.
 - De blokwinnaar kiest voor de volgende vier rondes:
   Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time.
-- Lucky Loser Round en Beat Streak maken geen deel uit van V210.
+- Lucky Loser Round en Beat Streak maken geen deel uit van V211.
 
 Weergave
 --------
@@ -35,4 +35,11 @@ Weergave
 - Bij de speciale ronde zijn vijf aparte antwoordvelden zichtbaar.
 - Dierenavatars staan in lobby, ronde-scorebord, blokscorebord en eindstand.
 
-Upload alle bestanden uit deze map samen en maak voor V210 een nieuwe kamer.
+V211 schermopmaak:
+- Grotere categorie-animatie.
+- Geen dubbel klein BB-logo meer in de spelersbalk.
+- Groot BB-logo boven categorie en stopwatch.
+- Categorie en stopwatch samen in één venster.
+- Groter BB-logo op het scorebord en bij de ronde-intro.
+
+Upload alle bestanden uit deze map samen en maak voor V211 een nieuwe kamer.

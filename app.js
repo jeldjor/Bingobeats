@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V210
+/* Bingo Beats Clean V211
    Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
    scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
@@ -1540,6 +1540,7 @@
   function questionReadyMarkup(round){
     const color = colorForRound(round);
     return `<section class="playerPanel waitingCard categoryReveal" style="--round-color:${color.hex}">
+      <img class="roundRevealLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
       <span class="questionColor"></span>
       <small style="color:${color.hex};font-weight:900">${escapeHtml(color.name)}</small>
       <h1>${escapeHtml(round.category)}</h1>
@@ -1659,15 +1660,14 @@
     const banner = advantageBannerMarkup(state.room || {},round,userId);
     return `<div class="playerState answerState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
       ${banner}
-      <section class="playerPanel questionCard">
-        <div class="questionColor"></div>
-        <small>${escapeHtml(color.name)}</small>
-        <h1>${escapeHtml(round.category)}</h1>
-      </section>
-      <section class="playerPanel countdownPanel">
+      <section class="playerPanel countdownPanel roundPlayPanel">
+        <img class="roundMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
+        <div class="roundCategoryInline">
+          <div class="questionColor"></div>
+          <div><small>${escapeHtml(color.name)}</small><h1>${escapeHtml(round.category)}</h1></div>
+        </div>
         ${stopwatchMarkup(round)}
-        <h1>Luister goed</h1>
-        <p>Vul je antwoord in voordat de stopwatch op 0 staat.</p>
+        <div class="listenPrompt"><h2>Luister goed</h2><p>Vul je antwoord in voordat de stopwatch op 0 staat.</p></div>
       </section>
       <div class="playerPanel answerForm">
         <input class="participantAnswerInput" type="text" maxlength="100" placeholder="Typ je antwoord" autocomplete="off">
@@ -1699,11 +1699,12 @@
     const banner = advantageBannerMarkup(room,round,userId);
     return `<div class="playerState submittedState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
       ${banner}
-      <section class="playerPanel questionCard submittedQuestion">
-        <div class="questionColor"></div>
-        <div><small>${escapeHtml(color.name)}</small><h1>${escapeHtml(round.category)}</h1></div>
-      </section>
       <section class="playerPanel submittedLivePanel">
+        <img class="roundMainLogo submittedMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
+        <div class="roundCategoryInline submittedCategory">
+          <div class="questionColor"></div>
+          <div><small>${escapeHtml(color.name)}</small><h1>${escapeHtml(round.category)}</h1></div>
+        </div>
         <div class="submittedTimer">
           ${stopwatchMarkup(round)}
           <div><strong>Antwoord ingeleverd ✓</strong><small>${submittedCount} van ${total} antwoorden binnen</small></div>
@@ -2161,7 +2162,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2100',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2110',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

@@ -553,7 +553,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .playerTopbar{
   min-width:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 42px 66px 48px;
+  grid-template-columns:minmax(0,1fr) 72px 52px;
   align-items:center;
   gap:6px;
   padding:7px 10px;
@@ -561,7 +561,6 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   border-radius:15px;
   background:#071008;
 }
-.gameTopLogo{width:42px;height:38px;object-fit:contain}
 .playerTopbar>strong{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px}
 .playerTopbar>span{text-align:center;font-size:12px}
 #playerTimer,#hostTimer{padding:7px 5px;border-radius:9px;color:#071008;background:var(--lime);font-size:14px;font-weight:950}
@@ -598,8 +597,8 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .readyButton.done{opacity:.68}
 .lobbyButtons{display:grid;grid-template-columns:110px minmax(0,1fr);gap:7px}
 .rulesButton{height:52px;border-color:rgba(255,255,255,.2);color:#fff;background:#101610;font-size:11px}
-.answerState{grid-template-rows:auto minmax(0,1fr) auto}
-.answerState.hasAdvantage{grid-template-rows:auto auto minmax(0,1fr) auto}
+.answerState{grid-template-rows:minmax(0,1fr) auto}
+.answerState.hasAdvantage{grid-template-rows:auto minmax(0,1fr) auto}
 .questionCard{padding:12px;text-align:center}
 .questionColor{width:28px;height:28px;margin:0 auto 7px;border-radius:8px;background:var(--round-color,var(--lime));box-shadow:0 0 17px var(--round-color,var(--lime))}
 .questionCard small{color:var(--round-color,var(--lime));font-size:9px;font-weight:900}
@@ -619,6 +618,26 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 }
 .countdownPanel h1{margin:8px 0 0;font-size:clamp(24px,7vw,31px)}
 .countdownPanel p{max-width:330px;margin:0;color:var(--muted);font-size:12px}
+.roundPlayPanel{justify-content:center;gap:7px}
+.roundMainLogo{width:140px;height:112px;flex:0 0 112px;object-fit:contain}
+.roundCategoryInline{
+  min-width:min(100%,330px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:7px 12px;
+  border:1px solid color-mix(in srgb,var(--round-color,var(--lime)) 40%,transparent);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--round-color,var(--lime)) 9%,#071008);
+  text-align:left;
+}
+.roundCategoryInline .questionColor{width:31px;height:31px;margin:0;flex:0 0 31px}
+.roundCategoryInline>div:last-child{min-width:0}
+.roundCategoryInline small{color:var(--round-color,var(--lime));font-size:8px;font-weight:950;letter-spacing:.08em}
+.roundCategoryInline h1{overflow:hidden;margin:1px 0 0;font-size:clamp(19px,5.5vw,25px);white-space:nowrap;text-overflow:ellipsis}
+.listenPrompt h2{margin:0;font-size:clamp(22px,6vw,28px)}
+.listenPrompt p{margin-top:3px}
 .roundStopwatch{
   --timer-progress:100;
   position:relative;
@@ -684,7 +703,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .categoryPickerState p{margin:4px 0 0;color:var(--muted);font-size:13px}
 .categoryWheel{
   position:relative;
-  width:min(62vw,235px);
+  width:min(74vw,292px);
   aspect-ratio:1;
   display:grid;
   place-items:center;
@@ -711,10 +730,10 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   border-radius:14px;
   background:var(--wheel-color);
   box-shadow:0 0 20px var(--wheel-color);
-  transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-94px) rotate(calc(var(--wheel-index) * -72deg));
+  transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-118px) rotate(calc(var(--wheel-index) * -72deg));
 }
-.submittedState{grid-template-rows:auto minmax(0,1fr)}
-.submittedState.hasAdvantage{grid-template-rows:auto auto minmax(0,1fr)}
+.submittedState{grid-template-rows:minmax(0,1fr)}
+.submittedState.hasAdvantage{grid-template-rows:auto minmax(0,1fr)}
 .submittedQuestion{
   display:flex;
   align-items:center;
@@ -725,7 +744,9 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 }
 .submittedQuestion .questionColor{width:34px;height:34px;margin:0;flex:0 0 34px}
 .submittedQuestion h1{margin:2px 0 0;font-size:clamp(20px,6vw,27px)}
-.submittedLivePanel{min-height:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:8px;padding:10px}
+.submittedLivePanel{min-height:0;display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr);gap:7px;padding:9px}
+.submittedMainLogo{width:82px;height:65px;justify-self:center;flex-basis:65px}
+.submittedCategory{justify-self:center;padding-top:5px;padding-bottom:5px}
 .submittedTimer{display:flex;align-items:center;justify-content:center;gap:15px;padding:4px 0 7px;border-bottom:1px solid rgba(255,255,255,.1)}
 .submittedTimer .roundStopwatch{width:112px;flex:0 0 112px;margin-top:8px}
 .submittedTimer .roundStopwatch::before{inset:8px}
@@ -772,6 +793,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .advantageBanner b{color:var(--gold);font-size:15px}.advantageBanner span{font-size:10px;font-weight:850}
 .waitingCard{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .waitingCard img{width:115px;height:110px;object-fit:contain}
+.categoryReveal .roundRevealLogo{width:158px;height:142px;margin-bottom:8px}
 .waitingCard h1{margin:5px 0;font-size:29px}
 .waitingCard p{margin:2px 0;color:var(--muted);font-size:13px}
 .resultState{grid-template-rows:auto minmax(0,1fr) auto}
@@ -821,7 +843,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .bingoCell.bombLocked span,.bingoCell.engineerCell span{font-size:18px}
 .bingoCell.engineerCell{box-shadow:inset 0 0 0 2px #fff,0 0 13px var(--aqua)}
 
-/* V210: speciale ronde en scoreborden */
+/* V211: speciale ronde en scoreborden */
 .specialPickerState .specialRoundStar{position:relative;width:min(58vw,220px);aspect-ratio:1;display:grid;place-items:center;margin:7px 0}
 .specialRoundStar::before{content:"";position:absolute;inset:5%;border:4px solid var(--gold);border-radius:38%;rotate:45deg;box-shadow:0 0 30px rgba(255,204,51,.35)}
 .specialRoundStar img{position:relative;z-index:2;width:62%;height:62%;object-fit:contain}
@@ -850,7 +872,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roundScoreState:has(.jokerActivateButton){grid-template-rows:minmax(0,1fr) auto auto}
 .roundScorePanel,.blockScorePanel{min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px}
 .scoreboardTitle{display:flex;align-items:center;justify-content:center;gap:9px;text-align:left}
-.scoreboardTitle img{width:60px;height:52px;object-fit:contain}.scoreboardTitle>span{font-size:37px}
+.scoreboardTitle img{width:112px;height:94px;object-fit:contain}.scoreboardTitle>span{font-size:37px}
 .scoreboardTitle small{color:var(--lime);font-size:8px;font-weight:950;letter-spacing:.1em}.scoreboardTitle h1{margin:2px 0 0;font-size:clamp(20px,6vw,27px)}
 .scoreTrack{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 8px;border-radius:9px;background:#111811;overflow:hidden;white-space:nowrap}.scoreTrack strong,.scoreTrack span{overflow:hidden;text-overflow:ellipsis}.scoreTrack strong{font-size:10px}.scoreTrack span{color:var(--muted);font-size:8px}
 .blockTitle small{color:var(--gold)}
@@ -870,7 +892,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .advantageWaiting,.chosenAdvantage{padding:9px;border:1px solid rgba(255,204,51,.25);border-radius:11px;background:rgba(255,204,51,.08);font-size:10px;text-align:center}
 .chosenAdvantage{display:flex;align-items:center;justify-content:center;gap:8px}.chosenAdvantage b{color:var(--gold)}
 
-/* V210: regels, jury en speciale-vakmeldingen */
+/* V211: regels, jury en speciale-vakmeldingen */
 .rulesModalCard{max-height:min(92dvh,720px)}.rulesList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:11px;overflow-y:auto}.rulesList article{display:grid;grid-template-columns:32px minmax(0,1fr);gap:7px;padding:8px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:#0c140c}.rulesList article.wide{grid-column:1/-1}.rulesList article>b{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;color:#071008;background:var(--lime);font-size:15px}.rulesList span,.rulesList strong,.rulesList small{display:block}.rulesList strong{font-size:11px}.rulesList small{margin-top:3px;color:var(--muted);font-size:8px;line-height:1.25}.rulesCloseButton{width:calc(100% - 22px);margin:0 11px 11px}
 .specialJuryPlayer{overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:#0b120c}.specialJuryPlayer>header{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:6px;padding:7px 9px;background:#111911}.specialJuryPlayer>header span{font-size:20px}.specialJuryPlayer>header strong{font-size:12px}.specialJuryPlayer>header em{color:var(--gold);font-size:10px;font-style:normal;font-weight:950}.specialJuryPlayer>div{display:flex;flex-direction:column}.specialJuryPlayer section{display:grid;grid-template-columns:minmax(0,1fr) 35px 35px;align-items:center;gap:5px;padding:5px 7px;border-top:1px solid rgba(255,255,255,.07)}.specialJuryPlayer section div{min-width:0}.specialJuryPlayer section small,.specialJuryPlayer section strong{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.specialJuryPlayer section small{color:var(--muted);font-size:7px}.specialJuryPlayer section strong{font-size:10px}.specialJuryPlayer section button{width:35px;height:31px;padding:0}
 .powerEffectOverlay{position:fixed;z-index:1200;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.9)}.powerEffectOverlay section{width:min(100%,390px);padding:22px;border:1px solid rgba(147,245,0,.4);border-radius:22px;background:#071008;text-align:center;box-shadow:0 0 45px rgba(147,245,0,.18)}.powerEffectOverlay section>span{display:block;font-size:64px}.powerEffectOverlay small{color:var(--lime);font-weight:950;letter-spacing:.15em}.powerEffectOverlay h2{margin:6px 0;font-size:29px}.powerEffectOverlay p{color:var(--muted);font-size:13px}.powerEffectOverlay button{width:100%;height:49px;margin-top:8px}
@@ -907,8 +929,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .categoryRow{grid-template-columns:25px minmax(0,1fr) 48px;gap:6px;padding-left:7px;padding-right:7px}
   .categoryRow small{display:none}
   .playerList{grid-template-columns:1fr}
-  .playerTopbar{grid-template-columns:minmax(0,1fr) 38px 62px 43px}
-  .gameTopLogo{width:38px;height:35px}
+  .playerTopbar{grid-template-columns:minmax(0,1fr) 68px 48px}
   .rulesList{grid-template-columns:1fr}.rulesList article.wide{grid-column:auto}
 }
 
@@ -954,15 +975,21 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .lobbyPlayers{grid-auto-rows:32px}
   .playerChip{grid-template-columns:25px minmax(0,1fr) auto;padding:2px 5px}
   .playerChip span{font-size:16px}.playerChip strong{font-size:11px}.playerChip i{font-size:8px}
-  .countdownPanel{padding:8px}
-  .countdownPanel h1{margin-top:3px;font-size:23px}
+  .countdownPanel{padding:7px}
+  .roundMainLogo{width:112px;height:88px;flex-basis:88px}
+  .roundCategoryInline{padding:5px 9px}
+  .roundCategoryInline .questionColor{width:27px;height:27px;flex-basis:27px}
+  .listenPrompt h2{font-size:21px}
+  .listenPrompt p{font-size:10px}
   .roundStopwatch{width:min(36vw,146px)}
   .stopwatchFace strong{font-size:51px}
-  .categoryWheel{width:min(49vw,180px);margin:6px 0}
-  .categoryWheelOrbit i{width:36px;margin:-18px;border-radius:11px;transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-72px) rotate(calc(var(--wheel-index) * -72deg))}
+  .categoryWheel{width:min(63vw,230px);margin:8px 0}
+  .categoryWheelOrbit i{width:40px;margin:-20px;border-radius:12px;transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-91px) rotate(calc(var(--wheel-index) * -72deg))}
   .categoryPickerState{padding:10px}
   .categoryPickerState h1{font-size:24px}
-  .submittedLivePanel{gap:5px;padding:7px}
+  .submittedLivePanel{gap:4px;padding:6px}
+  .submittedMainLogo{width:60px;height:43px;flex-basis:43px}
+  .submittedCategory{padding-top:3px;padding-bottom:3px}
   .submittedTimer{gap:10px;padding:0 0 5px}
   .submittedTimer .roundStopwatch{width:82px;flex-basis:82px}
   .submittedTimer .stopwatchFace strong{font-size:32px}
@@ -982,7 +1009,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .specialFields{gap:4px}.specialField input{min-height:31px;font-size:11px}
   .specialSubmitButton{height:39px}
   .roundScorePanel,.blockScorePanel{gap:5px;padding:7px}
-  .scoreboardTitle img{width:48px;height:42px}.scoreboardTitle h1{font-size:20px}
+  .scoreboardTitle img{width:94px;height:76px}.scoreboardTitle h1{font-size:20px}
   .roundScoreRow{padding:5px}
   .advantageChoice button{min-height:39px}
   .advantageChoice button small{display:none}
@@ -992,8 +1019,11 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 @media(max-height:667px){
   .gameScreen{grid-template-rows:48px minmax(0,1fr);padding-top:max(4px,env(safe-area-inset-top));gap:5px}
   .hostGameScreen{grid-template-rows:48px minmax(0,1fr);gap:5px}
-  .playerTopbar{grid-template-columns:minmax(0,1fr) 42px 62px 43px;padding:4px 7px;border-radius:12px}
-  .gameTopLogo{width:42px;height:37px}
+  .playerTopbar{grid-template-columns:minmax(0,1fr) 65px 46px;padding:4px 7px;border-radius:12px}
+  .roundMainLogo{width:100px;height:78px;flex-basis:78px}
+  .roundPlayPanel{gap:4px}
+  .categoryReveal .roundRevealLogo{width:130px;height:112px;margin-bottom:4px}
+  .scoreboardTitle img{width:82px;height:64px}
   .lobbyRosterPanel{max-height:77px}
   .lobbyButtons,.resultActions{height:45px}.lobbyButtons button,.resultActions button{height:45px}
   .specialAnswerHead .roundStopwatch{width:65px;flex-basis:65px}.specialAnswerHead .stopwatchFace strong{font-size:25px}.specialAnswerHead .stopwatchFace small{display:none}

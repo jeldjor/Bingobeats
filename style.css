@@ -553,7 +553,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .playerTopbar{
   min-width:0;
   display:grid;
-  grid-template-columns:minmax(0,1fr) 70px 55px;
+  grid-template-columns:minmax(0,1fr) 42px 66px 48px;
   align-items:center;
   gap:6px;
   padding:7px 10px;
@@ -561,6 +561,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   border-radius:15px;
   background:#071008;
 }
+.gameTopLogo{width:42px;height:38px;object-fit:contain}
 .playerTopbar>strong{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px}
 .playerTopbar>span{text-align:center;font-size:12px}
 #playerTimer,#hostTimer{padding:7px 5px;border-radius:9px;color:#071008;background:var(--lime);font-size:14px;font-weight:950}
@@ -595,7 +596,10 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .lobbyPlayers{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:38px;gap:5px;overflow-y:auto}
 .readyButton{width:100%;height:52px;font-size:18px}
 .readyButton.done{opacity:.68}
+.lobbyButtons{display:grid;grid-template-columns:110px minmax(0,1fr);gap:7px}
+.rulesButton{height:52px;border-color:rgba(255,255,255,.2);color:#fff;background:#101610;font-size:11px}
 .answerState{grid-template-rows:auto minmax(0,1fr) auto}
+.answerState.hasAdvantage{grid-template-rows:auto auto minmax(0,1fr) auto}
 .questionCard{padding:12px;text-align:center}
 .questionColor{width:28px;height:28px;margin:0 auto 7px;border-radius:8px;background:var(--round-color,var(--lime));box-shadow:0 0 17px var(--round-color,var(--lime))}
 .questionCard small{color:var(--round-color,var(--lime));font-size:9px;font-weight:900}
@@ -710,6 +714,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-94px) rotate(calc(var(--wheel-index) * -72deg));
 }
 .submittedState{grid-template-rows:auto minmax(0,1fr)}
+.submittedState.hasAdvantage{grid-template-rows:auto auto minmax(0,1fr)}
 .submittedQuestion{
   display:flex;
   align-items:center;
@@ -751,6 +756,20 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .liveAnswerRow strong{font-size:11px}.liveAnswerRow small{color:#f5f7f5;font-size:13px}
 .liveAnswerRow>i{color:var(--lime);font-size:8px;font-style:normal;font-weight:950}
 .liveAnswersEmpty{align-self:center;margin:auto;color:var(--muted);font-size:12px;text-align:center}
+.advantageBanner{
+  min-height:35px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:5px 9px;
+  border:1px solid rgba(255,204,51,.35);
+  border-radius:12px;
+  color:#fff;
+  background:rgba(255,204,51,.1);
+  text-align:center;
+}
+.advantageBanner b{color:var(--gold);font-size:15px}.advantageBanner span{font-size:10px;font-weight:850}
 .waitingCard{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .waitingCard img{width:115px;height:110px;object-fit:contain}
 .waitingCard h1{margin:5px 0;font-size:29px}
@@ -798,6 +817,63 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .bingoCell.marked{box-shadow:inset 0 0 0 2px #fff,0 0 12px rgba(255,255,255,.35)}
 .bingoCell.pickable{animation:pulseCell 1s infinite;cursor:pointer}
 .bingoCell span{font-size:12px}
+.bingoCell.bombLocked{filter:saturate(.5) brightness(.62);box-shadow:inset 0 0 0 2px #ff6173}
+.bingoCell.bombLocked span,.bingoCell.engineerCell span{font-size:18px}
+.bingoCell.engineerCell{box-shadow:inset 0 0 0 2px #fff,0 0 13px var(--aqua)}
+
+/* V210: speciale ronde en scoreborden */
+.specialPickerState .specialRoundStar{position:relative;width:min(58vw,220px);aspect-ratio:1;display:grid;place-items:center;margin:7px 0}
+.specialRoundStar::before{content:"";position:absolute;inset:5%;border:4px solid var(--gold);border-radius:38%;rotate:45deg;box-shadow:0 0 30px rgba(255,204,51,.35)}
+.specialRoundStar img{position:relative;z-index:2;width:62%;height:62%;object-fit:contain}
+.specialRoundStar span{position:absolute;z-index:3;right:8%;bottom:6%;color:var(--gold);font-size:42px;text-shadow:0 0 14px var(--gold)}
+.specialRuleChips{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+.specialRuleChips span{padding:6px 9px;border:1px solid rgba(147,245,0,.25);border-radius:999px;color:#dbe3dc;background:#0d160e;font-size:9px;font-weight:850}
+.specialReadyState>small{color:var(--gold);font-size:10px;font-weight:950;letter-spacing:.14em}.specialReadyState h1{font-size:clamp(28px,8vw,38px)}
+.specialAnswerState{grid-template-rows:minmax(0,1fr)}
+.specialAnswerPanel{min-height:0;display:grid;grid-template-rows:auto auto 46px;align-content:center;gap:8px;padding:9px}
+.specialAnswerHead{display:flex;align-items:center;justify-content:center;gap:14px;text-align:left}
+.specialAnswerHead>div:first-child{min-width:0}.specialAnswerHead small{color:var(--gold);font-size:8px;font-weight:950;letter-spacing:.1em}.specialAnswerHead h1{margin:2px 0 0;font-size:25px}
+.specialAnswerHead .roundStopwatch{width:102px;flex:0 0 102px;margin:7px 0 0}.specialAnswerHead .roundStopwatch::before{inset:7px}.specialAnswerHead .stopwatchCrown{top:-9px;width:29px;height:14px;border-width:3px}.specialAnswerHead .stopwatchFace strong{font-size:39px}.specialAnswerHead .stopwatchFace small{margin-top:3px;font-size:6px}
+.specialFields{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,45px);gap:6px}
+.specialField{min-width:0;display:flex;flex-direction:column;gap:3px}.specialField:last-child{grid-column:1/-1}
+.specialField span{overflow:hidden;color:#cbd2cc;font-size:8px;font-weight:900;white-space:nowrap;text-overflow:ellipsis}
+.specialField input{min-width:0;height:100%;min-height:36px;padding:0 9px;font-size:13px}
+.specialSubmitButton{height:46px;font-size:13px}
+.specialSubmittedState{grid-template-rows:minmax(0,1fr)}
+.specialLiveRow small{font-size:10px}
+.specialBlockedState{grid-template-rows:auto minmax(0,1fr)}
+.specialBlockedState .roundStopwatch{width:min(42vw,170px)}
+.specialResultDetails{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin-top:7px}
+.specialResultDetails span{display:flex;flex-direction:column;gap:2px;padding:3px;border-radius:6px;color:#aeb7b0;font-size:6px}.specialResultDetails span b{font-size:12px}.specialResultDetails .good{color:var(--lime);background:rgba(147,245,0,.1)}.specialResultDetails .bad{color:#ff8794;background:rgba(255,97,115,.1)}
+
+.roundScoreState,.blockScoreState{grid-template-rows:minmax(0,1fr) auto}
+.roundScoreState:has(.jokerActivateButton){grid-template-rows:minmax(0,1fr) auto auto}
+.roundScorePanel,.blockScorePanel{min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px}
+.scoreboardTitle{display:flex;align-items:center;justify-content:center;gap:9px;text-align:left}
+.scoreboardTitle img{width:60px;height:52px;object-fit:contain}.scoreboardTitle>span{font-size:37px}
+.scoreboardTitle small{color:var(--lime);font-size:8px;font-weight:950;letter-spacing:.1em}.scoreboardTitle h1{margin:2px 0 0;font-size:clamp(20px,6vw,27px)}
+.scoreTrack{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 8px;border-radius:9px;background:#111811;overflow:hidden;white-space:nowrap}.scoreTrack strong,.scoreTrack span{overflow:hidden;text-overflow:ellipsis}.scoreTrack strong{font-size:10px}.scoreTrack span{color:var(--muted);font-size:8px}
+.blockTitle small{color:var(--gold)}
+.roundScoreRows{min-height:0;display:flex;flex-direction:column;gap:5px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.roundScoreRow{min-width:0;display:grid;grid-template-columns:22px 31px minmax(0,1fr) 42px 58px;align-items:center;gap:5px;padding:7px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:#0c140c}
+.blockScorePanel .roundScoreRow{grid-template-columns:22px 31px minmax(0,1fr) 64px}
+.roundScoreRow.leader{border-color:rgba(255,204,51,.42);background:rgba(255,204,51,.08)}
+.roundScoreRow>b{color:var(--lime);text-align:center}.roundScoreRow>span{font-size:21px}.roundScoreRow>div{min-width:0;display:flex;flex-direction:column}.roundScoreRow>div strong,.roundScoreRow>div small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.roundScoreRow>div strong{font-size:12px}.roundScoreRow>div small{color:var(--muted);font-size:8px}
+.roundScoreRow>em{color:var(--lime);font-size:11px;font-style:normal;font-weight:950;text-align:right}.roundScoreRow>strong{color:var(--gold);font-size:13px;text-align:right}.roundScoreRow>strong small{font-size:7px}
+.readyCounter{padding:5px;border-radius:9px;color:var(--lime);background:rgba(147,245,0,.08);font-size:8px;font-weight:950;text-align:center}
+.jokerActivateButton{height:44px;border-color:rgba(255,204,51,.4);color:#140e00;background:var(--gold);font-size:10px}
+.advantageChoice{min-height:0;display:flex;flex-direction:column;gap:5px}
+.advantageChoice>strong{color:var(--gold);font-size:10px;text-align:center}
+.advantageChoice>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;overflow-y:auto}
+.advantageChoice button{min-height:47px;padding:5px 7px;border:1px solid rgba(255,204,51,.3);color:#fff;background:#111811;text-align:left}
+.advantageChoice button:last-child{grid-column:1/-1}.advantageChoice button b,.advantageChoice button small{display:block}.advantageChoice button b{font-size:10px}.advantageChoice button small{margin-top:2px;color:var(--muted);font-size:7px;line-height:1.2}
+.advantageWaiting,.chosenAdvantage{padding:9px;border:1px solid rgba(255,204,51,.25);border-radius:11px;background:rgba(255,204,51,.08);font-size:10px;text-align:center}
+.chosenAdvantage{display:flex;align-items:center;justify-content:center;gap:8px}.chosenAdvantage b{color:var(--gold)}
+
+/* V210: regels, jury en speciale-vakmeldingen */
+.rulesModalCard{max-height:min(92dvh,720px)}.rulesList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:11px;overflow-y:auto}.rulesList article{display:grid;grid-template-columns:32px minmax(0,1fr);gap:7px;padding:8px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:#0c140c}.rulesList article.wide{grid-column:1/-1}.rulesList article>b{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;color:#071008;background:var(--lime);font-size:15px}.rulesList span,.rulesList strong,.rulesList small{display:block}.rulesList strong{font-size:11px}.rulesList small{margin-top:3px;color:var(--muted);font-size:8px;line-height:1.25}.rulesCloseButton{width:calc(100% - 22px);margin:0 11px 11px}
+.specialJuryPlayer{overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:#0b120c}.specialJuryPlayer>header{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:6px;padding:7px 9px;background:#111911}.specialJuryPlayer>header span{font-size:20px}.specialJuryPlayer>header strong{font-size:12px}.specialJuryPlayer>header em{color:var(--gold);font-size:10px;font-style:normal;font-weight:950}.specialJuryPlayer>div{display:flex;flex-direction:column}.specialJuryPlayer section{display:grid;grid-template-columns:minmax(0,1fr) 35px 35px;align-items:center;gap:5px;padding:5px 7px;border-top:1px solid rgba(255,255,255,.07)}.specialJuryPlayer section div{min-width:0}.specialJuryPlayer section small,.specialJuryPlayer section strong{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.specialJuryPlayer section small{color:var(--muted);font-size:7px}.specialJuryPlayer section strong{font-size:10px}.specialJuryPlayer section button{width:35px;height:31px;padding:0}
+.powerEffectOverlay{position:fixed;z-index:1200;inset:0;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.9)}.powerEffectOverlay section{width:min(100%,390px);padding:22px;border:1px solid rgba(147,245,0,.4);border-radius:22px;background:#071008;text-align:center;box-shadow:0 0 45px rgba(147,245,0,.18)}.powerEffectOverlay section>span{display:block;font-size:64px}.powerEffectOverlay small{color:var(--lime);font-weight:950;letter-spacing:.15em}.powerEffectOverlay h2{margin:6px 0;font-size:29px}.powerEffectOverlay p{color:var(--muted);font-size:13px}.powerEffectOverlay button{width:100%;height:49px;margin-top:8px}
 .finalScore{height:100%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px}
 .finalTrophy{font-size:48px}.finalScore>small{color:var(--gold);font-weight:950;letter-spacing:.14em}.finalScore h1{margin:3px 0 14px;font-size:31px}
 .finalRanking{width:100%;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
@@ -831,6 +907,9 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .categoryRow{grid-template-columns:25px minmax(0,1fr) 48px;gap:6px;padding-left:7px;padding-right:7px}
   .categoryRow small{display:none}
   .playerList{grid-template-columns:1fr}
+  .playerTopbar{grid-template-columns:minmax(0,1fr) 38px 62px 43px}
+  .gameTopLogo{width:38px;height:35px}
+  .rulesList{grid-template-columns:1fr}.rulesList article.wide{grid-column:auto}
 }
 
 @media(max-height:720px){
@@ -896,4 +975,30 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .pickMode .resultBoardPanel .bingoCard{width:min(calc(100vw - 34px),calc(100dvh - 265px))}
   .resultCard{padding:8px}.resultCard>span{font-size:28px}.resultCard h1{font-size:22px}.trackAnswer{margin-top:5px;padding:6px}
   .standingsStrip>span{padding:3px 4px;font-size:9px}
+  .specialPickerState .specialRoundStar{width:min(43vw,164px)}
+  .specialAnswerPanel{gap:5px;padding:7px}
+  .specialAnswerHead .roundStopwatch{width:76px;flex-basis:76px}.specialAnswerHead .stopwatchFace strong{font-size:30px}
+  .specialAnswerHead h1{font-size:20px}
+  .specialFields{gap:4px}.specialField input{min-height:31px;font-size:11px}
+  .specialSubmitButton{height:39px}
+  .roundScorePanel,.blockScorePanel{gap:5px;padding:7px}
+  .scoreboardTitle img{width:48px;height:42px}.scoreboardTitle h1{font-size:20px}
+  .roundScoreRow{padding:5px}
+  .advantageChoice button{min-height:39px}
+  .advantageChoice button small{display:none}
+  .powerEffectOverlay section{padding:16px}.powerEffectOverlay section>span{font-size:49px}
+}
+
+@media(max-height:667px){
+  .gameScreen{grid-template-rows:48px minmax(0,1fr);padding-top:max(4px,env(safe-area-inset-top));gap:5px}
+  .hostGameScreen{grid-template-rows:48px minmax(0,1fr);gap:5px}
+  .playerTopbar{grid-template-columns:minmax(0,1fr) 42px 62px 43px;padding:4px 7px;border-radius:12px}
+  .gameTopLogo{width:42px;height:37px}
+  .lobbyRosterPanel{max-height:77px}
+  .lobbyButtons,.resultActions{height:45px}.lobbyButtons button,.resultActions button{height:45px}
+  .specialAnswerHead .roundStopwatch{width:65px;flex-basis:65px}.specialAnswerHead .stopwatchFace strong{font-size:25px}.specialAnswerHead .stopwatchFace small{display:none}
+  .specialField span{font-size:7px}
+  .roundScoreRow>span{font-size:18px}.roundScoreRow>div strong{font-size:10px}
+  .advantageChoice>div{grid-template-columns:1fr 1fr}.advantageChoice button{min-height:34px;padding:3px 5px}.advantageChoice button b{font-size:8px}
+  .rulesList{gap:4px;padding:7px}.rulesList article{padding:5px}.rulesList small{font-size:7px}
 }

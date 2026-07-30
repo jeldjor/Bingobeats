@@ -1,25 +1,38 @@
-BINGO BEATS CLEAN V209
+BINGO BEATS CLEAN V210
 
-Dit is de schone versie met één indexbestand, één stylesheet en één hoofdscript.
+Dit is de schone V210-versie met één indexbestand, één stylesheet en één hoofdscript.
 
-Nieuwe automatische spelwerking:
-- de host speelt automatisch mee als gewone speler;
-- geen knop of tekst “Host doet mee”;
-- geen knoppen voor ronde starten, afspelen, stoppen of antwoord tonen;
-- host en alle spelers krijgen dezelfde lobby, bingokaart, READY-knop en spelweergave;
-- zodra alle actieve deelnemers READY zijn, start de volgende ronde automatisch;
-- categorie, muziek en timer starten automatisch in de juiste volgorde;
-- de muziek stopt automatisch wanneer de timer 0 bereikt;
-- antwoorden worden automatisch beoordeeld;
-- alleen de host kan het juryoordeel corrigeren;
-- bij een goed antwoord kiest de speler één vrij vakje in de gespeelde categoriekleur;
-- bij het kiezen van een categorie verschijnt een duidelijke gezamenlijke kleurenrad-animatie;
-- tijdens het luisteren staat een grote aflopende stopwatch centraal in beeld;
-- na het insturen blijven de stopwatch en de live antwoorden van spelers zichtbaar, nog zonder juryuitslag;
-- bij een goed antwoord wordt de bingokaart zo groot mogelijk getoond om een kleurvak te kiezen;
-- na de keuze klikt de speler opnieuw op READY;
-- dierenavatars blijven zichtbaar in lobby en tussenstand;
-- een volledige rij, kolom of diagonaal op de 6x6-kaart geeft BINGO;
-- bij BINGO stopt het spel en verschijnt de eindstand.
+Vaste spelwerking
+-----------------
+- De host speelt automatisch mee als gewone speler.
+- De ronde start automatisch zodra alle actieve deelnemers READY zijn.
+- Een normale ronde kiest automatisch een categorie en duurt volgens de instelling.
+- Muziek en stopwatch starten en stoppen automatisch.
+- Goed antwoord: 100 punten; snelste goede antwoord: 50 bonuspunten.
+- Na een goed antwoord kies je één vrij vak in de gespeelde categoriekleur.
+- Na ieder liedje verschijnt een scorebord met rondepunten, totaalscore en kaartvoortgang.
+- Alleen de host kan een verkeerd juryoordeel corrigeren.
 
-Upload alle bestanden uit deze map samen en maak voor V209 een nieuwe kamer.
+Nieuwe vaste regels
+-------------------
+- Iedere kaart heeft één verborgen Beat Bomb.
+- De Beat Bomb wist alle gekozen vakken en blijft daarna geblokkeerd.
+- Iedere kaart heeft één verborgen Beat Engineer.
+- De Beat Engineer beschermt één keer tegen een Beat Bomb.
+- Na vier normale rondes volgt automatisch de BingoBeats Round.
+- De BingoBeats Round duurt 60 seconden en gebruikt alle vijf categorieën.
+- Elk goed onderdeel is 100 punten.
+- Met minimaal 4 van 5 goed kies je één vrij vak naar keuze.
+- Daarna verschijnt het blokscorebord.
+- De blokwinnaar kiest voor de volgende vier rondes:
+  Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time.
+- Lucky Loser Round en Beat Streak maken geen deel uit van V210.
+
+Weergave
+--------
+- Het BB-logo blijft tijdens het spelen bovenaan zichtbaar.
+- De stopwatch, invoervelden, kleurkeuze en bingokaart blijven passend op mobiel.
+- Bij de speciale ronde zijn vijf aparte antwoordvelden zichtbaar.
+- Dierenavatars staan in lobby, ronde-scorebord, blokscorebord en eindstand.
+
+Upload alle bestanden uit deze map samen en maak voor V210 een nieuwe kamer.

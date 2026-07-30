@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2090">
+  <link rel="stylesheet" href="style.css?v=2100">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -225,6 +225,7 @@
       <div class="hostGameScreen">
         <header class="playerTopbar hostPlayerTopbar">
           <strong><span id="hostAvatar">🎵</span> <span id="hostDisplayName">Host</span></strong>
+          <img class="gameTopLogo" src="bb_logo_lime.webp" alt="BB">
           <span id="hostTimer">--</span>
           <span>👥 <b data-player-count>0</b></span>
         </header>
@@ -247,6 +248,7 @@
     <section id="playerGameScreen" class="playerScreen gameScreen hidden">
       <header class="playerTopbar">
         <strong><span id="playerAvatar">🎵</span> <span id="playerDisplayName">Speler</span></strong>
+        <img class="gameTopLogo" src="bb_logo_lime.webp" alt="BB">
         <span id="playerTimer">--</span>
         <span>👥 <b data-player-count>0</b></span>
       </header>
@@ -272,10 +274,38 @@
     </section>
   </div>
 
+  <div id="rulesModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="rulesModalTitle">
+    <section class="modalCard rulesModalCard">
+      <header>
+        <div><small>DE VASTE SPELREGELS</small><h2 id="rulesModalTitle">Zo werkt Bingo Beats</h2></div>
+        <button type="button" data-close-modal="rulesModal" aria-label="Sluiten">×</button>
+      </header>
+      <div class="rulesList">
+        <article><b>1</b><span><strong>Luister en antwoord</strong><small>Goed: 100 punten. Snelste goede antwoord: 50 bonuspunten.</small></span></article>
+        <article><b>2</b><span><strong>Kies jouw kleurvak</strong><small>Na een goed antwoord kies je één vrij vak in de gespeelde kleur.</small></span></article>
+        <article><b>💣</b><span><strong>Verborgen Beat Bomb</strong><small>De bom wist je gekozen vakken en blijft daarna geblokkeerd.</small></span></article>
+        <article><b>👷</b><span><strong>Verborgen Beat Engineer</strong><small>De Engineer beschermt je één keer tegen een Beat Bomb.</small></span></article>
+        <article class="wide"><b>★</b><span><strong>Elke vijfde ronde: BingoBeats Round</strong><small>Vijf antwoorden in 60 seconden. Elk goed deel is 100 punten; 4/5 geeft één vrij vak.</small></span></article>
+        <article class="wide"><b>🏆</b><span><strong>Blokwinnaar kiest een voordeel</strong><small>Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time voor de volgende vier rondes.</small></span></article>
+      </div>
+      <button type="button" class="readyButton rulesCloseButton" data-close-modal="rulesModal">BEGREPEN</button>
+    </section>
+  </div>
+
+  <div id="powerEffectOverlay" class="powerEffectOverlay hidden" role="status" aria-live="assertive">
+    <section>
+      <span id="powerEffectIcon">💥</span>
+      <small>SPECIAAL VAK</small>
+      <h2 id="powerEffectTitle">Beat Bomb!</h2>
+      <p id="powerEffectText"></p>
+      <button id="powerEffectClose" type="button">VERDER</button>
+    </section>
+  </div>
+
   <div id="winnerOverlay" class="winnerOverlay hidden">
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2090"></script>
+  <script src="app.js?v=2100"></script>
 </body>
 </html>

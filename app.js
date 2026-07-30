@@ -1,5 +1,6 @@
-/* Bingo Beats Clean V209
-   Eén applicatiebestand: Spotify, Firebase, hoststappen en spelersscherm. */
+/* Bingo Beats Clean V210
+   Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
+   scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
   'use strict';
 
@@ -30,6 +31,20 @@
     {key:'green',name:'KORAAL',hex:'#ff6173',category:'Titel van track'}
   ];
   const ANIMALS = ['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
+  const SPECIAL_FIELDS = [
+    {key:'era',label:'Voor of na 2001',placeholder:'Voor / na 2001'},
+    {key:'artist',label:'Naam van artiest',placeholder:'Artiest'},
+    {key:'decade',label:'Decennium',placeholder:'Bijv. jaren 90'},
+    {key:'year',label:'Jaartal ± 2',placeholder:'Bijv. 1998'},
+    {key:'title',label:'Titel van track',placeholder:'Titel'}
+  ];
+  const ADVANTAGES = {
+    timePressure:{name:'Time Pressure',icon:'⏱️',text:'Tegenstanders krijgen 5 seconden minder.'},
+    doubleTrouble:{name:'Double Trouble',icon:'💣',text:'Tegenstanders krijgen een tweede Beat Bomb.'},
+    joker:{name:'Joker',icon:'🃏',text:'Zet hem vóór een nummer in; alleen jouw antwoord telt.'},
+    engineer:{name:'Beat Engineer Unlock',icon:'👷',text:'Jouw Beat Engineer is direct actief.'},
+    extraTime:{name:'Extra Time',icon:'+5',text:'Jij krijgt 5 seconden extra.'}
+  };
   const $ = id => document.getElementById(id);
   const $$ = selector => Array.from(document.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -63,7 +78,8 @@
     judgingRound:'',
     lastPlayerRender:'',
     lastHostRender:'',
-    winnerKey:localStorage.getItem('bb_last_winner_key') || ''
+    winnerKey:localStorage.getItem('bb_last_winner_key') || '',
+    powerEffectKey:''
   };
 
   function readJson(key,fallback){
@@ -100,6 +116,73 @@
       hash = Math.imul(hash,16777619);
     }
     return ANIMALS[(hash>>>0)%ANIMALS.length];
+  }
+
+  function stableHash(value){
+    let hash = 2166136261;
+    for(const character of String(value || '')){
+      hash ^= character.charCodeAt(0);
+      hash = Math.imul(hash,16777619);
+    }
+    return hash>>>0;
+  }
+
+  function availableCardIndexes(card){
+    return (Array.isArray(card) ? card : []).map((_color,index) => index);
+  }
+
+  function powerCellsFor(playerId,card,existing={}){
+    const indexes = availableCardIndexes(card);
+    const power = {...existing};
+    if(!indexes.length) return power;
+    if(!Number.isInteger(power.bombIndex)){
+      power.bombIndex = indexes[stableHash(`${playerId}|beat-bomb`)%indexes.length];
+    }
+    if(!Number.isInteger(power.engineerIndex)){
+      const choices = indexes.filter(index => index!==power.bombIndex);
+      power.engineerIndex = choices[stableHash(`${playerId}|beat-engineer`)%choices.length];
+    }
+    power.bombTriggered = !!power.bombTriggered;
+    power.bomb2Triggered = !!power.bomb2Triggered;
+    power.engineerFound = !!power.engineerFound;
+    power.engineerActive = !!power.engineerActive;
+    power.engineerUsed = !!power.engineerUsed;
+    return power;
+  }
+
+  function secondBombIndex(playerId,card,power){
+    const choices = availableCardIndexes(card).filter(index => index!==power.bombIndex && index!==power.engineerIndex);
+    return choices.length ? choices[stableHash(`${playerId}|second-beat-bomb`)%choices.length] : null;
+  }
+
+  function activeAdvantage(room,round=room?.currentRound){
+    const advantage = round?.advantage || room?.gameState?.activeAdvantage;
+    const number = Number(round?.number || room?.roundNumber || 0);
+    if(!advantage || number<Number(advantage.startRound||0) || number>Number(advantage.endRound||0)) return null;
+    return advantage;
+  }
+
+  function jokerOwner(room,round=room?.currentRound){
+    const advantage = activeAdvantage(room,round);
+    if(advantage?.type!=='joker' || !advantage.jokerUsed) return '';
+    return Number(advantage.jokerRound||0)===Number(round?.number||0) ? advantage.ownerId : '';
+  }
+
+  function effectiveDeadline(room,round,playerId){
+    const base = Number(round?.baseDeadlineMs || round?.deadlineMs || 0);
+    if(!base || round?.isBingoBeats) return base;
+    const advantage = activeAdvantage(room,round);
+    if(advantage?.type==='timePressure' && playerId!==advantage.ownerId) return base-5000;
+    if(advantage?.type==='extraTime' && playerId===advantage.ownerId) return base+5000;
+    return base;
+  }
+
+  function markedCount(player){
+    return Object.values(player?.marked || {}).filter(Boolean).length;
+  }
+
+  function blockRoundNumber(number){
+    return ((Math.max(1,Number(number)||1)-1)%5)+1;
   }
 
   function activePlayers(room=state.room){
@@ -186,6 +269,10 @@
     $('juryModal')?.addEventListener('click',event => {
       if(event.target===event.currentTarget) event.currentTarget.classList.add('hidden');
     });
+    $('rulesModal')?.addEventListener('click',event => {
+      if(event.target===event.currentTarget) event.currentTarget.classList.add('hidden');
+    });
+    $('powerEffectClose')?.addEventListener('click',() => $('powerEffectOverlay')?.classList.add('hidden'));
     document.addEventListener('visibilitychange',() => {
       if(!document.hidden && state.roomCode && currentUserId()){
         state.db.ref(`rooms/${state.roomCode}/players/${currentUserId()}`).update({
@@ -644,6 +731,7 @@
       createdAt:firebase.database.ServerValue.TIMESTAMP,
       roundNumber:0,
       gameStatus:'lobby',
+      gameState:{blockRound:0,version:210},
       settings:currentSettings()
     });
     state.roomCode = code;
@@ -685,6 +773,7 @@
     saveHostName();
     const reference = state.db.ref(`rooms/${state.roomCode}/players/${state.hostPlayerId}`);
     const existing = (await reference.once('value')).val() || {};
+    const card = Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard();
     await reference.update({
       name:hostName(),
       emoji:existing.emoji || playerAnimal(state.hostPlayerId,existing),
@@ -692,10 +781,12 @@
       online:true,
       ready:existing.ready ?? false,
       score:Number(existing.score)||0,
+      blockScore:Number(existing.blockScore)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
-      card:Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard(),
+      card,
       marked:existing.marked || {},
+      powerCells:powerCellsFor(state.hostPlayerId,card,existing.powerCells),
       bingo:!!existing.bingo
     });
     reference.child('online').onDisconnect().set(false);
@@ -757,7 +848,7 @@
     if(!host) return;
     $('hostAvatar').textContent = playerAnimal(state.hostPlayerId,host);
     $('hostDisplayName').textContent = host.name || hostName();
-    updateGameTimer('host',round);
+    updateGameTimer('host',round,state.hostPlayerId);
     $('testStatus').textContent = sessionStorage.getItem('bb_sound_test_ok')==='1'
       ? 'Geluidstest geslaagd.'
       : state.tracks.length ? 'Test Spotify voordat je start.' : 'Importeer eerst een playlist.';
@@ -772,6 +863,9 @@
     const action = event.target.closest('[data-game-action]')?.dataset.gameAction;
     if(action==='ready') markReady(state.hostPlayerId);
     if(action==='submit') submitAnswer(state.hostPlayerId,$('hostGameContent'));
+    if(action==='rules') $('rulesModal')?.classList.remove('hidden');
+    if(action==='advantage') chooseAdvantage(event.target.closest('[data-advantage]')?.dataset.advantage);
+    if(action==='joker') activateJokerForNextRound();
     if(action==='jury'){
       renderHostScoreboard(state.room,state.room.currentRound || {});
       $('juryModal').classList.remove('hidden');
@@ -781,6 +875,22 @@
   function renderHostScoreboard(room,round){
     const answers = room.answers?.[round.id] || {};
     const correct = room.correct?.[round.id] || {};
+    if(round.isBingoBeats){
+      $('hostScoreboard').innerHTML = activePlayers(room).map(([id,player]) => {
+        const result = room.specialResults?.[round.id]?.[id] || {details:[false,false,false,false,false]};
+        return `<article class="specialJuryPlayer">
+          <header><span>${playerAnimal(id,player)}</span><strong>${escapeHtml(player.name || 'Speler')}</strong><em>${Number(result.count||0)} / 5</em></header>
+          <div>${SPECIAL_FIELDS.map((field,index) => {
+            const good = result.details?.[index]===true;
+            return `<section><div><small>${escapeHtml(field.label)}</small><strong>${escapeHtml(answers[id]?.answers?.[field.key] || 'Geen antwoord')}</strong></div>
+              <button type="button" class="judgeButton ${good?'selected':''}" data-judge-player="${escapeHtml(id)}" data-judge-field="${index}" data-value="true">✓</button>
+              <button type="button" class="judgeButton secondaryButton ${!good?'selected':''}" data-judge-player="${escapeHtml(id)}" data-judge-field="${index}" data-value="false">×</button>
+            </section>`;
+          }).join('')}</div>
+        </article>`;
+      }).join('');
+      return;
+    }
     $('hostScoreboard').innerHTML = activePlayers(room).map(([id,player]) => {
       const result = correct[id];
       return `<article class="scoreRow ${result===true?'good':result===false?'bad':''}">
@@ -800,29 +910,92 @@
     const playerId = button.dataset.judgePlayer;
     const value = button.dataset.value==='true';
     const roundId = state.room.currentRound.id;
+    const round = state.room.currentRound;
+    if(round.isBingoBeats && button.dataset.judgeField!==undefined){
+      const index = Number(button.dataset.judgeField);
+      const oldResult = state.room.specialResults?.[roundId]?.[playerId] || {details:[false,false,false,false,false],count:0};
+      const details = [...(oldResult.details || [false,false,false,false,false])];
+      while(details.length<5) details.push(false);
+      if(details[index]===value) return;
+      details[index] = value;
+      const count = details.filter(Boolean).length;
+      const player = state.room.players?.[playerId] || {};
+      const oldPoints = Number(state.room.points?.[roundId]?.[playerId] || 0);
+      const newPoints = count*100;
+      const updates = {
+        [`specialResults/${roundId}/${playerId}`]:{...oldResult,details,count},
+        [`correct/${roundId}/${playerId}`]:count>=4,
+        [`points/${roundId}/${playerId}`]:newPoints,
+        [`players/${playerId}/score`]:Math.max(0,Number(player.score||0)-oldPoints+newPoints),
+        [`players/${playerId}/blockScore`]:Math.max(0,Number(player.blockScore||0)-oldPoints+newPoints),
+        [`players/${playerId}/ready`]:false
+      };
+      if(count<4) restorePickedCellForCorrection(updates,playerId,player,roundId);
+      await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+      await refreshBlockWinnerAfterCorrection(roundId);
+      const latest = (await state.db.ref(`rooms/${state.roomCode}`).once('value')).val() || state.room;
+      renderHostScoreboard(latest,latest.currentRound || round);
+      return;
+    }
     const wasGood = state.room.correct?.[roundId]?.[playerId]===true;
     if(wasGood===value) return;
+    const corrected = {...(state.room.correct?.[roundId] || {}),[playerId]:value};
+    const answers = state.room.answers?.[roundId] || {};
+    const goodIds = activePlayers(state.room).filter(([id]) => corrected[id]===true && (!round.jokerOwnerId || id===round.jokerOwnerId)).map(([id]) => id);
+    goodIds.sort((a,b) => Number(answers[a]?.submittedAt||Infinity)-Number(answers[b]?.submittedAt||Infinity));
+    const fastest = goodIds[0] || '';
+    const updates = {[`correct/${roundId}/${playerId}`]:value};
+    activePlayers(state.room).forEach(([id,player]) => {
+      const oldPoints = Number(state.room.points?.[roundId]?.[id] || 0);
+      const newPoints = corrected[id]===true ? (id===fastest ? 150 : 100) : 0;
+      updates[`points/${roundId}/${id}`] = newPoints;
+      updates[`players/${id}/score`] = Math.max(0,Number(player.score||0)-oldPoints+newPoints);
+      updates[`players/${id}/blockScore`] = Math.max(0,Number(player.blockScore||0)-oldPoints+newPoints);
+    });
+    updates[`players/${playerId}/ready`] = false;
     const player = state.room.players?.[playerId] || {};
-    const awarded = Number(state.room.points?.[roundId]?.[playerId] || 0);
-    const replacement = value ? 100 : 0;
-    const updates = {
-      [`correct/${roundId}/${playerId}`]:value,
-      [`points/${roundId}/${playerId}`]:replacement,
-      [`players/${playerId}/score`]:Math.max(0,Number(player.score||0)-awarded+replacement),
-      [`players/${playerId}/ready`]:false
-    };
-    const pickedIndex = state.room.pickedCells?.[roundId]?.[playerId];
-    if(!value && pickedIndex!==undefined && pickedIndex!==null){
-      const marked = {...(player.marked || {})};
-      delete marked[pickedIndex];
-      updates[`players/${playerId}/marked`] = marked;
-      updates[`players/${playerId}/bingo`] = checkBingo(marked);
-      updates[`players/${playerId}/lastPickedRound`] = null;
-      updates[`pickedCells/${roundId}/${playerId}`] = null;
-    }
+    if(!value) restorePickedCellForCorrection(updates,playerId,player,roundId);
     await state.db.ref(`rooms/${state.roomCode}`).update(updates);
     const latest = (await state.db.ref(`rooms/${state.roomCode}`).once('value')).val() || state.room;
     renderHostScoreboard(latest,latest.currentRound || round);
+  }
+
+  function restorePickedCellForCorrection(updates,playerId,player,roundId){
+    const picked = state.room?.pickedCells?.[roundId]?.[playerId];
+    if(picked===undefined || picked===null) return;
+    if(typeof picked==='object' && picked.previousMarked){
+      updates[`players/${playerId}/marked`] = picked.previousMarked;
+      updates[`players/${playerId}/powerCells`] = picked.previousPower || player.powerCells || {};
+      updates[`players/${playerId}/bingo`] = checkBingo(picked.previousMarked);
+    }else{
+      const marked = {...(player.marked || {})};
+      delete marked[Number(picked)];
+      updates[`players/${playerId}/marked`] = marked;
+      updates[`players/${playerId}/bingo`] = checkBingo(marked);
+    }
+    updates[`players/${playerId}/lastPickedRound`] = null;
+    updates[`players/${playerId}/lastPowerEffect`] = null;
+    updates[`pickedCells/${roundId}/${playerId}`] = null;
+  }
+
+  async function refreshBlockWinnerAfterCorrection(roundId){
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
+    const room = snapshot.val() || {};
+    if(room.currentRound?.id!==roundId || !room.currentRound?.isBingoBeats) return;
+    const winner = determineBlockWinner(room);
+    if(!winner) return;
+    const scores = {};
+    activePlayers(room).forEach(([id,player]) => scores[id] = Number(player.blockScore||0));
+    const updates = {
+      'gameState/lastBlock/winnerId':winner.id,
+      'gameState/lastBlock/winnerName':winner.player.name || 'Speler',
+      'gameState/lastBlock/scores':scores
+    };
+    if(room.gameState?.pendingAdvantageWinnerId){
+      updates['gameState/pendingAdvantageWinnerId'] = winner.id;
+      updates['gameState/pendingAdvantageWinnerName'] = winner.player.name || 'Speler';
+    }
+    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
   }
 
   function showRoomError(error){
@@ -855,7 +1028,8 @@
     const players = activePlayers(room);
     const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
 
-    if((!round.id || round.status==='judged') && allReady){
+    const waitingForAdvantage = !!room.gameState?.pendingAdvantageWinnerId;
+    if((!round.id || round.status==='judged') && allReady && !waitingForAdvantage){
       queueAutomation(`start:${round.id || 'first'}:${room.roundNumber || 0}`,startAutomaticRound,250);
       return;
     }
@@ -869,7 +1043,7 @@
       return;
     }
     if(round.status==='answering'){
-      const delay = Math.max(0,Number(round.deadlineMs || Date.now())-Date.now());
+      const delay = Math.max(0,Number(round.maxDeadlineMs || round.deadlineMs || Date.now())-Date.now());
       queueAutomation(`judge:${round.id}`,() => lockAndJudgeRound(round.id),delay);
       return;
     }
@@ -900,11 +1074,13 @@
     const players = activePlayers(room);
     if(room.gameStatus==='finished' || !players.length || !players.every(([,player]) => player.ready===true)) return;
     if(round.id && round.status!=='judged') return;
+    if(room.gameState?.pendingAdvantageWinnerId) return;
 
     const track = chooseTrack();
     if(!track) throw new Error('Importeer eerst een Spotify-playlist bij Muziek.');
     state.currentTrack = track;
     const number = Number(room.roundNumber || 0)+1;
+    const isBingoBeats = number%5===0;
     const roundId = `r_${Date.now()}`;
     $('juryModal')?.classList.add('hidden');
     const updates = {
@@ -914,11 +1090,15 @@
       currentRound:{
         id:roundId,
         number,
+        blockRound:blockRoundNumber(number),
+        isBingoBeats,
         status:'picking',
         startedAt:firebase.database.ServerValue.TIMESTAMP,
-        categoryAt:Date.now()+2600,
-        seconds:currentSettings().duration,
-        trackId:track.id
+        categoryAt:Date.now()+(isBingoBeats?3400:2600),
+        seconds:isBingoBeats ? 60 : currentSettings().duration,
+        trackId:track.id,
+        advantage:room.gameState?.activeAdvantage || null,
+        jokerOwnerId:''
       }
     };
     players.forEach(([id]) => {
@@ -932,13 +1112,24 @@
     const snapshot = await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value');
     const round = snapshot.val() || {};
     if(round.id!==roundId || round.status!=='picking') return;
+    if(round.isBingoBeats){
+      await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+        status:'ready',
+        category:'BingoBeats Round',
+        categoryChosenAt:firebase.database.ServerValue.TIMESTAMP
+      });
+      return;
+    }
     const color = randomItem(COLORS);
+    const room = state.room || {};
+    const owner = jokerOwner(room,round);
     await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
       status:'ready',
       colorKey:color.key,
       colorName:color.name,
       colorHex:color.hex,
       category:color.category,
+      jokerOwnerId:owner,
       categoryChosenAt:firebase.database.ServerValue.TIMESTAMP
     });
   }
@@ -956,7 +1147,7 @@
     const track = trackForRound(round);
     if(!track) throw new Error('Het gekozen nummer staat niet meer in de geïmporteerde playlist.');
     const deviceId = await ensureSpotifyPlayer();
-    const duration = Number(round.seconds || currentSettings().duration)*1000;
+    const duration = Number(round.isBingoBeats ? 60 : (round.seconds || currentSettings().duration))*1000;
     let position = 0;
     if($('randomStart')?.checked && track.duration_ms>duration+45000){
       position = Math.floor(20000 + Math.random()*(track.duration_ms-duration-30000));
@@ -965,10 +1156,16 @@
       method:'PUT',
       body:JSON.stringify({uris:[track.uri],position_ms:Math.max(0,position)})
     });
-    const deadline = Date.now()+duration;
+    const baseDeadline = Date.now()+duration;
+    const advantage = activeAdvantage(state.room || {},round);
+    const extra = !round.isBingoBeats && advantage?.type==='extraTime' ? 5000 : 0;
+    const maxDeadline = baseDeadline+extra;
     await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
       status:'answering',
-      deadlineMs:deadline,
+      deadlineMs:baseDeadline,
+      baseDeadlineMs:baseDeadline,
+      maxDeadlineMs:maxDeadline,
+      maxSeconds:Number(round.seconds||20)+(extra/1000),
       musicStartedAt:firebase.database.ServerValue.TIMESTAMP
     });
   }
@@ -1036,6 +1233,49 @@
     }
   }
 
+  function wordsMatch(given,correct){
+    const first = normalize(given);
+    const second = normalize(correct);
+    if(!first || !second) return false;
+    if(first===second || first.includes(second) || second.includes(first)) return true;
+    const a = new Set(first.split(' ').filter(word => word.length>1));
+    const b = new Set(second.split(' ').filter(word => word.length>1));
+    const common = [...a].filter(word => b.has(word)).length;
+    return common>=Math.max(1,Math.ceil(Math.min(a.size,b.size)*.65));
+  }
+
+  function judgeSpecialAnswers(entry,correctAnswer){
+    const answers = entry?.answers || {};
+    const year = Number(correctAnswer.year)||0;
+    const era = normalize(answers.era);
+    const before = year<2001;
+    const eraGood = before
+      ? /\b(voor|before|ouder|tot)\b/.test(era)
+      : /\b(na|after|nieuwer|vanaf)\b/.test(era);
+    const decade = Math.floor(year/10)*10;
+    const decadeValues = normalize(answers.decade).match(/\d{2,4}/g) || [];
+    const guessedYear = Number((String(answers.year||'').match(/\d{4}/)||[])[0]);
+    const details = [
+      eraGood,
+      wordsMatch(answers.artist,correctAnswer.artist),
+      decadeValues.some(value => Number(value)===decade || Number(value)===decade%100),
+      !!guessedYear && Math.abs(guessedYear-year)<=2,
+      wordsMatch(answers.title,correctAnswer.track)
+    ];
+    return {details,count:details.filter(Boolean).length};
+  }
+
+  function determineBlockWinner(room,scoreOverrides={}){
+    return activePlayers(room)
+      .map(([id,player]) => ({
+        id,
+        player,
+        block:Number(scoreOverrides[id] ?? player.blockScore ?? 0),
+        total:Number(player.score||0)
+      }))
+      .sort((a,b) => b.block-a.block || b.total-a.total || a.id.localeCompare(b.id))[0] || null;
+  }
+
   async function lockAndJudgeRound(roundId){
     if(state.judgingRound===roundId) return;
     state.judgingRound = roundId;
@@ -1055,30 +1295,66 @@
     const correctAnswer = answerForTrack(track);
     const answers = room.answers?.[latestRound.id] || {};
     const correct = {};
-    const goodTimes = [];
-    activePlayers(room).forEach(([id]) => {
-      const entry = answers[id] || {};
-      const good = judgeAnswer(entry.answer,latestRound,correctAnswer);
-      correct[id] = good;
-      if(good) goodTimes.push({id,time:Number(entry.submittedAt)||Number.MAX_SAFE_INTEGER});
-    });
-    goodTimes.sort((a,b) => a.time-b.time);
-    const fastest = goodTimes[0]?.id || '';
+    const specialResults = {};
+    const points = {};
+    const roundJokerOwner = latestRound.jokerOwnerId || jokerOwner(room,latestRound);
+    if(latestRound.isBingoBeats){
+      activePlayers(room).forEach(([id]) => {
+        const blocked = !!roundJokerOwner && id!==roundJokerOwner;
+        const result = blocked
+          ? {details:[false,false,false,false,false],count:0,jokerBlocked:true}
+          : judgeSpecialAnswers(answers[id] || {},correctAnswer);
+        specialResults[id] = result;
+        correct[id] = !blocked && result.count>=4;
+        points[id] = blocked ? 0 : result.count*100;
+      });
+    }else{
+      const goodTimes = [];
+      activePlayers(room).forEach(([id]) => {
+        const entry = answers[id] || {};
+        const blocked = !!roundJokerOwner && id!==roundJokerOwner;
+        const good = !blocked && judgeAnswer(entry.answer,latestRound,correctAnswer);
+        correct[id] = good;
+        if(good) goodTimes.push({id,time:Number(entry.submittedAt)||Number.MAX_SAFE_INTEGER});
+      });
+      goodTimes.sort((a,b) => a.time-b.time);
+      const fastest = goodTimes[0]?.id || '';
+      activePlayers(room).forEach(([id]) => {
+        points[id] = correct[id] ? (id===fastest ? 150 : 100) : 0;
+      });
+    }
     const updates = {
       [`currentRound/status`]:'judged',
       [`currentRound/correctAnswer`]:correctAnswer,
       [`currentRound/judgedAt`]:firebase.database.ServerValue.TIMESTAMP,
       [`correct/${latestRound.id}`]:correct
     };
+    if(latestRound.isBingoBeats) updates[`specialResults/${latestRound.id}`] = specialResults;
+    const blockScores = {};
     activePlayers(room).forEach(([id,player]) => {
-      if(correct[id]){
-        const points = id===fastest ? 150 : 100;
-        updates[`points/${latestRound.id}/${id}`] = points;
-        updates[`players/${id}/score`] = Number(player.score||0)+points;
-      }else{
-        updates[`points/${latestRound.id}/${id}`] = 0;
-      }
+      const awarded = Number(points[id]||0);
+      const newTotal = Number(player.score||0)+awarded;
+      const newBlock = Number(player.blockScore||0)+awarded;
+      blockScores[id] = newBlock;
+      updates[`points/${latestRound.id}/${id}`] = awarded;
+      updates[`players/${id}/score`] = newTotal;
+      updates[`players/${id}/blockScore`] = newBlock;
+      updates[`players/${id}/ready`] = false;
     });
+    if(latestRound.isBingoBeats){
+      const winner = determineBlockWinner(room,blockScores);
+      if(winner){
+        updates['gameState/pendingAdvantageWinnerId'] = winner.id;
+        updates['gameState/pendingAdvantageWinnerName'] = winner.player.name || 'Speler';
+        updates['gameState/lastBlock'] = {
+          endingRound:Number(latestRound.number||0),
+          winnerId:winner.id,
+          winnerName:winner.player.name || 'Speler',
+          scores:blockScores,
+          createdAt:firebase.database.ServerValue.TIMESTAMP
+        };
+      }
+    }
     await state.db.ref(`rooms/${state.roomCode}`).update(updates);
     state.judgingRound = '';
   }
@@ -1117,16 +1393,19 @@
     localStorage.setItem('hb_player_room',state.roomCode);
     const reference = state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`);
     const existing = (await reference.once('value')).val() || {};
+    const card = Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard();
     await reference.update({
       name,
       emoji:existing.emoji || playerAnimal(state.playerId,existing),
       online:true,
       ready:false,
       score:Number(existing.score)||0,
+      blockScore:Number(existing.blockScore)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
-      card:Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard(),
+      card,
       marked:existing.marked || {},
+      powerCells:powerCellsFor(state.playerId,card,existing.powerCells),
       bingo:!!existing.bingo
     });
     reference.child('online').onDisconnect().set(false);
@@ -1148,7 +1427,7 @@
     $('playerGameScreen').classList.remove('hidden');
     $('playerAvatar').textContent = playerAnimal(state.playerId,me);
     $('playerDisplayName').textContent = me.name || state.playerName;
-    updateGameTimer('player',round);
+    updateGameTimer('player',round,state.playerId);
     renderGameExperience($('playerGameContent'),room,round,me,state.playerId,false);
   }
 
@@ -1168,7 +1447,7 @@
     const liveAnswerSignature = ownAnswer
       ? activePlayers(room).map(([id]) => `${id}:${room.answers?.[round.id]?.[id]?.answer || ''}`).join('|')
       : '';
-    const key = `${room.gameStatus||'lobby'}:${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${liveAnswerSignature}:${activePlayers(room).map(([id,player])=>`${id}:${!!player.ready}:${player.score||0}`).join('|')}`;
+    const key = `${room.gameStatus||'lobby'}:${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${liveAnswerSignature}:${JSON.stringify(room.specialResults?.[round.id]?.[userId]||null)}:${JSON.stringify(room.gameState||{})}:${JSON.stringify(me.powerCells||{})}:${markedCount(me)}:${activePlayers(room).map(([id,player])=>`${id}:${!!player.ready}:${player.score||0}:${player.blockScore||0}`).join('|')}`;
     const keyName = isHost ? 'lastHostRender' : 'lastPlayerRender';
     if(key===state[keyName]) return;
     state[keyName] = key;
@@ -1178,22 +1457,25 @@
     }else if(!round.id){
       root.innerHTML = playerLobbyMarkup(room,me);
     }else if(round.status==='picking'){
-      root.innerHTML = categoryPickerMarkup(round);
+      root.innerHTML = round.isBingoBeats ? specialPickerMarkup(round) : categoryPickerMarkup(round);
     }else if(round.status==='ready'){
-      root.innerHTML = questionReadyMarkup(round);
+      root.innerHTML = round.isBingoBeats ? specialReadyMarkup(round) : questionReadyMarkup(round);
     }else if(round.status==='answering'){
       root.innerHTML = ownAnswer
-        ? submittedStateMarkup(room,round,userId)
-        : answerStateMarkup(round);
+        ? (round.isBingoBeats ? specialSubmittedMarkup(room,round,userId) : submittedStateMarkup(room,round,userId))
+        : (round.isBingoBeats ? specialAnswerStateMarkup(room,round,userId) : answerStateMarkup(round,userId));
     }else if(round.status==='judging' || round.status==='locked'){
       root.innerHTML = lockedMarkup(round);
     }else if(round.status==='judged'){
-      root.innerHTML = resultStateMarkup(room,round,me,ownCorrect,isHost);
+      root.innerHTML = round.isBingoBeats
+        ? specialResultStateMarkup(room,round,me,userId,isHost)
+        : resultStateMarkup(room,round,me,ownCorrect,isHost);
     }else if(round.status==='error'){
       root.innerHTML = gameErrorMarkup(round.error || 'De ronde kon niet automatisch starten.');
     }else{
       root.innerHTML = playerLobbyMarkup(room,me);
     }
+    maybeShowPowerEffect(me,round,userId);
     bindGameActions(root,userId,isHost);
   }
 
@@ -1212,7 +1494,10 @@
         <div class="readySummary"><span>SPELERS</span><strong>${ready} / ${players.length} READY</strong></div>
         <div class="lobbyPlayers">${playerListHtml(room)}</div>
       </section>
-      <button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY'}</button>
+      <div class="lobbyButtons">
+        <button type="button" class="rulesButton" data-game-action="rules">SPELREGELS</button>
+        <button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY'}</button>
+      </div>
     </div>`;
   }
 
@@ -1242,6 +1527,16 @@
     </section>`;
   }
 
+  function specialPickerMarkup(round){
+    return `<section class="playerPanel categoryPickerState specialPickerState">
+      <small>RONDE 5 VAN 5</small>
+      <h1>BingoBeats Round</h1>
+      <div class="specialRoundStar"><img src="bb_logo_lime.webp" alt="BB"><span>★</span></div>
+      <p>Vijf categorieën · één nummer · 60 seconden</p>
+      <div class="specialRuleChips"><span>100 punten per goed deel</span><span>4/5 = één vrij vak</span></div>
+    </section>`;
+  }
+
   function questionReadyMarkup(round){
     const color = colorForRound(round);
     return `<section class="playerPanel waitingCard categoryReveal" style="--round-color:${color.hex}">
@@ -1252,14 +1547,103 @@
     </section>`;
   }
 
-  function secondsLeft(round){
-    if(round.status!=='answering' || !round.deadlineMs) return 0;
-    return Math.max(0,Math.ceil((Number(round.deadlineMs)-Date.now())/1000));
+  function specialReadyMarkup(){
+    return `<section class="playerPanel waitingCard specialReadyState">
+      <img src="bb_logo_lime.webp" alt="Bingo Beats">
+      <small>BINGOBEATS ROUND</small>
+      <h1>Vijf antwoorden.<br>Één nummer.</h1>
+      <p>De muziek en stopwatch starten nu.</p>
+    </section>`;
   }
 
-  function stopwatchMarkup(round){
-    const left = secondsLeft(round);
-    const total = Math.max(1,Number(round.seconds)||20);
+  function advantageBannerMarkup(room,round,userId){
+    const advantage = activeAdvantage(room,round);
+    if(!advantage) return '';
+    const config = ADVANTAGES[advantage.type];
+    if(!config) return '';
+    const owner = room.players?.[advantage.ownerId];
+    const isOwner = advantage.ownerId===userId;
+    let text = isOwner ? `Jouw ${config.name} is actief.` : `${owner?.name || 'De blokwinnaar'}: ${config.name}.`;
+    if(round.jokerOwnerId){
+      text = isOwner ? 'Jouw Joker is actief: alleen jouw antwoord telt.' : `${owner?.name || 'De blokwinnaar'} gebruikt de Joker; jouw antwoord telt deze ronde niet.`;
+    }
+    return `<div class="advantageBanner"><b>${config.icon}</b><span>${escapeHtml(text)}</span></div>`;
+  }
+
+  function specialFieldsMarkup(){
+    return SPECIAL_FIELDS.map(field => `<label class="specialField">
+      <span>${escapeHtml(field.label)}</span>
+      <input type="text" maxlength="100" data-special-field="${field.key}" placeholder="${escapeHtml(field.placeholder)}" autocomplete="off">
+    </label>`).join('');
+  }
+
+  function specialAnswerStateMarkup(room,round,userId){
+    const blocked = !!round.jokerOwnerId && round.jokerOwnerId!==userId;
+    if(blocked){
+      const owner = room.players?.[round.jokerOwnerId];
+      return `<div class="playerState specialBlockedState">
+        ${advantageBannerMarkup(room,round,userId)}
+        <section class="playerPanel waitingCard">
+          ${stopwatchMarkup(round,userId)}
+          <h1>Joker actief</h1>
+          <p>Alleen het antwoord van ${escapeHtml(owner?.name || 'de blokwinnaar')} telt.</p>
+        </section>
+      </div>`;
+    }
+    return `<div class="playerState specialAnswerState">
+      ${advantageBannerMarkup(room,round,userId)}
+      <section class="playerPanel specialAnswerPanel">
+        <div class="specialAnswerHead">
+          <div><small>BINGOBEATS ROUND</small><h1>Wat weet jij?</h1></div>
+          ${stopwatchMarkup(round,userId)}
+        </div>
+        <div class="specialFields">${specialFieldsMarkup()}</div>
+        <button type="button" class="specialSubmitButton" data-game-action="submit">VERSTUUR ALLE 5</button>
+      </section>
+    </div>`;
+  }
+
+  function specialLiveAnswersMarkup(room,round,userId){
+    const answers = room.answers?.[round.id] || {};
+    const submitted = activePlayers(room).filter(([id]) => answers[id]);
+    if(!submitted.length) return '<p class="liveAnswersEmpty">Nog niemand heeft antwoorden ingestuurd.</p>';
+    return submitted.map(([id,player]) => {
+      const values = SPECIAL_FIELDS.map(field => answers[id]?.answers?.[field.key]).filter(Boolean);
+      return `<article class="liveAnswerRow specialLiveRow ${id===userId?'own':''}">
+        <span>${playerAnimal(id,player)}</span>
+        <div><strong>${escapeHtml(player.name || 'Speler')}${id===userId?' · JIJ':''}</strong><small>${escapeHtml(values.join(' · ') || 'Geen antwoorden')}</small></div>
+        <i>${values.length}/5</i>
+      </article>`;
+    }).join('');
+  }
+
+  function specialSubmittedMarkup(room,round,userId){
+    const submittedCount = activePlayers(room).filter(([id]) => room.answers?.[round.id]?.[id]).length;
+    return `<div class="playerState submittedState specialSubmittedState">
+      ${advantageBannerMarkup(room,round,userId)}
+      <section class="playerPanel submittedLivePanel">
+        <div class="submittedTimer">
+          ${stopwatchMarkup(round,userId)}
+          <div><strong>Vijf antwoorden ingeleverd ✓</strong><small>${submittedCount} van ${activePlayers(room).length} spelers klaar</small></div>
+        </div>
+        <div class="liveAnswersHeader"><span>LIVE ANTWOORDEN</span><small>Nog zonder juryuitslag</small></div>
+        <div class="liveAnswersList">${specialLiveAnswersMarkup(room,round,userId)}</div>
+      </section>
+    </div>`;
+  }
+
+  function secondsLeft(round,userId=currentUserId()){
+    if(round.status!=='answering' || !round.deadlineMs) return 0;
+    const deadline = effectiveDeadline(state.room || {},round,userId);
+    return Math.max(0,Math.ceil((deadline-Date.now())/1000));
+  }
+
+  function stopwatchMarkup(round,userId=currentUserId()){
+    const left = secondsLeft(round,userId);
+    const advantage = activeAdvantage(state.room || {},round);
+    let total = Math.max(1,Number(round.seconds)||20);
+    if(!round.isBingoBeats && advantage?.type==='timePressure' && userId!==advantage.ownerId) total -= 5;
+    if(!round.isBingoBeats && advantage?.type==='extraTime' && userId===advantage.ownerId) total += 5;
     const progress = Math.max(0,Math.min(100,(left/total)*100));
     return `<div class="roundStopwatch" data-stopwatch-round="${escapeHtml(round.id || '')}" style="--timer-progress:${progress}">
       <span class="stopwatchCrown" aria-hidden="true"></span>
@@ -1270,9 +1654,11 @@
     </div>`;
   }
 
-  function answerStateMarkup(round){
+  function answerStateMarkup(round,userId){
     const color = colorForRound(round);
-    return `<div class="playerState answerState" style="--round-color:${color.hex}">
+    const banner = advantageBannerMarkup(state.room || {},round,userId);
+    return `<div class="playerState answerState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
+      ${banner}
       <section class="playerPanel questionCard">
         <div class="questionColor"></div>
         <small>${escapeHtml(color.name)}</small>
@@ -1310,7 +1696,9 @@
     const color = colorForRound(round);
     const submittedCount = activePlayers(room).filter(([id]) => room.answers?.[round.id]?.[id]).length;
     const total = activePlayers(room).length;
-    return `<div class="playerState submittedState" style="--round-color:${color.hex}">
+    const banner = advantageBannerMarkup(room,round,userId);
+    return `<div class="playerState submittedState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
+      ${banner}
       <section class="playerPanel questionCard submittedQuestion">
         <div class="questionColor"></div>
         <div><small>${escapeHtml(color.name)}</small><h1>${escapeHtml(round.category)}</h1></div>
@@ -1339,6 +1727,7 @@
   function resultStateMarkup(room,round,me,good,isHost){
     const picked = me.lastPickedRound===round.id;
     const canPick = good===true && !picked;
+    if(!canPick) return roundScoreboardMarkup(room,round,isHost,currentUserId());
     const resultClass = good===true ? 'good' : 'bad';
     const resultTitle = good===true ? 'GOED ANTWOORD!' : 'HELAAS';
     const answer = round.correctAnswer || {};
@@ -1351,7 +1740,6 @@
       </section>
       <section class="playerPanel resultBoardPanel">
         <div class="bingoCard">${bingoCardHtml(me,round,canPick)}</div>
-        ${canPick?'':standingsStripHtml(room)}
       </section>
       <div class="resultActions ${isHost?'withJury':''}">
         ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
@@ -1360,13 +1748,107 @@
     </div>`;
   }
 
-  function standingsStripHtml(room){
-    const ranking = activePlayers(room)
-      .sort((a,b) => Number(b[1].score||0)-Number(a[1].score||0))
-      .slice(0,4);
-    return `<div class="standingsStrip">${ranking.map(([id,player],index) => `
-      <span><b>${index+1}</b>${playerAnimal(id,player)} <strong>${escapeHtml(player.name || 'Speler')}</strong><em>${Number(player.score)||0}</em></span>
-    `).join('')}</div>`;
+  function scoreboardRowsMarkup(room,round,block=false){
+    const points = room.points?.[round.id] || {};
+    const scores = block ? (room.gameState?.lastBlock?.scores || {}) : null;
+    const ranking = activePlayers(room).sort((a,b) => {
+      const aScore = block ? Number(scores?.[a[0]]||0) : Number(a[1].score||0);
+      const bScore = block ? Number(scores?.[b[0]]||0) : Number(b[1].score||0);
+      return bScore-aScore || Number(b[1].score||0)-Number(a[1].score||0);
+    });
+    return ranking.map(([id,player],index) => {
+      const total = block ? Number(scores?.[id]||0) : Number(player.score||0);
+      return `<article class="roundScoreRow ${index===0?'leader':''}">
+        <b>${index+1}</b>
+        <span>${playerAnimal(id,player)}</span>
+        <div><strong>${escapeHtml(player.name || 'Speler')}</strong><small>${markedCount(player)} van 36 vakken</small></div>
+        ${block ? '' : `<em>+${Number(points[id]||0)}</em>`}
+        <strong>${total} <small>PT</small></strong>
+      </article>`;
+    }).join('');
+  }
+
+  function jokerLobbyMarkup(room,userId){
+    const advantage = room.gameState?.activeAdvantage;
+    const nextRound = Number(room.roundNumber||0)+1;
+    if(advantage?.type!=='joker' || advantage.ownerId!==userId || advantage.jokerUsed || nextRound>Number(advantage.endRound||0)) return '';
+    return `<button type="button" class="jokerActivateButton" data-game-action="joker">🃏 JOKER INZETTEN BIJ VOLGENDE NUMMER</button>`;
+  }
+
+  function roundScoreboardMarkup(room,round,isHost,userId){
+    const me = room.players?.[userId] || {};
+    const allReady = activePlayers(room).filter(([,player]) => player.ready).length;
+    const answer = round.correctAnswer || {};
+    return `<div class="playerState roundScoreState">
+      <section class="playerPanel roundScorePanel">
+        <div class="scoreboardTitle">
+          <img src="bb_logo_lime.webp" alt="BB">
+          <div><small>RONDE ${Number(round.number||0)} · SCOREBORD</small><h1>Stand na dit liedje</h1></div>
+        </div>
+        <div class="scoreTrack"><strong>${escapeHtml(answer.track || '-')}</strong><span>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</span></div>
+        <div class="roundScoreRows">${scoreboardRowsMarkup(room,round,false)}</div>
+        <div class="readyCounter">${allReady} / ${activePlayers(room).length} READY VOOR VOLGENDE RONDE</div>
+      </section>
+      ${jokerLobbyMarkup(room,userId)}
+      <div class="resultActions ${isHost?'withJury':''}">
+        ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
+        <button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY VOLGENDE RONDE'}</button>
+      </div>
+    </div>`;
+  }
+
+  function advantageChoicesMarkup(){
+    return Object.entries(ADVANTAGES).map(([key,advantage]) => `<button type="button" data-game-action="advantage" data-advantage="${key}">
+      <b>${advantage.icon} ${escapeHtml(advantage.name)}</b><small>${escapeHtml(advantage.text)}</small>
+    </button>`).join('');
+  }
+
+  function blockScoreboardMarkup(room,round,isHost,userId){
+    const me = room.players?.[userId] || {};
+    const gameState = room.gameState || {};
+    const pending = gameState.pendingAdvantageWinnerId;
+    const winner = room.players?.[gameState.lastBlock?.winnerId] || {};
+    const advantage = gameState.activeAdvantage;
+    const canChoose = pending===userId;
+    const waiting = pending && !canChoose;
+    return `<div class="playerState blockScoreState">
+      <section class="playerPanel blockScorePanel">
+        <div class="scoreboardTitle blockTitle">
+          <span>🏆</span>
+          <div><small>BLOKSCOREBORD · RONDE 1–5</small><h1>${escapeHtml(gameState.lastBlock?.winnerName || winner.name || 'Blokwinnaar')} wint het blok</h1></div>
+        </div>
+        <div class="roundScoreRows">${scoreboardRowsMarkup(room,round,true)}</div>
+        ${canChoose ? `<div class="advantageChoice"><strong>Kies jouw voordeel voor de volgende vier rondes</strong><div>${advantageChoicesMarkup()}</div></div>` : ''}
+        ${waiting ? `<div class="advantageWaiting">Wachten tot ${escapeHtml(gameState.pendingAdvantageWinnerName || winner.name || 'de blokwinnaar')} een voordeel kiest…</div>` : ''}
+        ${!pending && advantage ? `<div class="chosenAdvantage"><b>${ADVANTAGES[advantage.type]?.icon || '★'} ${escapeHtml(ADVANTAGES[advantage.type]?.name || 'Voordeel')}</b><span>Gekozen door ${escapeHtml(advantage.ownerName || 'de blokwinnaar')}</span></div>` : ''}
+      </section>
+      <div class="resultActions ${isHost?'withJury':''}">
+        ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
+        ${!pending ? `<button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY NIEUW BLOK'}</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function specialResultStateMarkup(room,round,me,userId,isHost){
+    const result = room.specialResults?.[round.id]?.[userId] || {details:[false,false,false,false,false],count:0};
+    const picked = me.lastPickedRound===round.id;
+    const canPick = Number(result.count||0)>=4 && !picked;
+    if(!canPick) return blockScoreboardMarkup(room,round,isHost,userId);
+    const labels = SPECIAL_FIELDS.map((field,index) => `<span class="${result.details?.[index]?'good':'bad'}"><b>${result.details?.[index]?'✓':'×'}</b>${escapeHtml(field.label)}</span>`).join('');
+    return `<div class="playerState resultState pickMode specialResultState">
+      <section class="playerPanel resultCard good">
+        <span>★</span><h1>${Number(result.count||0)} VAN 5 GOED</h1>
+        <p>Kies één vrij vak naar keuze.</p>
+        <div class="specialResultDetails">${labels}</div>
+      </section>
+      <section class="playerPanel resultBoardPanel">
+        <div class="bingoCard">${bingoCardHtml(me,round,true,true)}</div>
+      </section>
+      <div class="resultActions ${isHost?'withJury':''}">
+        ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
+        <button type="button" class="readyButton" disabled>KIES EERST EEN VAK</button>
+      </div>
+    </div>`;
   }
 
   function finalScoreMarkup(room){
@@ -1396,6 +1878,11 @@
     });
     root.querySelector('[data-game-action="ready"]')?.addEventListener('click',() => markReady(userId));
     root.querySelector('[data-game-action="submit"]')?.addEventListener('click',() => submitAnswer(userId,root));
+    root.querySelector('[data-game-action="rules"]')?.addEventListener('click',() => $('rulesModal')?.classList.remove('hidden'));
+    root.querySelector('[data-game-action="joker"]')?.addEventListener('click',activateJokerForNextRound);
+    root.querySelectorAll('[data-game-action="advantage"]').forEach(button => {
+      button.addEventListener('click',() => chooseAdvantage(button.dataset.advantage));
+    });
     root.querySelector('.participantAnswerInput')?.addEventListener('keydown',event => {
       if(event.key==='Enter'){
         event.preventDefault();
@@ -1404,13 +1891,13 @@
     });
   }
 
-  function updateGameTimer(prefix,round){
+  function updateGameTimer(prefix,round,userId){
     clearInterval(state.timers[prefix]);
     const element = $(`${prefix}Timer`);
     const tick = () => {
       if(round.status==='answering' && round.deadlineMs){
-        const left = secondsLeft(round);
-        const total = Math.max(1,Number(round.seconds)||20);
+        const left = secondsLeft(round,userId);
+        const total = Math.max(1,Number(round.maxSeconds||round.seconds)||20);
         const progress = Math.max(0,Math.min(100,(left/total)*100));
         element.textContent = `00:${String(left).padStart(2,'0')}`;
         document.querySelectorAll('[data-stopwatch-round]').forEach(stopwatch => {
@@ -1430,13 +1917,30 @@
 
   async function submitAnswer(playerId,root){
     const round = state.room?.currentRound;
+    if(!round?.id || round.status!=='answering') return;
+    const deadline = effectiveDeadline(state.room,round,playerId);
+    if(deadline && Date.now()>deadline) return;
+    if(round.isBingoBeats){
+      const values = {};
+      root?.querySelectorAll('[data-special-field]').forEach(input => {
+        values[input.dataset.specialField] = input.value.trim().slice(0,100);
+      });
+      if(Object.values(values).every(value => !value)) return;
+      await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${playerId}`).set({
+        special:true,
+        answers:values,
+        answer:Object.values(values).join(' · '),
+        submittedAt:firebase.database.ServerValue.TIMESTAMP
+      });
+      return;
+    }
     const input = root?.querySelector('.participantAnswerInput');
     const answer = input?.value.trim() || '';
-    if(!round?.id || round.status!=='answering') return;
+    if(!answer) return;
     await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${playerId}`).set({
       answer,submittedAt:firebase.database.ServerValue.TIMESTAMP
     });
-    if(input) input.value = '';
+    input.value = '';
   }
 
   async function markReady(playerId){
@@ -1444,30 +1948,85 @@
     await state.db.ref(`rooms/${state.roomCode}/players/${playerId}/ready`).set(true);
   }
 
-  function bingoCardHtml(player,round,canPick){
+  function bingoCardHtml(player,round,canPick,freeChoice=false){
     const card = Array.isArray(player?.card) ? player.card : [];
     const marked = player?.marked || {};
+    const power = powerCellsFor(currentUserId(),card,player?.powerCells);
     return card.map((color,index) => {
       const colorInfo = COLORS.find(item => item.key===color);
       const isMarked = !!marked[index];
-      const pickable = canPick && color===round?.colorKey && !isMarked;
-      return `<button type="button" class="bingoCell ${isMarked?'marked':''} ${pickable?'pickable':''}" data-index="${index}" style="--cell:${colorInfo?.hex || '#777'}" ${pickable?'':'disabled'}><span>${isMarked?'✓':''}</span></button>`;
+      const bombTriggered = (index===power.bombIndex && power.bombTriggered) || (index===power.bomb2Index && power.bomb2Triggered);
+      const engineerVisible = index===power.engineerIndex && power.engineerFound;
+      const pickable = canPick && (freeChoice || color===round?.colorKey) && !isMarked && !bombTriggered;
+      const icon = bombTriggered ? '💣' : engineerVisible ? '👷' : isMarked ? '✓' : '';
+      return `<button type="button" class="bingoCell ${isMarked?'marked':''} ${pickable?'pickable':''} ${bombTriggered?'bombLocked':''} ${engineerVisible?'engineerCell':''}" data-index="${index}" style="--cell:${colorInfo?.hex || '#777'}" ${pickable?'':'disabled'}><span>${icon}</span></button>`;
     }).join('');
   }
 
   async function pickBingoCell(playerId,index){
     const round = state.room?.currentRound;
-    const player = state.room?.players?.[playerId];
     const good = state.room?.correct?.[round?.id]?.[playerId]===true;
-    if(round?.status!=='judged' || !good || !round?.id || !player || player.lastPickedRound===round.id || player.card?.[index]!==round.colorKey || player.marked?.[index]) return;
-    const marked = {...(player.marked||{}),[index]:true};
-    const bingo = checkBingo(marked);
+    const specialCount = Number(state.room?.specialResults?.[round?.id]?.[playerId]?.count||0);
+    const freeChoice = !!round?.isBingoBeats && specialCount>=4;
+    if(round?.status!=='judged' || !good || !round?.id) return;
+    const reference = state.db.ref(`rooms/${state.roomCode}/players/${playerId}`);
+    let effect = '';
+    let beforeMarked = {};
+    let beforePower = {};
+    let bingo = false;
+    const transaction = await reference.transaction(current => {
+      const player = current || {};
+      const card = Array.isArray(player.card) ? player.card : [];
+      const marked = {...(player.marked||{})};
+      const power = powerCellsFor(playerId,card,player.powerCells);
+      const bomb2Active = Number.isInteger(power.bomb2Index) && activeAdvantage(state.room || {},round)?.type==='doubleTrouble';
+      const bomb1 = index===power.bombIndex && !power.bombTriggered;
+      const bomb2 = bomb2Active && index===power.bomb2Index && !power.bomb2Triggered;
+      if(!card[index] || marked[index] || player.lastPickedRound===round.id) return;
+      if(!freeChoice && card[index]!==round.colorKey) return;
+      if((index===power.bombIndex && power.bombTriggered) || (index===power.bomb2Index && power.bomb2Triggered)) return;
+      beforeMarked = {...marked};
+      beforePower = {...power};
+      if(index===power.engineerIndex && !power.engineerFound){
+        marked[index] = true;
+        power.engineerFound = true;
+        power.engineerActive = true;
+        effect = 'engineer';
+      }else if(bomb1 || bomb2){
+        if(bomb1) power.bombTriggered = true;
+        if(bomb2) power.bomb2Triggered = true;
+        if(power.engineerActive && !power.engineerUsed){
+          marked[index] = true;
+          power.engineerUsed = true;
+          power.engineerActive = false;
+          effect = 'repaired';
+        }else{
+          Object.keys(marked).forEach(key => delete marked[key]);
+          effect = 'bomb';
+        }
+      }else{
+        marked[index] = true;
+      }
+      bingo = checkBingo(marked);
+      return {
+        ...player,
+        marked,
+        powerCells:power,
+        bingo,
+        lastPickedRound:round.id,
+        lastPowerEffect:effect ? {type:effect,roundId:round.id,at:Date.now()} : null,
+        ready:false
+      };
+    },false);
+    if(!transaction.committed) return;
+    const player = transaction.snapshot.val() || {};
     await state.db.ref(`rooms/${state.roomCode}`).update({
-      [`players/${playerId}/marked`]:marked,
-      [`players/${playerId}/bingo`]:bingo,
-      [`players/${playerId}/lastPickedRound`]:round.id,
-      [`players/${playerId}/ready`]:false,
-      [`pickedCells/${round.id}/${playerId}`]:index
+      [`pickedCells/${round.id}/${playerId}`]:{
+        index,
+        previousMarked:beforeMarked,
+        previousPower:beforePower,
+        effect:effect || ''
+      }
     });
     if(bingo){
       const roomSnapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
@@ -1494,6 +2053,90 @@
     }
   }
 
+  function maybeShowPowerEffect(player,round,userId){
+    const effect = player?.lastPowerEffect;
+    if(!effect?.type || effect.roundId!==round?.id) return;
+    const key = `${userId}:${effect.roundId}:${effect.type}:${effect.at||''}`;
+    if(state.powerEffectKey===key) return;
+    state.powerEffectKey = key;
+    const config = {
+      bomb:{icon:'💥',title:'Beat Bomb!',text:'Al je gekozen vakken zijn verdwenen. De bom blijft geblokkeerd.'},
+      repaired:{icon:'👷',title:'Engineer redt je kaart!',text:'Je Beat Engineer beschermt je. Je gekozen vakken blijven staan.'},
+      engineer:{icon:'👷',title:'Beat Engineer gevonden!',text:'Je Engineer is nu actief en beschermt je één keer tegen een Beat Bomb.'}
+    }[effect.type];
+    if(!config) return;
+    $('powerEffectIcon').textContent = config.icon;
+    $('powerEffectTitle').textContent = config.title;
+    $('powerEffectText').textContent = config.text;
+    $('powerEffectOverlay').classList.remove('hidden');
+  }
+
+  async function chooseAdvantage(type){
+    if(!ADVANTAGES[type] || !state.roomCode) return;
+    const userId = currentUserId();
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
+    const room = snapshot.val() || {};
+    if(room.gameState?.pendingAdvantageWinnerId!==userId) return;
+    const startRound = Number(room.roundNumber||0)+1;
+    const advantage = {
+      type,
+      ownerId:userId,
+      ownerName:room.players?.[userId]?.name || 'Speler',
+      startRound,
+      endRound:startRound+3,
+      chosenAt:firebase.database.ServerValue.TIMESTAMP,
+      jokerUsed:false
+    };
+    const updates = {
+      'gameState/activeAdvantage':advantage,
+      'gameState/pendingAdvantageWinnerId':null,
+      'gameState/pendingAdvantageWinnerName':null
+    };
+    Object.entries(room.players||{}).forEach(([id,player]) => {
+      const power = powerCellsFor(id,player.card,player.powerCells);
+      delete power.bomb2Index;
+      power.bomb2Triggered = false;
+      updates[`players/${id}/blockScore`] = 0;
+      updates[`players/${id}/ready`] = false;
+      updates[`players/${id}/powerCells`] = power;
+    });
+    if(type==='engineer'){
+      const player = room.players?.[userId] || {};
+      const power = powerCellsFor(userId,player.card,player.powerCells);
+      delete power.bomb2Index;
+      updates[`players/${userId}/powerCells`] = {
+        ...power,
+        bomb2Triggered:false,
+        engineerFound:true,
+        engineerActive:true,
+        engineerUsed:false
+      };
+    }
+    if(type==='doubleTrouble'){
+      Object.entries(room.players||{}).forEach(([id,player]) => {
+        if(id===userId) return;
+        const power = powerCellsFor(id,player.card,player.powerCells);
+        power.bomb2Index = secondBombIndex(id,player.card,power);
+        power.bomb2Triggered = false;
+        updates[`players/${id}/powerCells`] = power;
+      });
+    }
+    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+  }
+
+  async function activateJokerForNextRound(){
+    const userId = currentUserId();
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
+    const room = snapshot.val() || {};
+    const advantage = room.gameState?.activeAdvantage;
+    const nextRound = Number(room.roundNumber||0)+1;
+    if(advantage?.type!=='joker' || advantage.ownerId!==userId || advantage.jokerUsed || nextRound>Number(advantage.endRound||0)) return;
+    await state.db.ref(`rooms/${state.roomCode}/gameState/activeAdvantage`).update({
+      jokerUsed:true,
+      jokerRound:nextRound
+    });
+  }
+
   function checkBingo(marked){
     const lines = [];
     for(let row=0;row<6;row++) lines.push(Array.from({length:6},(_,column) => row*6+column));
@@ -1518,7 +2161,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2090',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2100',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

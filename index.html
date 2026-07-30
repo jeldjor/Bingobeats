@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2080">
+  <link rel="stylesheet" href="style.css?v=2090">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -80,7 +80,7 @@
             <li data-preflight="import"><input type="checkbox" disabled aria-label="Playlist goed geïmporteerd"><strong>Playlist goed geïmporteerd</strong></li>
             <li data-preflight="test"><input type="checkbox" disabled aria-label="Geluidstest geslaagd"><strong>Geluidstest geslaagd</strong></li>
           </ul>
-          <p id="testStatus" class="statusLine hidden" aria-live="polite">Importeer eerst een playlist.</p>
+          <p id="testStatus" class="statusLine">Importeer eerst een playlist.</p>
         </section>
       </div>
 
@@ -222,24 +222,7 @@
     </section>
 
     <section class="hostStep playStep" data-step="4">
-      <header class="hostFlowHeader">
-        <nav class="stepper" aria-label="Hoststappen">
-          <button type="button" class="stepNode" data-step-target="1" data-go="1"><b>1</b><span>MUZIEK</span></button>
-          <i aria-hidden="true"></i>
-          <button type="button" class="stepNode" data-step-target="2" data-go="2"><b>2</b><span>KAMER</span></button>
-          <i aria-hidden="true"></i>
-          <button type="button" class="stepNode" data-step-target="3" data-go="3"><b>3</b><span>INSTELLINGEN</span></button>
-          <i aria-hidden="true"></i>
-          <button type="button" class="stepNode" data-step-target="4" data-go="4"><b>4</b><span>SPELEN</span></button>
-        </nav>
-        <div class="flowBrand">
-          <span class="flowRole">♛ HOST</span>
-          <img src="bb_logo_lime.webp" alt="Bingo Beats">
-          <span class="flowPlayers"><b data-player-count>0</b> spelers</span>
-        </div>
-      </header>
-
-      <div class="hostGameShell">
+      <div class="hostGameScreen">
         <header class="playerTopbar hostPlayerTopbar">
           <strong><span id="hostAvatar">🎵</span> <span id="hostDisplayName">Host</span></strong>
           <span id="hostTimer">--</span>
@@ -284,7 +267,7 @@
         <div><small>ALLEEN VOOR DE HOST</small><h2 id="juryModalTitle">Jury controleren</h2></div>
         <button type="button" data-close-modal="juryModal" aria-label="Sluiten">×</button>
       </header>
-      <p class="juryHelp">Pas alleen een antwoord aan als de automatische jury het verkeerd heeft beoordeeld.</p>
+      <p class="juryHelp">Pas alleen een antwoord aan wanneer de automatische jury het verkeerd heeft beoordeeld.</p>
       <div id="hostScoreboard" class="scoreboard"></div>
     </section>
   </div>
@@ -293,6 +276,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2080"></script>
+  <script src="app.js?v=2090"></script>
 </body>
 </html>

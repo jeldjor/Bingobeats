@@ -1,54 +1,25 @@
-BINGO BEATS CLEAN V208
+BINGO BEATS CLEAN V209
 
-Dit is een opnieuw opgebouwde versie zonder de oude V176-V189-laagbestanden.
+Dit is de schone versie met één indexbestand, één stylesheet en één hoofdscript.
 
-De website laadt alleen:
-- index.html
-- style.css
-- app.js
-- sw.js
+Nieuwe automatische spelwerking:
+- de host speelt automatisch mee als gewone speler;
+- geen knop of tekst “Host doet mee”;
+- geen knoppen voor ronde starten, afspelen, stoppen of antwoord tonen;
+- host en alle spelers krijgen dezelfde lobby, bingokaart, READY-knop en spelweergave;
+- zodra alle actieve deelnemers READY zijn, start de volgende ronde automatisch;
+- categorie, muziek en timer starten automatisch in de juiste volgorde;
+- de muziek stopt automatisch wanneer de timer 0 bereikt;
+- antwoorden worden automatisch beoordeeld;
+- alleen de host kan het juryoordeel corrigeren;
+- bij een goed antwoord kiest de speler één vrij vakje in de gespeelde categoriekleur;
+- bij het kiezen van een categorie verschijnt een duidelijke gezamenlijke kleurenrad-animatie;
+- tijdens het luisteren staat een grote aflopende stopwatch centraal in beeld;
+- na het insturen blijven de stopwatch en de live antwoorden van spelers zichtbaar, nog zonder juryuitslag;
+- bij een goed antwoord wordt de bingokaart zo groot mogelijk getoond om een kleurvak te kiezen;
+- na de keuze klikt de speler opnieuw op READY;
+- dierenavatars blijven zichtbaar in lobby en tussenstand;
+- een volledige rij, kolom of diagonaal op de 6x6-kaart geeft BINGO;
+- bij BINGO stopt het spel en verschijnt de eindstand.
 
-Aanwezig:
-- Spotify PKCE-login met één callbackverwerking
-- knop KIES met een eigen mobiele playlistkiezer
-- playlist importeren
-- Muziek -> Kamer -> Instellingen -> Spelen
-- dezelfde 1-2-3-4-stappenbalk en een groter gecentreerd logo op elk hostscherm
-- geluidstest bij Muziek
-- vaste categorieën bij Instellingen
-- automatisch een kamer met QR-code en deelbare link
-- host speelt automatisch mee als gewone speler
-- compacte lobby met dierenavatars
-- 6x6 bingokaart zonder gratis middenvak
-- antwoorden, timer, automatische beoordeling en host-overrule
-- punten, vakje kiezen en bingocontrole
-- geen licentiescherm
-- geen oude startoverlays
-- compact host-lobbyscherm met de volledige 6x6-kaart in beeld
-- alle vensterranden in dezelfde limekleur, zonder paarse lijnen
-- groter logo zonder scheidingslijn eronder op elk hostscherm
-- grotere, gecentreerde QR-code met de deelbare link eronder
-- onderste navigatieknoppen zonder pijltje
-- logo op alle vier hostschermen ongeveer tweemaal zo groot
-- Kamer als één groot venster zonder genest deelvenster rond spelcode, QR en link
-- dubbele titel MUZIEK onder het logo verwijderd
-- automatische controlelijst voor Spotify-login, playlistkeuze, import en geluidstest
-- kleinere QR-code zodat het volledige Kamerscherm past
-- host en spelers klikken zelf op READY
-- compactere beginlobby met de volledige 6x6-hostkaart zichtbaar
-- normale, goed leesbare schaal voor logo, teksten, vensters en knoppen
-- korte Safari-schermen hebben een eigen passende indeling zonder afgedekte onderdelen
-- playlistkiezer toont alleen playlistnamen, zonder onbetrouwbare aantallen
-- categorieën tonen alleen hun duidelijke vetgedrukte naam
-- onderste twee instellingen staan compact naast elkaar
-- spelerslijst verwijderd uit Kamer; QR-code groter gemaakt
-- host en spelers gebruiken tijdens het spel dezelfde spelweergave
-- geen knoppen voor ronde starten, afspelen, stoppen of antwoord tonen
-- ronde start automatisch zodra host en alle spelers READY zijn
-- categorie wordt automatisch gekozen en daarna starten muziek en timer vanzelf
-- muziek stopt bij 0 en antwoorden worden automatisch beoordeeld
-- na een goed antwoord kiest de speler één vrij vak in de categoriekleur
-- iedereen klikt na de uitslag opnieuw op READY
-- alleen de host kan via Jury controleren een beoordeling corrigeren
-- compacte tussenstand met dierenavatars en echte muziekweetjes
-- cachevernieuwing naar V208 met netwerk-eerst laden
+Upload alle bestanden uit deze map samen en maak voor V209 een nieuwe kamer.

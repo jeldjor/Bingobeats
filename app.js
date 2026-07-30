@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V208
+/* Bingo Beats Clean V209
    Eén applicatiebestand: Spotify, Firebase, hoststappen en spelersscherm. */
 (() => {
   'use strict';
@@ -30,16 +30,6 @@
     {key:'green',name:'KORAAL',hex:'#ff6173',category:'Titel van track'}
   ];
   const ANIMALS = ['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
-  const MUSIC_FACTS = [
-    'Een liedje dat in je hoofd blijft hangen heet een oorwurm.',
-    'Muziek kan herinneringen sneller oproepen dan veel andere prikkels.',
-    'De eerste commerciële cd verscheen in 1982.',
-    'Een standaard piano heeft 88 toetsen.',
-    'De muziekvideo van “Video Killed the Radio Star” opende MTV.',
-    'Een octaaf bestaat in de westerse muziek uit twaalf halve tonen.',
-    'Vinylplaten draaien meestal op 33⅓ of 45 toeren per minuut.',
-    'Het applaus na een optreden heet ook wel een ovatie.'
-  ];
   const $ = id => document.getElementById(id);
   const $$ = selector => Array.from(document.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -66,9 +56,10 @@
     selectedPlaylist:null,
     tracks:readJson('hb_playlist_tracks',[]),
     currentTrack:null,
-    timer:null,
+    timers:{},
     stopTimer:null,
-    autoStarting:false,
+    automationTimer:null,
+    automationKey:'',
     judgingRound:'',
     lastPlayerRender:'',
     lastHostRender:'',
@@ -146,10 +137,7 @@
     if(requested===2) ensureRoom().catch(showRoomError);
     if(requested===4){
       renderHost(state.room);
-      maybeStartRound().catch(error => {
-        state.autoStarting = false;
-        showGameError(error);
-      });
+      scheduleHostAutomation(state.room);
     }
   }
 
@@ -183,17 +171,19 @@
     $('soundTestButton')?.addEventListener('click',runSoundTest);
     $('hostGameContent')?.addEventListener('click',handleHostGameClick);
     $('hostGameContent')?.addEventListener('keydown',event => {
-      if(event.key==='Enter') event.preventDefault();
-    });
-    $('playerGameContent')?.addEventListener('click',handlePlayerGameClick);
-    $('playerGameContent')?.addEventListener('keydown',event => {
-      if(event.key==='Enter') event.preventDefault();
+      if(event.key==='Enter' && event.target.matches('.participantAnswerInput')){
+        event.preventDefault();
+        submitAnswer(state.hostPlayerId,$('hostGameContent'));
+      }
     });
     $('hostScoreboard')?.addEventListener('click',handleHostJudgement);
     $$('[data-close-modal]').forEach(button => {
       button.addEventListener('click',() => $(button.dataset.closeModal)?.classList.add('hidden'));
     });
     $('playlistModal')?.addEventListener('click',event => {
+      if(event.target===event.currentTarget) event.currentTarget.classList.add('hidden');
+    });
+    $('juryModal')?.addEventListener('click',event => {
       if(event.target===event.currentTarget) event.currentTarget.classList.add('hidden');
     });
     document.addEventListener('visibilitychange',() => {
@@ -653,6 +643,7 @@
     await state.db.ref(`rooms/${code}`).set({
       createdAt:firebase.database.ServerValue.TIMESTAMP,
       roundNumber:0,
+      gameStatus:'lobby',
       settings:currentSettings()
     });
     state.roomCode = code;
@@ -753,10 +744,7 @@
       if(isPlayerPage()) renderPlayer();
       else{
         renderHost();
-        maybeStartRound().catch(error => {
-          state.autoStarting = false;
-          showGameError(error);
-        });
+        scheduleHostAutomation(state.room);
       }
     });
     listenForWinner(code);
@@ -769,82 +757,25 @@
     if(!host) return;
     $('hostAvatar').textContent = playerAnimal(state.hostPlayerId,host);
     $('hostDisplayName').textContent = host.name || hostName();
-    updateGameTimer($('hostTimer'),round);
-    scheduleRoundDeadline(round);
+    updateGameTimer('host',round);
     $('testStatus').textContent = sessionStorage.getItem('bb_sound_test_ok')==='1'
       ? 'Geluidstest geslaagd.'
       : state.tracks.length ? 'Test Spotify voordat je start.' : 'Importeer eerst een playlist.';
     $('testStatus').classList.toggle('ok',sessionStorage.getItem('bb_sound_test_ok')==='1');
     updatePreflightChecks();
-    renderHostPlayerExperience(room,round,host);
-  }
-
-  function renderHostPlayerExperience(room,round,host){
-    const ownAnswer = round.id ? room.answers?.[round.id]?.[state.hostPlayerId] : null;
-    const ownCorrect = round.id ? room.correct?.[round.id]?.[state.hostPlayerId] : undefined;
-    const renderKey = `${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!host.ready}:${host.lastPickedRound||''}:${activePlayers(room).map(([id,p])=>`${id}:${!!p.ready}:${p.score||0}`).join('|')}`;
-    if(renderKey===state.lastHostRender && round.status==='answering' && !ownAnswer) return;
-    state.lastHostRender = renderKey;
-
-    const root = $('hostGameContent');
-    if(!round.id){
-      root.innerHTML = playerLobbyMarkup(room,host,true);
-    }else if(round.status==='picking'){
-      root.innerHTML = waitingMarkup('Categorie wordt gekozen…','Daarna starten de muziek en timer automatisch.');
-    }else if(round.status==='ready'){
-      root.innerHTML = questionReadyMarkup(round);
-    }else if(round.status==='answering'){
-      root.innerHTML = ownAnswer
-        ? waitingMarkup('Antwoord ingeleverd','Wacht tot de timer op 0 staat.')
-        : answerStateMarkup(round,'host');
-    }else if(round.status==='judging'){
-      root.innerHTML = lockedMarkup(round,'De antwoorden worden automatisch beoordeeld.');
-    }else if(round.status==='judged'){
-      root.innerHTML = resultStateMarkup(room,round,host,ownCorrect,true);
-      renderHostScoreboard(room,round);
-    }else if(round.status==='error'){
-      root.innerHTML = gameErrorMarkup(round.error || 'De ronde kon niet automatisch starten.');
-    }else{
-      root.innerHTML = playerLobbyMarkup(room,host,true);
-    }
+    renderGameExperience($('hostGameContent'),room,round,host,state.hostPlayerId,true);
   }
 
   function handleHostGameClick(event){
-    const readyButton = event.target.closest('[data-host-ready]');
-    if(readyButton) return markHostReady();
-
-    const answerButton = event.target.closest('[data-host-answer]');
-    if(answerButton) return submitHostAnswer();
-
-    const cell = event.target.closest('.bingoCell.pickable');
-    if(cell) return pickBingoCell(state.hostPlayerId,Number(cell.dataset.index));
-
-    const juryButton = event.target.closest('[data-open-jury]');
-    if(juryButton){
-      renderHostScoreboard(state.room,state.room?.currentRound || {});
+    const pick = event.target.closest('.bingoCell.pickable');
+    if(pick) return pickBingoCell(state.hostPlayerId,Number(pick.dataset.index));
+    const action = event.target.closest('[data-game-action]')?.dataset.gameAction;
+    if(action==='ready') markReady(state.hostPlayerId);
+    if(action==='submit') submitAnswer(state.hostPlayerId,$('hostGameContent'));
+    if(action==='jury'){
+      renderHostScoreboard(state.room,state.room.currentRound || {});
       $('juryModal').classList.remove('hidden');
-      return;
     }
-
-    const retryButton = event.target.closest('[data-retry-round]');
-    if(retryButton){
-      state.db.ref(`rooms/${state.roomCode}/currentRound`).remove()
-        .then(() => markHostReady())
-        .catch(showGameError);
-    }
-  }
-
-  function showGameError(error){
-    const message = error?.message || String(error || 'Onbekende fout');
-    const root = $('hostGameContent');
-    if(root) root.innerHTML = gameErrorMarkup(message);
-  }
-
-  function scheduleRoundDeadline(round){
-    if(round?.status!=='answering' || !round.deadlineMs) return;
-    clearTimeout(state.stopTimer);
-    const remaining = Math.max(0,Number(round.deadlineMs)-Date.now());
-    state.stopTimer = setTimeout(() => lockAndJudgeRound(),remaining);
   }
 
   function renderHostScoreboard(room,round){
@@ -856,8 +787,8 @@
         <span>${playerAnimal(id,player)}</span>
         <div class="scoreWho"><strong>${escapeHtml(player.name || 'Speler')}</strong><small>${escapeHtml(answers[id]?.answer || 'Geen antwoord')}</small></div>
         <div class="judgeActions">
-          <button type="button" class="judgeButton" data-judge-player="${escapeHtml(id)}" data-value="true">✓</button>
-          <button type="button" class="judgeButton secondaryButton" data-judge-player="${escapeHtml(id)}" data-value="false">×</button>
+          <button type="button" class="judgeButton ${result===true?'selected':''}" data-judge-player="${escapeHtml(id)}" data-value="true" aria-label="Antwoord goed rekenen">✓</button>
+          <button type="button" class="judgeButton secondaryButton ${result===false?'selected':''}" data-judge-player="${escapeHtml(id)}" data-value="false" aria-label="Antwoord fout rekenen">×</button>
         </div>
       </article>`;
     }).join('');
@@ -880,15 +811,18 @@
       [`players/${playerId}/score`]:Math.max(0,Number(player.score||0)-awarded+replacement),
       [`players/${playerId}/ready`]:false
     };
-    if(!value && player.lastPickedRound===roundId){
+    const pickedIndex = state.room.pickedCells?.[roundId]?.[playerId];
+    if(!value && pickedIndex!==undefined && pickedIndex!==null){
       const marked = {...(player.marked || {})};
-      const pickedIndex = Number(player.lastPickedIndex);
-      if(Number.isInteger(pickedIndex)) delete marked[pickedIndex];
+      delete marked[pickedIndex];
       updates[`players/${playerId}/marked`] = marked;
+      updates[`players/${playerId}/bingo`] = checkBingo(marked);
       updates[`players/${playerId}/lastPickedRound`] = null;
-      updates[`players/${playerId}/lastPickedIndex`] = null;
+      updates[`pickedCells/${roundId}/${playerId}`] = null;
     }
     await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+    const latest = (await state.db.ref(`rooms/${state.roomCode}`).once('value')).val() || state.room;
+    renderHostScoreboard(latest,latest.currentRound || round);
   }
 
   function showRoomError(error){
@@ -910,58 +844,81 @@
     return track;
   }
 
-  async function maybeStartRound(){
-    if(isPlayerPage() || !state.roomCode || !state.room || state.currentStep!==4 || state.autoStarting) return;
-    const round = state.room.currentRound || {};
-    if(round.status==='picking' && round.id && round.trackId){
-      state.autoStarting = true;
-      return continueRoundSetup(round.id);
-    }
-    if(round.status==='ready' && round.id && round.trackId){
-      state.autoStarting = true;
-      return playRoundTrack();
-    }
-    if(round.id && round.status!=='judged' && round.status!=='error') return;
-    const players = activePlayers();
-    const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
-    if(!allReady) return;
-    if(!state.tracks.length){
-      showGameError('Importeer eerst een Spotify-playlist bij Muziek.');
+  function scheduleHostAutomation(room){
+    if(!room || room.gameStatus==='finished' || state.currentStep!==4){
+      clearTimeout(state.automationTimer);
+      state.automationTimer = null;
+      state.automationKey = '';
       return;
     }
-    state.autoStarting = true;
-    return startRound();
+    const round = room.currentRound || {};
+    const players = activePlayers(room);
+    const allReady = players.length>0 && players.every(([,player]) => player.ready===true);
+
+    if((!round.id || round.status==='judged') && allReady){
+      queueAutomation(`start:${round.id || 'first'}:${room.roundNumber || 0}`,startAutomaticRound,250);
+      return;
+    }
+    if(round.status==='picking'){
+      const delay = Math.max(0,Number(round.categoryAt || Date.now())-Date.now());
+      queueAutomation(`category:${round.id}`,() => revealCategory(round.id),delay);
+      return;
+    }
+    if(round.status==='ready'){
+      queueAutomation(`play:${round.id}`,() => playRoundTrack(round.id),850);
+      return;
+    }
+    if(round.status==='answering'){
+      const delay = Math.max(0,Number(round.deadlineMs || Date.now())-Date.now());
+      queueAutomation(`judge:${round.id}`,() => lockAndJudgeRound(round.id),delay);
+      return;
+    }
+    clearTimeout(state.automationTimer);
+    state.automationTimer = null;
+    state.automationKey = '';
   }
 
-  async function startRound(){
-    if(!state.roomCode || !state.room) return;
-    const players = activePlayers();
-    if(!players.length || !players.every(([,player]) => player.ready===true)){
-      state.autoStarting = false;
-      return;
-    }
-    state.currentTrack = chooseTrack();
-    if(!state.currentTrack){
-      state.autoStarting = false;
-      return showGameError('Importeer eerst een Spotify-playlist bij Muziek.');
-    }
-    const color = randomItem(COLORS);
-    const number = Number(state.room.roundNumber || 0)+1;
+  function queueAutomation(key,task,delay){
+    if(state.automationKey===key) return;
+    clearTimeout(state.automationTimer);
+    state.automationKey = key;
+    state.automationTimer = setTimeout(async() => {
+      try{
+        await task();
+      }catch(error){
+        await setRoundError(error);
+      }finally{
+        if(state.automationKey===key) state.automationKey = '';
+      }
+    },Math.min(Math.max(0,delay),2147483647));
+  }
+
+  async function startAutomaticRound(){
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
+    const room = snapshot.val() || {};
+    const round = room.currentRound || {};
+    const players = activePlayers(room);
+    if(room.gameStatus==='finished' || !players.length || !players.every(([,player]) => player.ready===true)) return;
+    if(round.id && round.status!=='judged') return;
+
+    const track = chooseTrack();
+    if(!track) throw new Error('Importeer eerst een Spotify-playlist bij Muziek.');
+    state.currentTrack = track;
+    const number = Number(room.roundNumber || 0)+1;
     const roundId = `r_${Date.now()}`;
+    $('juryModal')?.classList.add('hidden');
     const updates = {
       roundNumber:number,
       settings:currentSettings(),
+      gameStatus:'playing',
       currentRound:{
         id:roundId,
         number,
         status:'picking',
         startedAt:firebase.database.ServerValue.TIMESTAMP,
+        categoryAt:Date.now()+2600,
         seconds:currentSettings().duration,
-        trackId:state.currentTrack.id,
-        colorKey:color.key,
-        colorName:color.name,
-        colorHex:color.hex,
-        category:color.category
+        trackId:track.id
       }
     };
     players.forEach(([id]) => {
@@ -969,69 +926,61 @@
       updates[`players/${id}/lastPickedRound`] = null;
     });
     await state.db.ref(`rooms/${state.roomCode}`).update(updates);
-    await continueRoundSetup(roundId);
   }
 
-  async function continueRoundSetup(roundId){
-    try{
-      await wait(1800);
-      const snapshot = await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value');
-      const round = snapshot.val() || {};
-      if(round.id!==roundId) return;
-      if(round.status==='picking'){
-        await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({status:'ready'});
-      }
-      await wait(900);
-      await playRoundTrack();
-    }finally{
-      if(state.room?.currentRound?.status!=='answering') state.autoStarting = false;
-    }
+  async function revealCategory(roundId){
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value');
+    const round = snapshot.val() || {};
+    if(round.id!==roundId || round.status!=='picking') return;
+    const color = randomItem(COLORS);
+    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+      status:'ready',
+      colorKey:color.key,
+      colorName:color.name,
+      colorHex:color.hex,
+      category:color.category,
+      categoryChosenAt:firebase.database.ServerValue.TIMESTAMP
+    });
   }
 
-  async function playRoundTrack(){
-    let round = state.room?.currentRound;
-    if(round?.status!=='ready' && state.roomCode){
-      round = (await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value')).val() || round;
+  function trackForRound(round){
+    if(state.currentTrack?.id===round?.trackId) return state.currentTrack;
+    state.currentTrack = state.tracks.find(track => track.id===round?.trackId) || null;
+    return state.currentTrack;
+  }
+
+  async function playRoundTrack(roundId){
+    const snapshot = await state.db.ref(`rooms/${state.roomCode}/currentRound`).once('value');
+    const round = snapshot.val() || {};
+    if(round.id!==roundId || round.status!=='ready') return;
+    const track = trackForRound(round);
+    if(!track) throw new Error('Het gekozen nummer staat niet meer in de geïmporteerde playlist.');
+    const deviceId = await ensureSpotifyPlayer();
+    const duration = Number(round.seconds || currentSettings().duration)*1000;
+    let position = 0;
+    if($('randomStart')?.checked && track.duration_ms>duration+45000){
+      position = Math.floor(20000 + Math.random()*(track.duration_ms-duration-30000));
     }
-    if(!round?.id || round.status!=='ready'){
-      state.autoStarting = false;
-      return;
-    }
-    state.currentTrack = state.currentTrack?.id===round.trackId
-      ? state.currentTrack
-      : state.tracks.find(track => track.id===round.trackId) || null;
-    if(!state.currentTrack){
-      state.autoStarting = false;
-      return showGameError('Het gekozen nummer staat niet meer in de geïmporteerde playlist.');
-    }
-    try{
-      const deviceId = await ensureSpotifyPlayer();
-      const duration = Number(round.seconds || currentSettings().duration)*1000;
-      let position = 0;
-      if($('randomStart')?.checked && state.currentTrack.duration_ms>duration+45000){
-        position = Math.floor(20000 + Math.random()*(state.currentTrack.duration_ms-duration-30000));
-      }
-      await spotifyApi(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,{
-        method:'PUT',
-        body:JSON.stringify({uris:[state.currentTrack.uri],position_ms:Math.max(0,position)})
-      });
-      const deadline = Date.now()+duration;
-      await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
-        status:'answering',
-        deadlineMs:deadline,
-        musicStartedAt:firebase.database.ServerValue.TIMESTAMP
-      });
-      clearTimeout(state.stopTimer);
-      state.stopTimer = setTimeout(() => lockAndJudgeRound(),duration);
-      state.autoStarting = false;
-    }catch(error){
-      state.autoStarting = false;
-      await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
-        status:'error',
-        error:`Muziek starten mislukt: ${error.message}`
-      }).catch(()=>{});
-      showGameError(`Muziek starten mislukt: ${error.message}`);
-    }
+    await spotifyApi(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,{
+      method:'PUT',
+      body:JSON.stringify({uris:[track.uri],position_ms:Math.max(0,position)})
+    });
+    const deadline = Date.now()+duration;
+    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+      status:'answering',
+      deadlineMs:deadline,
+      musicStartedAt:firebase.database.ServerValue.TIMESTAMP
+    });
+  }
+
+  async function setRoundError(error){
+    const message = error?.message || String(error || 'Onbekende fout');
+    console.error(error);
+    if(!state.roomCode || !state.room?.currentRound?.id) return;
+    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
+      status:'error',
+      error:message
+    }).catch(()=>{});
   }
 
   function answerForTrack(track){
@@ -1087,23 +1036,23 @@
     }
   }
 
-  async function lockAndJudgeRound(){
-    const round = state.room?.currentRound;
-    if(!round?.id || ['judging','judged'].includes(round.status) || state.judgingRound===round.id) return;
-    state.judgingRound = round.id;
-    clearTimeout(state.stopTimer);
+  async function lockAndJudgeRound(roundId){
+    if(state.judgingRound===roundId) return;
+    state.judgingRound = roundId;
     await stopSpotify();
-    await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
-      status:'judging',
-      deadlineMs:Date.now()
-    }).catch(()=>{});
     const snapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
     const room = snapshot.val() || {};
-    const latestRound = room.currentRound || round;
-    state.currentTrack = state.currentTrack?.id===latestRound.trackId
-      ? state.currentTrack
-      : state.tracks.find(track => track.id===latestRound.trackId) || state.currentTrack;
-    const correctAnswer = answerForTrack(state.currentTrack);
+    const latestRound = room.currentRound || {};
+    if(latestRound.id!==roundId || latestRound.status!=='answering'){
+      state.judgingRound = '';
+      return;
+    }
+    const track = trackForRound(latestRound);
+    if(!track){
+      state.judgingRound = '';
+      throw new Error('Het nummer voor deze ronde kon niet meer worden gevonden.');
+    }
+    const correctAnswer = answerForTrack(track);
     const answers = room.answers?.[latestRound.id] || {};
     const correct = {};
     const goodTimes = [];
@@ -1118,11 +1067,10 @@
     const updates = {
       [`currentRound/status`]:'judged',
       [`currentRound/correctAnswer`]:correctAnswer,
-      [`currentRound/fact`]:MUSIC_FACTS[(Number(latestRound.number || 1)-1)%MUSIC_FACTS.length],
+      [`currentRound/judgedAt`]:firebase.database.ServerValue.TIMESTAMP,
       [`correct/${latestRound.id}`]:correct
     };
     activePlayers(room).forEach(([id,player]) => {
-      updates[`players/${id}/ready`] = false;
       if(correct[id]){
         const points = id===fastest ? 150 : 100;
         updates[`points/${latestRound.id}/${id}`] = points;
@@ -1131,25 +1079,8 @@
         updates[`points/${latestRound.id}/${id}`] = 0;
       }
     });
-    try{
-      await state.db.ref(`rooms/${state.roomCode}`).update(updates);
-    }finally{
-      state.judgingRound = '';
-    }
-  }
-
-  async function submitHostAnswer(){
-    const round = state.room?.currentRound;
-    const answer = $('hostGameContent')?.querySelector('#hostAnswerInput')?.value.trim() || '';
-    if(!round?.id || round.status!=='answering') return;
-    await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${state.hostPlayerId}`).set({
-      answer,submittedAt:firebase.database.ServerValue.TIMESTAMP
-    });
-  }
-
-  async function markHostReady(){
-    if(!state.roomCode || !state.hostPlayerId) return;
-    await state.db.ref(`rooms/${state.roomCode}/players/${state.hostPlayerId}/ready`).set(true);
+    await state.db.ref(`rooms/${state.roomCode}`).update(updates);
+    state.judgingRound = '';
   }
 
   /* Speler */
@@ -1217,34 +1148,8 @@
     $('playerGameScreen').classList.remove('hidden');
     $('playerAvatar').textContent = playerAnimal(state.playerId,me);
     $('playerDisplayName').textContent = me.name || state.playerName;
-    updateGameTimer($('playerTimer'),round);
-
-    const ownAnswer = round.id ? room.answers?.[round.id]?.[state.playerId] : null;
-    const ownCorrect = round.id ? room.correct?.[round.id]?.[state.playerId] : undefined;
-    const renderKey = `${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${activePlayers(room).map(([id,p])=>`${id}:${!!p.ready}:${p.score||0}`).join('|')}`;
-    if(renderKey===state.lastPlayerRender && round.status==='answering' && !ownAnswer) return;
-    state.lastPlayerRender = renderKey;
-
-    const root = $('playerGameContent');
-    if(!round.id){
-      root.innerHTML = playerLobbyMarkup(room,me,false);
-    }else if(round.status==='picking'){
-      root.innerHTML = waitingMarkup('Categorie wordt gekozen…','Daarna starten de muziek en timer automatisch.');
-    }else if(round.status==='ready'){
-      root.innerHTML = questionReadyMarkup(round);
-    }else if(round.status==='answering'){
-      root.innerHTML = ownAnswer
-        ? waitingMarkup('Antwoord ingeleverd','Wacht tot de timer op 0 staat.')
-        : answerStateMarkup(round,'player');
-    }else if(round.status==='judging'){
-      root.innerHTML = lockedMarkup(round,'De antwoorden worden automatisch beoordeeld.');
-    }else if(round.status==='judged'){
-      root.innerHTML = resultStateMarkup(room,round,me,ownCorrect,false);
-    }else if(round.status==='error'){
-      root.innerHTML = gameErrorMarkup('De host herstelt de ronde.',false);
-    }else{
-      root.innerHTML = playerLobbyMarkup(room,me,false);
-    }
+    updateGameTimer('player',round);
+    renderGameExperience($('playerGameContent'),room,round,me,state.playerId,false);
   }
 
   function playerListHtml(room){
@@ -1256,29 +1161,64 @@
       </article>`).join('');
   }
 
-  function playerLobbyMarkup(room,me,isHost){
+  function renderGameExperience(root,room,round,me,userId,isHost){
+    if(!root || !me) return;
+    const ownAnswer = round.id ? room.answers?.[round.id]?.[userId] : null;
+    const ownCorrect = round.id ? room.correct?.[round.id]?.[userId] : undefined;
+    const liveAnswerSignature = ownAnswer
+      ? activePlayers(room).map(([id]) => `${id}:${room.answers?.[round.id]?.[id]?.answer || ''}`).join('|')
+      : '';
+    const key = `${room.gameStatus||'lobby'}:${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${liveAnswerSignature}:${activePlayers(room).map(([id,player])=>`${id}:${!!player.ready}:${player.score||0}`).join('|')}`;
+    const keyName = isHost ? 'lastHostRender' : 'lastPlayerRender';
+    if(key===state[keyName]) return;
+    state[keyName] = key;
+
+    if(room.gameStatus==='finished'){
+      root.innerHTML = finalScoreMarkup(room);
+    }else if(!round.id){
+      root.innerHTML = playerLobbyMarkup(room,me);
+    }else if(round.status==='picking'){
+      root.innerHTML = categoryPickerMarkup(round);
+    }else if(round.status==='ready'){
+      root.innerHTML = questionReadyMarkup(round);
+    }else if(round.status==='answering'){
+      root.innerHTML = ownAnswer
+        ? submittedStateMarkup(room,round,userId)
+        : answerStateMarkup(round);
+    }else if(round.status==='judging' || round.status==='locked'){
+      root.innerHTML = lockedMarkup(round);
+    }else if(round.status==='judged'){
+      root.innerHTML = resultStateMarkup(room,round,me,ownCorrect,isHost);
+    }else if(round.status==='error'){
+      root.innerHTML = gameErrorMarkup(round.error || 'De ronde kon niet automatisch starten.');
+    }else{
+      root.innerHTML = playerLobbyMarkup(room,me);
+    }
+    bindGameActions(root,userId,isHost);
+  }
+
+  function playerLobbyMarkup(room,me){
     const players = activePlayers(room);
     const ready = players.filter(([,player]) => player.ready===true).length;
-    return `<div class="playerState lobbyState">
-      <section class="playerHero compactHero">
+    return `<div class="playerState lobbyGameState">
+      <section class="playerHero compactLobbyHero">
         <img src="bb_logo_lime.webp" alt="Bingo Beats">
-        <div><h1>Klaar voor de start?</h1><p>De ronde begint automatisch zodra iedereen READY is.</p></div>
+        <div><h1>Iedereen READY?</h1><p>Zodra iedereen klaar is, start de ronde automatisch.</p></div>
       </section>
-      <section class="playerPanel gameLobbyPanel">
+      <section class="playerPanel lobbyCardPanel">
+        <div class="bingoCard">${bingoCardHtml(me,null,false)}</div>
+      </section>
+      <section class="playerPanel lobbyRosterPanel">
         <div class="readySummary"><span>SPELERS</span><strong>${ready} / ${players.length} READY</strong></div>
         <div class="lobbyPlayers">${playerListHtml(room)}</div>
-        <div class="lobbyCardWrap">
-          <small>JOUW BINGOKAART</small>
-          <div class="bingoCard lobbyCard">${bingoCardHtml(me,null,false)}</div>
-        </div>
       </section>
-      <button type="button" class="readyButton ${me.ready?'done':''}" ${isHost?'data-host-ready':'data-player-ready'} ${me.ready?'disabled':''}>${me.ready?'READY ✓':'IK BEN READY'}</button>
+      <button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${me.ready?'disabled':''}>${me.ready?'READY ✓':'READY'}</button>
     </div>`;
   }
 
   function waitingMarkup(title,subtitle){
     return `<section class="playerPanel waitingCard">
-      <img src="bb_mascot_dj.png" alt="Bingo Beats DJ">
+      <img src="bb_logo_lime.webp" alt="Bingo Beats">
       <h1>${escapeHtml(title)}</h1>
       <p>${escapeHtml(subtitle)}</p>
     </section>`;
@@ -1288,143 +1228,220 @@
     return COLORS.find(color => color.key===round.colorKey) || COLORS[0];
   }
 
+  function categoryPickerMarkup(round){
+    return `<section class="playerPanel categoryPickerState">
+      <small>CATEGORIE KIEZEN</small>
+      <h1>Het kleurenrad draait</h1>
+      <div class="categoryWheel" aria-label="De categorie wordt automatisch gekozen">
+        <div class="categoryWheelOrbit">
+          ${COLORS.map((color,index) => `<i style="--wheel-color:${color.hex};--wheel-index:${index}"></i>`).join('')}
+        </div>
+        <img src="bb_logo_lime.webp" alt="Bingo Beats">
+      </div>
+      <p>Dezelfde categorie verschijnt zo bij iedereen.</p>
+    </section>`;
+  }
+
   function questionReadyMarkup(round){
     const color = colorForRound(round);
     return `<section class="playerPanel waitingCard categoryReveal" style="--round-color:${color.hex}">
       <span class="questionColor"></span>
       <small style="color:${color.hex};font-weight:900">${escapeHtml(color.name)}</small>
       <h1>${escapeHtml(round.category)}</h1>
-      <p>Muziek en timer starten automatisch.</p>
+      <p>De muziek en stopwatch starten nu.</p>
     </section>`;
   }
 
-  function answerStateMarkup(round,role){
+  function secondsLeft(round){
+    if(round.status!=='answering' || !round.deadlineMs) return 0;
+    return Math.max(0,Math.ceil((Number(round.deadlineMs)-Date.now())/1000));
+  }
+
+  function stopwatchMarkup(round){
+    const left = secondsLeft(round);
+    const total = Math.max(1,Number(round.seconds)||20);
+    const progress = Math.max(0,Math.min(100,(left/total)*100));
+    return `<div class="roundStopwatch" data-stopwatch-round="${escapeHtml(round.id || '')}" style="--timer-progress:${progress}">
+      <span class="stopwatchCrown" aria-hidden="true"></span>
+      <div class="stopwatchFace">
+        <strong data-countdown-seconds>${left}</strong>
+        <small>SECONDEN</small>
+      </div>
+    </div>`;
+  }
+
+  function answerStateMarkup(round){
     const color = colorForRound(round);
-    const isHost = role==='host';
     return `<div class="playerState answerState" style="--round-color:${color.hex}">
       <section class="playerPanel questionCard">
         <div class="questionColor"></div>
         <small>${escapeHtml(color.name)}</small>
         <h1>${escapeHtml(round.category)}</h1>
       </section>
-      <section class="playerPanel waitingCard">
-        <img src="bb_mascot_dj.png" alt="Luister naar het nummer">
+      <section class="playerPanel countdownPanel">
+        ${stopwatchMarkup(round)}
         <h1>Luister goed</h1>
-        <p>Geef je antwoord voordat de timer op 0 staat.</p>
+        <p>Vul je antwoord in voordat de stopwatch op 0 staat.</p>
       </section>
       <div class="playerPanel answerForm">
-        <input id="${isHost?'hostAnswerInput':'playerAnswerInput'}" type="text" maxlength="100" placeholder="Typ je antwoord" autocomplete="off">
-        <button type="button" ${isHost?'data-host-answer':'data-player-answer'}>VERSTUUR</button>
+        <input class="participantAnswerInput" type="text" maxlength="100" placeholder="Typ je antwoord" autocomplete="off">
+        <button type="button" data-game-action="submit">VERSTUUR</button>
       </div>
     </div>`;
   }
 
-  function lockedMarkup(round,subtitle){
+  function liveAnswersMarkup(room,round,userId){
+    const answers = room.answers?.[round.id] || {};
+    const submitted = activePlayers(room).filter(([id]) => answers[id]);
+    if(!submitted.length){
+      return '<p class="liveAnswersEmpty">Nog niemand heeft een antwoord ingestuurd.</p>';
+    }
+    return submitted.map(([id,player]) => `<article class="liveAnswerRow ${id===userId?'own':''}">
+      <span>${playerAnimal(id,player)}</span>
+      <div>
+        <strong>${escapeHtml(player.name || 'Speler')}${id===userId?' · JIJ':''}</strong>
+        <small>${escapeHtml(answers[id]?.answer || 'Geen antwoord')}</small>
+      </div>
+      <i>BINNEN ✓</i>
+    </article>`).join('');
+  }
+
+  function submittedStateMarkup(room,round,userId){
+    const color = colorForRound(round);
+    const submittedCount = activePlayers(room).filter(([id]) => room.answers?.[round.id]?.[id]).length;
+    const total = activePlayers(room).length;
+    return `<div class="playerState submittedState" style="--round-color:${color.hex}">
+      <section class="playerPanel questionCard submittedQuestion">
+        <div class="questionColor"></div>
+        <div><small>${escapeHtml(color.name)}</small><h1>${escapeHtml(round.category)}</h1></div>
+      </section>
+      <section class="playerPanel submittedLivePanel">
+        <div class="submittedTimer">
+          ${stopwatchMarkup(round)}
+          <div><strong>Antwoord ingeleverd ✓</strong><small>${submittedCount} van ${total} antwoorden binnen</small></div>
+        </div>
+        <div class="liveAnswersHeader"><span>LIVE ANTWOORDEN</span><small>Nog zonder juryuitslag</small></div>
+        <div class="liveAnswersList">${liveAnswersMarkup(room,round,userId)}</div>
+      </section>
+    </div>`;
+  }
+
+  function lockedMarkup(round){
     const answer = round.correctAnswer || {};
     return `<section class="playerPanel waitingCard">
       <span style="font-size:38px">🎵</span>
-      <h1>Timer afgelopen</h1>
-      ${answer.track?`<div class="trackAnswer"><strong>${escapeHtml(answer.track)}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>`:''}
-      <p>${escapeHtml(subtitle)}</p>
+      <h1>Jury beoordeelt…</h1>
+      <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
+      <p>De uitslag verschijnt automatisch.</p>
     </section>`;
   }
 
   function resultStateMarkup(room,round,me,good,isHost){
     const picked = me.lastPickedRound===round.id;
     const canPick = good===true && !picked;
-    if(me.ready && !canPick) return betweenRoundMarkup(room,round,me,isHost);
     const resultClass = good===true ? 'good' : 'bad';
     const resultTitle = good===true ? 'GOED ANTWOORD!' : 'HELAAS';
     const answer = round.correctAnswer || {};
-    return `<div class="playerState resultState">
+    return `<div class="playerState resultState ${canPick?'pickMode':''}">
       <section class="playerPanel resultCard ${resultClass}">
         <span>${good===true?'😎':'🙈'}</span>
         <h1>${resultTitle}</h1>
         <p>${canPick?`Kies één vrij ${escapeHtml(round.colorName)} vakje.`:'Klik op READY voor de volgende ronde.'}</p>
         <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
       </section>
-      <section class="playerPanel bingoPanel">
+      <section class="playerPanel resultBoardPanel">
         <div class="bingoCard">${bingoCardHtml(me,round,canPick)}</div>
+        ${canPick?'':standingsStripHtml(room)}
       </section>
       <div class="resultActions ${isHost?'withJury':''}">
-        ${isHost?'<button type="button" class="juryOpenButton" data-open-jury>JURY CONTROLEREN</button>':''}
-        <button type="button" class="readyButton" ${isHost?'data-host-ready':'data-player-ready'} ${canPick?'disabled':''}>${canPick?'KIES EERST EEN VAK':'IK BEN READY'}</button>
+        ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
+        <button type="button" class="readyButton ${me.ready?'done':''}" data-game-action="ready" ${canPick||me.ready?'disabled':''}>${canPick?'KIES EERST EEN VAK':me.ready?'READY ✓':'READY'}</button>
       </div>
     </div>`;
   }
 
-  function betweenRoundMarkup(room,round,me,isHost){
-    const fact = round.fact || MUSIC_FACTS[(Number(round.number || 1)-1)%MUSIC_FACTS.length];
-    return `<div class="playerState betweenState">
-      <section class="playerPanel betweenHeader">
-        <span>READY ✓</span>
-        <div><h1>Klaar voor de volgende?</h1><p>De volgende ronde start zodra iedereen READY is.</p></div>
-      </section>
-      <section class="playerPanel betweenContent">
-        <div class="miniStanding">
-          <div class="readySummary"><span>TUSSENSTAND</span><strong>RONDE ${Number(round.number || 1)}</strong></div>
-          <div class="scoreMini">${standingHtml(room)}</div>
-        </div>
-        <div class="factCard"><small>WIST JE DAT?</small><strong>${escapeHtml(fact)}</strong></div>
-        <div class="bingoCard betweenCard">${bingoCardHtml(me,round,false)}</div>
-      </section>
-      ${isHost?'<button type="button" class="juryOpenButton full" data-open-jury>JURY CONTROLEREN</button>':''}
-    </div>`;
+  function standingsStripHtml(room){
+    const ranking = activePlayers(room)
+      .sort((a,b) => Number(b[1].score||0)-Number(a[1].score||0))
+      .slice(0,4);
+    return `<div class="standingsStrip">${ranking.map(([id,player],index) => `
+      <span><b>${index+1}</b>${playerAnimal(id,player)} <strong>${escapeHtml(player.name || 'Speler')}</strong><em>${Number(player.score)||0}</em></span>
+    `).join('')}</div>`;
   }
 
-  function standingHtml(room){
-    return activePlayers(room)
-      .sort(([,a],[,b]) => Number(b.score||0)-Number(a.score||0))
-      .map(([id,player],index) => `<article class="scoreRow">
-        <span>${playerAnimal(id,player)}</span>
-        <div class="scoreWho"><strong>${index+1}. ${escapeHtml(player.name || 'Speler')}</strong></div>
-        <b>${Number(player.score || 0)}</b>
-      </article>`).join('');
-  }
-
-  function gameErrorMarkup(message,canRetry=true){
-    return `<section class="playerPanel waitingCard gameError">
-      <span>⚠️</span>
-      <h1>Ronde niet gestart</h1>
-      <p>${escapeHtml(message)}</p>
-      ${canRetry?'<button type="button" data-retry-round>OPNIEUW PROBEREN</button>':''}
+  function finalScoreMarkup(room){
+    const ranking = activePlayers(room).sort((a,b) => Number(b[1].score||0)-Number(a[1].score||0));
+    const winner = room.winner || {};
+    return `<section class="playerPanel finalScore">
+      <span class="finalTrophy">🏆</span>
+      <small>BINGO!</small>
+      <h1>${escapeHtml(winner.name || ranking[0]?.[1]?.name || 'Winnaar')}</h1>
+      <div class="finalRanking">${ranking.map(([id,player],index) => `
+        <article class="scoreRow"><b>${index+1}</b><span>${playerAnimal(id,player)}</span><strong>${escapeHtml(player.name || 'Speler')}</strong><em>${Number(player.score)||0} punten</em></article>
+      `).join('')}</div>
     </section>`;
   }
 
-  function handlePlayerGameClick(event){
-    if(event.target.closest('[data-player-ready]')) return markPlayerReady();
-    if(event.target.closest('[data-player-answer]')) return submitPlayerAnswer();
-    const cell = event.target.closest('.bingoCell.pickable');
-    if(cell) return pickBingoCell(state.playerId,Number(cell.dataset.index));
+  function gameErrorMarkup(message){
+    return `<section class="playerPanel waitingCard gameError">
+      <span>⚠️</span><h1>Ronde gestopt</h1><p>${escapeHtml(message)}</p>
+      <p>De host kan bij Muziek de Spotify-verbinding controleren en daarna een nieuwe kamer maken.</p>
+    </section>`;
   }
 
-  function updateGameTimer(element,round){
-    clearInterval(state.timer);
-    if(!element) return;
-    const tick = () => {
-      if(round.status==='answering' && round.deadlineMs){
-        const left = Math.max(0,Math.ceil((round.deadlineMs-Date.now())/1000));
-        element.textContent = `00:${String(left).padStart(2,'0')}`;
-      }else{
-        element.textContent = ['judging','judged'].includes(round.status) ? '00:00' : '--';
+  function bindGameActions(root,userId,isHost){
+    if(isHost) return;
+    root.querySelectorAll('.bingoCell.pickable').forEach(button => {
+      button.addEventListener('click',() => pickBingoCell(userId,Number(button.dataset.index)));
+    });
+    root.querySelector('[data-game-action="ready"]')?.addEventListener('click',() => markReady(userId));
+    root.querySelector('[data-game-action="submit"]')?.addEventListener('click',() => submitAnswer(userId,root));
+    root.querySelector('.participantAnswerInput')?.addEventListener('keydown',event => {
+      if(event.key==='Enter'){
+        event.preventDefault();
+        submitAnswer(userId,root);
       }
-    };
-    tick();
-    if(round.status==='answering') state.timer = setInterval(tick,250);
-  }
-
-  async function submitPlayerAnswer(){
-    const round = state.room?.currentRound;
-    const answer = $('playerAnswerInput')?.value.trim() || '';
-    if(!round?.id || round.status!=='answering') return;
-    await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${state.playerId}`).set({
-      answer,submittedAt:firebase.database.ServerValue.TIMESTAMP
     });
   }
 
-  async function markPlayerReady(){
-    if(!state.playerId) return;
-    await state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}/ready`).set(true);
+  function updateGameTimer(prefix,round){
+    clearInterval(state.timers[prefix]);
+    const element = $(`${prefix}Timer`);
+    const tick = () => {
+      if(round.status==='answering' && round.deadlineMs){
+        const left = secondsLeft(round);
+        const total = Math.max(1,Number(round.seconds)||20);
+        const progress = Math.max(0,Math.min(100,(left/total)*100));
+        element.textContent = `00:${String(left).padStart(2,'0')}`;
+        document.querySelectorAll('[data-stopwatch-round]').forEach(stopwatch => {
+          if(stopwatch.dataset.stopwatchRound!==(round.id || '')) return;
+          stopwatch.style.setProperty('--timer-progress',String(progress));
+          stopwatch.classList.toggle('urgent',left<=5);
+          const seconds = stopwatch.querySelector('[data-countdown-seconds]');
+          if(seconds) seconds.textContent = String(left);
+        });
+      }else{
+        element.textContent = ['judging','locked','judged'].includes(round.status) ? '00:00' : '--';
+      }
+    };
+    tick();
+    if(round.status==='answering') state.timers[prefix] = setInterval(tick,250);
+  }
+
+  async function submitAnswer(playerId,root){
+    const round = state.room?.currentRound;
+    const input = root?.querySelector('.participantAnswerInput');
+    const answer = input?.value.trim() || '';
+    if(!round?.id || round.status!=='answering') return;
+    await state.db.ref(`rooms/${state.roomCode}/answers/${round.id}/${playerId}`).set({
+      answer,submittedAt:firebase.database.ServerValue.TIMESTAMP
+    });
+    if(input) input.value = '';
+  }
+
+  async function markReady(playerId){
+    if(!playerId) return;
+    await state.db.ref(`rooms/${state.roomCode}/players/${playerId}/ready`).set(true);
   }
 
   function bingoCardHtml(player,round,canPick){
@@ -1441,17 +1458,33 @@
   async function pickBingoCell(playerId,index){
     const round = state.room?.currentRound;
     const player = state.room?.players?.[playerId];
-    if(!round?.id || !player || player.card?.[index]!==round.colorKey || player.marked?.[index]) return;
+    const good = state.room?.correct?.[round?.id]?.[playerId]===true;
+    if(round?.status!=='judged' || !good || !round?.id || !player || player.lastPickedRound===round.id || player.card?.[index]!==round.colorKey || player.marked?.[index]) return;
     const marked = {...(player.marked||{}),[index]:true};
     const bingo = checkBingo(marked);
-    await state.db.ref(`rooms/${state.roomCode}/players/${playerId}`).update({
-      marked,
-      bingo,
-      lastPickedRound:round.id,
-      lastPickedIndex:index,
-      ready:false
+    await state.db.ref(`rooms/${state.roomCode}`).update({
+      [`players/${playerId}/marked`]:marked,
+      [`players/${playerId}/bingo`]:bingo,
+      [`players/${playerId}/lastPickedRound`]:round.id,
+      [`players/${playerId}/ready`]:false,
+      [`pickedCells/${round.id}/${playerId}`]:index
     });
     if(bingo){
+      const roomSnapshot = await state.db.ref(`rooms/${state.roomCode}`).once('value');
+      const latestRoom = roomSnapshot.val() || {};
+      if(!latestRoom.winner){
+        await state.db.ref(`rooms/${state.roomCode}`).update({
+          gameStatus:'finished',
+          'currentRound/status':'finished',
+          winner:{
+            playerId,
+            name:player.name || 'Speler',
+            emoji:playerAnimal(playerId,player),
+            roundId:round.id,
+            at:firebase.database.ServerValue.TIMESTAMP
+          }
+        });
+      }
       await state.db.ref(`rooms/${state.roomCode}/bingos`).push({
         playerId,
         name:player.name || 'Speler',
@@ -1485,7 +1518,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2080',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2090',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V212
+/* Bingo Beats Clean V213
    Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
    scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
@@ -1514,21 +1514,21 @@
   }
 
   function categoryPickerMarkup(round){
-    return `<section class="playerPanel categoryPickerState">
-      <small>CATEGORIE KIEZEN</small>
-      <h1>Het kleurenrad draait</h1>
+    return `<section class="openStage categoryPickerState">
+      <img class="pickerMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
+      <small>NIEUWE RONDE</small>
+      <h1>Categorie kiezen</h1>
       <div class="categoryWheel" aria-label="De categorie wordt automatisch gekozen">
-        <div class="categoryWheelOrbit">
-          ${COLORS.map((color,index) => `<i style="--wheel-color:${color.hex};--wheel-index:${index}"></i>`).join('')}
-        </div>
-        <img src="bb_logo_lime.webp" alt="Bingo Beats">
+        <span class="categoryWheelPointer" aria-hidden="true"></span>
+        <div class="categoryWheelOrbit"></div>
+        <strong class="categoryWheelCenter">BB</strong>
       </div>
-      <p>Dezelfde categorie verschijnt zo bij iedereen.</p>
+      <p><strong>Het rad kiest de vraag…</strong></p>
     </section>`;
   }
 
   function specialPickerMarkup(round){
-    return `<section class="playerPanel categoryPickerState specialPickerState">
+    return `<section class="openStage categoryPickerState specialPickerState">
       <small>RONDE 5 VAN 5</small>
       <h1>BingoBeats Round</h1>
       <div class="specialRoundStar"><img src="bb_logo_lime.webp" alt="BB"><span>★</span></div>
@@ -1539,7 +1539,7 @@
 
   function questionReadyMarkup(round){
     const color = colorForRound(round);
-    return `<section class="playerPanel waitingCard categoryReveal" style="--round-color:${color.hex}">
+    return `<section class="openStage waitingCard categoryReveal" style="--round-color:${color.hex}">
       <img class="roundRevealLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
       <span class="questionColor"></span>
       <small style="color:${color.hex};font-weight:900">${escapeHtml(color.name)}</small>
@@ -1549,7 +1549,7 @@
   }
 
   function specialReadyMarkup(){
-    return `<section class="playerPanel waitingCard specialReadyState">
+    return `<section class="openStage waitingCard specialReadyState">
       <img src="bb_logo_lime.webp" alt="Bingo Beats">
       <small>BINGOBEATS ROUND</small>
       <h1>Vijf antwoorden.<br>Één nummer.</h1>
@@ -1584,7 +1584,7 @@
       const owner = room.players?.[round.jokerOwnerId];
       return `<div class="playerState specialBlockedState">
         ${advantageBannerMarkup(room,round,userId)}
-        <section class="playerPanel waitingCard">
+        <section class="openStage waitingCard">
           ${stopwatchMarkup(round,userId)}
           <h1>Joker actief</h1>
           <p>Alleen het antwoord van ${escapeHtml(owner?.name || 'de blokwinnaar')} telt.</p>
@@ -1593,7 +1593,7 @@
     }
     return `<div class="playerState specialAnswerState">
       ${advantageBannerMarkup(room,round,userId)}
-      <section class="playerPanel specialAnswerPanel">
+      <section class="openStage specialAnswerPanel">
         <div class="specialAnswerHead">
           <div><small>BINGOBEATS ROUND</small><h1>Wat weet jij?</h1></div>
           ${stopwatchMarkup(round,userId)}
@@ -1622,7 +1622,7 @@
     const submittedCount = activePlayers(room).filter(([id]) => room.answers?.[round.id]?.[id]).length;
     return `<div class="playerState submittedState specialSubmittedState">
       ${advantageBannerMarkup(room,round,userId)}
-      <section class="playerPanel submittedLivePanel">
+      <section class="openStage submittedLivePanel">
         <div class="submittedTimer">
           ${stopwatchMarkup(round,userId)}
           <div><strong>Vijf antwoorden ingeleverd ✓</strong><small>${submittedCount} van ${activePlayers(room).length} spelers klaar</small></div>
@@ -1660,7 +1660,7 @@
     const banner = advantageBannerMarkup(state.room || {},round,userId);
     return `<div class="playerState answerState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
       ${banner}
-      <section class="playerPanel countdownPanel roundPlayPanel">
+      <section class="openStage countdownPanel roundPlayPanel">
         <img class="roundMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
         <div class="roundCategoryInline">
           <div class="questionColor"></div>
@@ -1699,7 +1699,7 @@
     const banner = advantageBannerMarkup(room,round,userId);
     return `<div class="playerState submittedState ${banner?'hasAdvantage':''}" style="--round-color:${color.hex}">
       ${banner}
-      <section class="playerPanel submittedLivePanel">
+      <section class="openStage submittedLivePanel">
         <img class="roundMainLogo submittedMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
         <div class="roundCategoryInline submittedCategory">
           <div class="questionColor"></div>
@@ -1717,7 +1717,7 @@
 
   function lockedMarkup(round){
     const answer = round.correctAnswer || {};
-    return `<section class="playerPanel waitingCard">
+    return `<section class="openStage waitingCard">
       <span style="font-size:38px">🎵</span>
       <h1>Jury beoordeelt…</h1>
       <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
@@ -2162,7 +2162,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2120',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2130',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

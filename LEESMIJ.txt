@@ -1,6 +1,6 @@
-BINGO BEATS CLEAN V212
+BINGO BEATS CLEAN V213
 
-Dit is de schone V212-versie met één indexbestand, één stylesheet en één hoofdscript.
+Dit is de schone V213-versie met één indexbestand, één stylesheet en één hoofdscript.
 
 Vaste spelwerking
 -----------------
@@ -26,7 +26,7 @@ Nieuwe vaste regels
 - Daarna verschijnt het blokscorebord.
 - De blokwinnaar kiest voor de volgende vier rondes:
   Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time.
-- Lucky Loser Round en Beat Streak maken geen deel uit van V212.
+- Lucky Loser Round en Beat Streak maken geen deel uit van V213.
 
 Weergave
 --------
@@ -35,13 +35,17 @@ Weergave
 - Bij de speciale ronde zijn vijf aparte antwoordvelden zichtbaar.
 - Dierenavatars staan in lobby, ronde-scorebord, blokscorebord en eindstand.
 
-V212 schermopmaak:
+V213 schermopmaak:
 - De categorie-animatie en het kleurenrad zijn duidelijk groter.
 - Geen dubbel klein BB-logo meer in de spelersbalk.
 - Het BB-logo gebruikt in ieder spelscherm meer van de vrije bovenruimte.
 - Groot BB-logo boven categorie en stopwatch, ook op korte iPhones.
 - Categorie en stopwatch samen in één venster.
 - Groter BB-logo in de lobby, na het inzenden, op het scorebord en bij de ronde-intro.
+- Open spelindeling zonder groot buitenvenster rond categorie, stopwatch en live antwoorden.
+- Categorie-kiezer met groot BB-logo en één duidelijk vijfkleurig rad.
+- Antwoordscherm behoudt alleen compacte kaders rond categorie en antwoordbediening.
+- Ingestuurde antwoorden staan los op de achtergrond met subtiele scheidingslijnen.
 - Alles blijft op één mobiel scherm passen zonder paginascroll.
 
-Upload alle bestanden uit deze map samen en maak voor V212 een nieuwe kamer.
+Upload alle bestanden uit deze map samen en maak voor V213 een nieuwe kamer.

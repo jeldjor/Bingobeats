@@ -1,7 +1,7 @@
 {
   "name": "Bingo Beats",
   "short_name": "Bingo Beats",
-  "start_url": "./?v=2120",
+  "start_url": "./?v=2130",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",

@@ -1,6 +1,6 @@
-BINGO BEATS CLEAN V213
+BINGO BEATS CLEAN V215
 
-Dit is de schone V213-versie met één indexbestand, één stylesheet en één hoofdscript.
+Dit is de schone V215-versie met één indexbestand, één stylesheet en één hoofdscript.
 
 Vaste spelwerking
 -----------------
@@ -26,7 +26,7 @@ Nieuwe vaste regels
 - Daarna verschijnt het blokscorebord.
 - De blokwinnaar kiest voor de volgende vier rondes:
   Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time.
-- Lucky Loser Round en Beat Streak maken geen deel uit van V213.
+- Lucky Loser Round en Beat Streak maken geen deel uit van V215.
 
 Weergave
 --------
@@ -35,17 +35,32 @@ Weergave
 - Bij de speciale ronde zijn vijf aparte antwoordvelden zichtbaar.
 - Dierenavatars staan in lobby, ronde-scorebord, blokscorebord en eindstand.
 
-V213 schermopmaak:
-- De categorie-animatie en het kleurenrad zijn duidelijk groter.
+V214 categorie-animatie:
+- Het oude draaiende kleurenrad is vervangen door de BB-aap met zijn eigen BB-pet.
+- In de pet liggen 15 ballen: drie per vaste categoriekleur.
+- Per normale ronde wordt willekeurig één van drie animaties gebruikt: schudden, lege hand of verkeerde bal teruggooien.
+- De trekking duurt circa 8 seconden en de aap graait zichtbaar diep in de pet.
+- De ronde kiest vooraf één categorie; de getoonde eindbal en categorietekst gebruiken altijd diezelfde keuze.
+- Alleen het aapgedeelte van de voorbeeldanimatie staat in het bestaande speelvlak. Spelersbalk, logo, titel en categoriegegevens worden niet dubbel getoond.
+
+V214 schermopmaak:
+- De categorie-animatie met de BB-aap is duidelijk en schermvullend zonder dubbele informatie.
 - Geen dubbel klein BB-logo meer in de spelersbalk.
 - Het BB-logo gebruikt in ieder spelscherm meer van de vrije bovenruimte.
 - Groot BB-logo boven categorie en stopwatch, ook op korte iPhones.
 - Categorie en stopwatch samen in één venster.
 - Groter BB-logo in de lobby, na het inzenden, op het scorebord en bij de ronde-intro.
 - Open spelindeling zonder groot buitenvenster rond categorie, stopwatch en live antwoorden.
-- Categorie-kiezer met groot BB-logo en één duidelijk vijfkleurig rad.
+- Categorie-kiezer met één BB-pettrekking en één categorie-uitkomst.
 - Antwoordscherm behoudt alleen compacte kaders rond categorie en antwoordbediening.
 - Ingestuurde antwoorden staan los op de achtergrond met subtiele scheidingslijnen.
 - Alles blijft op één mobiel scherm passen zonder paginascroll.
 
-Upload alle bestanden uit deze map samen en maak voor V213 een nieuwe kamer.
+Upload alle bestanden uit deze map samen en maak voor V215 een nieuwe kamer.
+V215 - Verplichte bingokaartkeuze in de kamer
+- Op het kamerscherm kiest de host 4x4, 5x5, 6x6 of 7x7.
+- 6x6 staat standaard geselecteerd, maar moet voor iedere nieuwe kamer worden bevestigd.
+- Spelers kunnen vóór de bevestiging al via de QR-code deelnemen, maar zien nog geen bingokaart.
+- Na bevestiging krijgen host en alle aanwezige spelers direct een kaart van het gekozen formaat.
+- Nieuwe spelers krijgen daarna automatisch hetzelfde formaat.
+- Kaartweergave, bingo-controle en speciale power-vakken passen zich aan het formaat aan.

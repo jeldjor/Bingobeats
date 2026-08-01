@@ -301,10 +301,11 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roomCard{
   display:grid;
   grid-template-columns:minmax(0,1fr) 118px;
-  grid-template-rows:auto auto minmax(0,1fr) auto;
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
   grid-template-areas:
     "title title"
     "name new"
+    "card-size card-size"
     "share share"
     "status status";
   gap:7px;
@@ -315,6 +316,27 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .fieldLabel{grid-area:name;color:var(--lime);font-size:11px;font-weight:900;letter-spacing:.08em}
 .fieldLabel input{width:100%;height:47px;margin-top:3px;padding:0 12px;font-size:16px}
 #newRoomButton{grid-area:new;height:47px;align-self:end;font-size:12px}
+.roomCardSizeChooser{
+  grid-area:card-size;
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto minmax(130px,1fr) 126px;
+  align-items:end;
+  gap:6px;
+  padding:6px;
+  border:1px solid rgba(147,245,0,.24);
+  border-radius:12px;
+  background:#0a100a;
+}
+.roomCardSizeHeading{display:flex;flex-direction:column;gap:2px;padding:0 2px 3px}
+.roomCardSizeHeading small{color:var(--lime);font-size:9px;font-weight:950;letter-spacing:.08em}
+.roomCardSizeHeading strong{font-size:10px;white-space:nowrap}
+.cardSizeGrid{min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.cardSizeGrid button,#confirmCardSizeButton{height:36px;padding:0 4px;font-size:10px}
+.cardSizeGrid button{border-color:rgba(255,255,255,.14);color:#fff;background:#101610}
+.cardSizeGrid button.active{border-color:var(--lime);color:#071008;background:linear-gradient(180deg,#a8ff20,#6dca00)}
+#confirmCardSizeButton{border-color:var(--lime);color:#071008;background:var(--lime);font-size:9px}
+.cardSizeGrid button:disabled,#confirmCardSizeButton:disabled{opacity:.72;cursor:not-allowed}
 .roomShare{
   grid-area:share;
   min-height:0;
@@ -598,6 +620,12 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .compactLobbyHero p{font-size:11px}
 .lobbyCardPanel{display:grid;place-items:center;padding:7px}
 .lobbyCardPanel .bingoCard{width:min(100%,max(240px,min(360px,calc(100dvh - 335px))))}
+.cardChoiceWaitingState{display:grid;place-items:center}
+.cardChoiceWaiting{display:flex;max-width:360px;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.cardChoiceWaiting img{width:min(62vw,220px);height:auto;object-fit:contain}
+.cardChoiceWaiting small{margin-top:10px;color:var(--lime);font-size:10px;font-weight:950;letter-spacing:.16em}
+.cardChoiceWaiting h1{margin:7px 0 4px;font-size:clamp(23px,7vw,32px);line-height:1.05}
+.cardChoiceWaiting p{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
 .lobbyRosterPanel{max-height:104px;padding:7px 8px}
 .readySummary{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;color:var(--lime);font-size:11px;font-weight:900}
 .lobbyPlayers{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:38px;gap:5px;overflow-y:auto}
@@ -708,78 +736,88 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   flex-direction:column;
   align-items:center;
   justify-content:flex-start;
-  gap:3px;
-  padding:0 8px 8px;
+  gap:5px;
+  padding:10px 8px 8px;
   text-align:center;
-}
-.pickerMainLogo{
-  width:min(64vw,250px);
-  height:clamp(174px,25dvh,228px);
-  flex:0 0 clamp(174px,25dvh,228px);
-  margin:-8px 0 -4px;
-  object-fit:contain;
 }
 .categoryPickerState>small{color:var(--lime);font-size:11px;font-weight:950;letter-spacing:.16em}
 .categoryPickerState h1{margin:0;font-size:clamp(28px,8.2vw,38px)}
-.categoryPickerState p{margin:6px 0 0;color:#fff;font-size:16px}
-.categoryPickerState p strong{font-weight:950}.categoryPickerState p strong::first-line{color:#fff}
-.categoryWheel{
+.bbDrawScene{
   position:relative;
-  width:min(78vw,306px);
-  aspect-ratio:1;
-  display:grid;
-  place-items:center;
-  margin:11px 0 1px;
+  width:min(78vw,300px);
+  aspect-ratio:5/6;
+  flex:0 1 360px;
+  min-height:0;
+  margin:1px 0 0;
+  overflow:hidden;
+  border-radius:20px;
+  background:#020502;
+  box-shadow:inset 0 0 0 1px rgba(147,245,0,.12);
 }
-.categoryWheelOrbit{
+.bbDrawVideo{
   position:absolute;
   inset:0;
-  border:3px solid rgba(255,255,255,.45);
-  border-radius:50%;
-  background:conic-gradient(
-    #ff6173 0 20%,
-    #ffcc33 20% 40%,
-    #93f500 40% 60%,
-    #28d7e8 60% 80%,
-    #9b66f5 80% 100%
-  );
-  box-shadow:0 0 30px rgba(147,245,0,.18);
-  animation:categorySpin 1.05s cubic-bezier(.42,0,.2,1) infinite;
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
-.categoryWheelOrbit::after{
-  content:"";
+.bbDrawSelectedBall{
   position:absolute;
-  inset:13%;
-  border:6px solid #19231b;
-  border-radius:50%;
-  background:#061007;
-}
-.categoryWheelPointer{
-  position:absolute;
-  z-index:4;
-  top:-15px;
-  left:50%;
-  width:0;
-  height:0;
-  translate:-50% 0;
-  border-right:19px solid transparent;
-  border-left:19px solid transparent;
-  border-top:34px solid #fff;
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));
-}
-.categoryWheelCenter{
   z-index:3;
-  width:38%;
+  top:0;
+  left:27.1%;
+  width:10%;
   aspect-ratio:1;
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff 0 8%,var(--round-color) 18% 66%,color-mix(in srgb,var(--round-color) 58%,#000) 100%);
+  box-shadow:0 0 17px color-mix(in srgb,var(--round-color) 75%,transparent);
+  opacity:0;
+  animation:drawBallReveal 8s linear var(--draw-delay,0ms) both;
+}
+.bbDrawCopy{
+  width:min(92%,350px);
+  min-height:72px;
   display:grid;
   place-items:center;
-  border:5px solid var(--lime);
-  border-radius:50%;
-  color:var(--lime);
-  background:#0a1a0b;
-  font-size:clamp(42px,13vw,61px);
-  line-height:1;
-  box-shadow:0 0 18px rgba(147,245,0,.16),inset 0 0 18px rgba(147,245,0,.08);
+  margin-top:1px;
+}
+.bbDrawPrompt,.bbDrawResult{grid-area:1/1;width:100%}
+.bbDrawPrompt{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin:0;
+  color:#fff;
+  animation:drawPrompt 8s linear var(--draw-delay,0ms) both;
+}
+.bbDrawPrompt strong{font-size:13px}.bbDrawPrompt small{color:var(--muted);font-size:9px}
+.bbDrawResult{
+  min-height:64px;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  align-items:center;
+  gap:11px;
+  padding:8px 12px;
+  border:2px solid var(--round-color);
+  border-radius:18px;
+  background:color-mix(in srgb,var(--round-color) 13%,#071008);
+  box-shadow:0 0 24px color-mix(in srgb,var(--round-color) 22%,transparent);
+  opacity:0;
+  text-align:left;
+  animation:drawResult 8s ease var(--draw-delay,0ms) both;
+}
+.bbDrawResultBall{width:38px;aspect-ratio:1;border:2px solid #fff;border-radius:50%;background:radial-gradient(circle at 34% 28%,#fff 0 8%,var(--round-color) 18% 68%,color-mix(in srgb,var(--round-color) 58%,#000) 100%);box-shadow:0 0 16px var(--round-color)}
+.bbDrawResult div{min-width:0;display:flex;flex-direction:column;gap:3px}.bbDrawResult small{color:var(--round-color);font-size:9px;font-weight:950;letter-spacing:.08em}.bbDrawResult strong{overflow:hidden;font-size:17px;white-space:nowrap;text-overflow:ellipsis}
+@keyframes drawPrompt{0%,62%{opacity:1}68%,100%{opacity:0}}
+@keyframes drawBallReveal{0%,65%{opacity:0;transform:scale(.55)}71%,100%{opacity:1;transform:scale(1)}}
+@keyframes drawResult{0%,67%{opacity:0;transform:translateY(8px) scale(.97)}74%,100%{opacity:1;transform:none}}
+
+@media(prefers-reduced-motion:reduce){
+  .bbDrawVideo{display:none}
+  .bbDrawScene{background:radial-gradient(circle at 50% 38%,rgba(147,245,0,.13),transparent 58%),url('bb_mascot_dj.png') center/contain no-repeat}
+  .bbDrawSelectedBall,.bbDrawPrompt{display:none}
+  .bbDrawResult{opacity:1;animation:none}
 }
 .submittedState{grid-template-rows:minmax(0,1fr)}
 .submittedState.hasAdvantage{grid-template-rows:auto minmax(0,1fr)}
@@ -875,7 +913,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .standingsStrip{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
 .standingsStrip>span{min-width:0;display:grid;grid-template-columns:18px 22px minmax(0,1fr) auto;align-items:center;gap:3px;padding:4px 6px;border-radius:9px;background:#101610;font-size:10px}
 .standingsStrip b{color:var(--lime)}.standingsStrip strong{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.standingsStrip em{color:var(--gold);font-style:normal;font-weight:900}
-.bingoCard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.bingoCard{display:grid;grid-template-columns:repeat(var(--card-size,6),minmax(0,1fr));gap:4px}
 .bingoCell{
   aspect-ratio:1;
   min-width:0;
@@ -893,7 +931,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .bingoCell.bombLocked span,.bingoCell.engineerCell span{font-size:18px}
 .bingoCell.engineerCell{box-shadow:inset 0 0 0 2px #fff,0 0 13px var(--aqua)}
 
-/* V213: grotere logo's, categorie-animatie en open spelindeling */
+/* V214: BB-pettrekking, grotere logo's en open spelindeling */
 .specialPickerState .specialRoundStar{position:relative;width:min(70vw,276px);aspect-ratio:1;display:grid;place-items:center;margin:5px 0}
 .specialRoundStar::before{content:"";position:absolute;inset:5%;border:4px solid var(--gold);border-radius:38%;rotate:45deg;box-shadow:0 0 30px rgba(255,204,51,.35)}
 .specialRoundStar img{position:relative;z-index:2;width:62%;height:62%;object-fit:contain}
@@ -965,11 +1003,6 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .winnerOverlay h2{margin:0;color:var(--gold);font-size:53px}.winnerOverlay strong{display:block;margin-top:7px;font-size:26px}
 
 @keyframes pulseCell{50%{transform:scale(1.05);box-shadow:0 0 19px #fff}}
-@keyframes categorySpin{
-  0%{transform:rotate(0deg)}
-  75%{transform:rotate(610deg)}
-  100%{transform:rotate(720deg)}
-}
 
 @media(max-width:390px){
   .setupRow{grid-template-columns:36px minmax(0,1fr) 104px;gap:8px;padding-left:8px;padding-right:8px}
@@ -981,6 +1014,13 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .playerList{grid-template-columns:1fr}
   .playerTopbar{grid-template-columns:minmax(0,1fr) 68px 48px}
   .rulesList{grid-template-columns:1fr}.rulesList article.wide{grid-column:auto}
+}
+
+@media(max-width:360px){
+  .roomCardSizeChooser{grid-template-columns:minmax(0,1fr) 108px;align-items:center}
+  .roomCardSizeHeading{grid-column:1/-1;flex-direction:row;align-items:baseline;padding:0}
+  .roomCardSizeHeading strong{margin-left:5px}
+  #confirmCardSizeButton{font-size:8px}
 }
 
 @media(max-height:720px){
@@ -1033,11 +1073,10 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .listenPrompt p{font-size:10px}
   .roundStopwatch{width:min(36vw,146px)}
   .stopwatchFace strong{font-size:51px}
-  .categoryWheel{width:min(76vw,296px);margin:5px 0 2px}
-  .categoryWheel img{width:60%;height:60%}
-  .categoryWheelOrbit i{width:46px;margin:-23px;border-radius:13px;transform:rotate(calc(var(--wheel-index) * 72deg)) translateY(-119px) rotate(calc(var(--wheel-index) * -72deg))}
   .categoryPickerState{padding:7px}
   .categoryPickerState h1{font-size:24px}
+  .bbDrawScene{width:min(76vw,290px)}
+  .bbDrawCopy{min-height:64px}.bbDrawResult{min-height:58px}.bbDrawResult strong{font-size:15px}
   .submittedLivePanel{gap:4px;padding:6px}
   .submittedMainLogo{width:94px;height:74px;flex-basis:74px}
   .submittedCategory{padding-top:3px;padding-bottom:3px}
@@ -1073,6 +1112,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .playerTopbar{grid-template-columns:minmax(0,1fr) 65px 46px;padding:4px 7px;border-radius:12px}
   .roundMainLogo{width:min(42vw,150px);height:116px;flex-basis:116px}
   .roundPlayPanel{gap:4px}
+  .categoryPickerState{gap:3px;padding-top:5px}.bbDrawScene{width:min(69vw,260px)}.bbDrawCopy{min-height:58px}.bbDrawPrompt strong{font-size:11px}.bbDrawResult{min-height:52px;padding:6px 10px}.bbDrawResultBall{width:34px}.bbDrawResult strong{font-size:14px}
   .categoryReveal .roundRevealLogo{width:174px;height:154px;margin:-6px 0 0}
   .submittedMainLogo{width:82px;height:64px;flex-basis:64px}
   .scoreboardTitle img{width:100px;height:80px}

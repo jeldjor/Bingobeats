@@ -301,10 +301,11 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .roomCard{
   display:grid;
   grid-template-columns:minmax(0,1fr) 118px;
-  grid-template-rows:auto auto minmax(0,1fr) auto;
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
   grid-template-areas:
     "title title"
     "name new"
+    "card-size card-size"
     "share share"
     "status status";
   gap:7px;
@@ -315,6 +316,27 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .fieldLabel{grid-area:name;color:var(--lime);font-size:11px;font-weight:900;letter-spacing:.08em}
 .fieldLabel input{width:100%;height:47px;margin-top:3px;padding:0 12px;font-size:16px}
 #newRoomButton{grid-area:new;height:47px;align-self:end;font-size:12px}
+.roomCardSizeChooser{
+  grid-area:card-size;
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto minmax(130px,1fr) 126px;
+  align-items:end;
+  gap:6px;
+  padding:6px;
+  border:1px solid rgba(147,245,0,.24);
+  border-radius:12px;
+  background:#0a100a;
+}
+.roomCardSizeHeading{display:flex;flex-direction:column;gap:2px;padding:0 2px 3px}
+.roomCardSizeHeading small{color:var(--lime);font-size:9px;font-weight:950;letter-spacing:.08em}
+.roomCardSizeHeading strong{font-size:10px;white-space:nowrap}
+.cardSizeGrid{min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.cardSizeGrid button,#confirmCardSizeButton{height:36px;padding:0 4px;font-size:10px}
+.cardSizeGrid button{border-color:rgba(255,255,255,.14);color:#fff;background:#101610}
+.cardSizeGrid button.active{border-color:var(--lime);color:#071008;background:linear-gradient(180deg,#a8ff20,#6dca00)}
+#confirmCardSizeButton{border-color:var(--lime);color:#071008;background:var(--lime);font-size:9px}
+.cardSizeGrid button:disabled,#confirmCardSizeButton:disabled{opacity:.72;cursor:not-allowed}
 .roomShare{
   grid-area:share;
   min-height:0;
@@ -598,6 +620,12 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .compactLobbyHero p{font-size:11px}
 .lobbyCardPanel{display:grid;place-items:center;padding:7px}
 .lobbyCardPanel .bingoCard{width:min(100%,max(240px,min(360px,calc(100dvh - 335px))))}
+.cardChoiceWaitingState{display:grid;place-items:center}
+.cardChoiceWaiting{display:flex;max-width:360px;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.cardChoiceWaiting img{width:min(62vw,220px);height:auto;object-fit:contain}
+.cardChoiceWaiting small{margin-top:10px;color:var(--lime);font-size:10px;font-weight:950;letter-spacing:.16em}
+.cardChoiceWaiting h1{margin:7px 0 4px;font-size:clamp(23px,7vw,32px);line-height:1.05}
+.cardChoiceWaiting p{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
 .lobbyRosterPanel{max-height:104px;padding:7px 8px}
 .readySummary{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;color:var(--lime);font-size:11px;font-weight:900}
 .lobbyPlayers{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:38px;gap:5px;overflow-y:auto}
@@ -885,7 +913,7 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
 .standingsStrip{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
 .standingsStrip>span{min-width:0;display:grid;grid-template-columns:18px 22px minmax(0,1fr) auto;align-items:center;gap:3px;padding:4px 6px;border-radius:9px;background:#101610;font-size:10px}
 .standingsStrip b{color:var(--lime)}.standingsStrip strong{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.standingsStrip em{color:var(--gold);font-style:normal;font-weight:900}
-.bingoCard{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.bingoCard{display:grid;grid-template-columns:repeat(var(--card-size,6),minmax(0,1fr));gap:4px}
 .bingoCell{
   aspect-ratio:1;
   min-width:0;
@@ -986,6 +1014,13 @@ input:focus{border-color:var(--lime);box-shadow:0 0 0 2px rgba(147,245,0,.16)}
   .playerList{grid-template-columns:1fr}
   .playerTopbar{grid-template-columns:minmax(0,1fr) 68px 48px}
   .rulesList{grid-template-columns:1fr}.rulesList article.wide{grid-column:auto}
+}
+
+@media(max-width:360px){
+  .roomCardSizeChooser{grid-template-columns:minmax(0,1fr) 108px;align-items:center}
+  .roomCardSizeHeading{grid-column:1/-1;flex-direction:row;align-items:baseline;padding:0}
+  .roomCardSizeHeading strong{margin-left:5px}
+  #confirmCardSizeButton{font-size:8px}
 }
 
 @media(max-height:720px){

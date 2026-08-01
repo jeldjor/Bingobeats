@@ -10,7 +10,7 @@
   <title>Bingo Beats</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="app-icon.png">
-  <link rel="stylesheet" href="style.css?v=2140">
+  <link rel="stylesheet" href="style.css?v=2150">
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-database-compat.js"></script>
@@ -115,6 +115,20 @@
         </label>
         <button id="newRoomButton" type="button" class="secondaryButton">NIEUWE KAMER</button>
 
+        <div class="roomCardSizeChooser">
+          <div class="roomCardSizeHeading">
+            <small>BINGOKAART</small>
+            <strong>Kies de grootte</strong>
+          </div>
+          <div class="cardSizeGrid" aria-label="Grootte van de bingokaart">
+            <button type="button" data-card-size="4" aria-pressed="false">4 × 4</button>
+            <button type="button" data-card-size="5" aria-pressed="false">5 × 5</button>
+            <button type="button" data-card-size="6" class="active" aria-pressed="true">6 × 6</button>
+            <button type="button" data-card-size="7" aria-pressed="false">7 × 7</button>
+          </div>
+          <button id="confirmCardSizeButton" type="button">BEVESTIG BINGOKAART</button>
+        </div>
+
         <div id="roomShare" class="roomShare empty">
           <div class="roomCodeBlock">
             <small>SPELCODE</small>
@@ -133,7 +147,7 @@
 
       <div class="bottomActions">
         <button type="button" class="backButton" data-go="1">TERUG</button>
-        <button type="button" class="nextButton compact" data-go="3">VOLGENDE</button>
+        <button id="roomNextButton" type="button" class="nextButton compact" data-go="3" disabled>VOLGENDE</button>
       </div>
     </section>
 
@@ -304,6 +318,6 @@
     <section><img src="bb_logo_orange.png" alt="Bingo Beats"><span>🏆</span><h2>BINGO!</h2><strong id="winnerName">Speler</strong></section>
   </div>
 
-  <script src="app.js?v=2140"></script>
+  <script src="app.js?v=2150"></script>
 </body>
 </html>

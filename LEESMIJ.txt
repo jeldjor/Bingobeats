@@ -1,6 +1,6 @@
-BINGO BEATS CLEAN V214
+BINGO BEATS CLEAN V215
 
-Dit is de schone V214-versie met één indexbestand, één stylesheet en één hoofdscript.
+Dit is de schone V215-versie met één indexbestand, één stylesheet en één hoofdscript.
 
 Vaste spelwerking
 -----------------
@@ -26,7 +26,7 @@ Nieuwe vaste regels
 - Daarna verschijnt het blokscorebord.
 - De blokwinnaar kiest voor de volgende vier rondes:
   Time Pressure, Double Trouble, Joker, Beat Engineer Unlock of Extra Time.
-- Lucky Loser Round en Beat Streak maken geen deel uit van V214.
+- Lucky Loser Round en Beat Streak maken geen deel uit van V215.
 
 Weergave
 --------
@@ -56,4 +56,11 @@ V214 schermopmaak:
 - Ingestuurde antwoorden staan los op de achtergrond met subtiele scheidingslijnen.
 - Alles blijft op één mobiel scherm passen zonder paginascroll.
 
-Upload alle bestanden uit deze map samen en maak voor V214 een nieuwe kamer.
+Upload alle bestanden uit deze map samen en maak voor V215 een nieuwe kamer.
+V215 - Verplichte bingokaartkeuze in de kamer
+- Op het kamerscherm kiest de host 4x4, 5x5, 6x6 of 7x7.
+- 6x6 staat standaard geselecteerd, maar moet voor iedere nieuwe kamer worden bevestigd.
+- Spelers kunnen vóór de bevestiging al via de QR-code deelnemen, maar zien nog geen bingokaart.
+- Na bevestiging krijgen host en alle aanwezige spelers direct een kaart van het gekozen formaat.
+- Nieuwe spelers krijgen daarna automatisch hetzelfde formaat.
+- Kaartweergave, bingo-controle en speciale power-vakken passen zich aan het formaat aan.

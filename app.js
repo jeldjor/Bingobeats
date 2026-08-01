@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V214
+/* Bingo Beats Clean V215
    Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
    scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
@@ -37,6 +37,8 @@
     2:{file:'bb_draw_variant_2.mp4',label:'Eerst een lege hand, daarna opnieuw'},
     3:{file:'bb_draw_variant_3.mp4',label:'Eerst een verkeerde bal terug, daarna opnieuw'}
   };
+  const CARD_SIZES = [4,5,6,7];
+  const DEFAULT_CARD_SIZE = 6;
   const ANIMALS = ['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
   const SPECIAL_FIELDS = [
     {key:'era',label:'Voor of na 2001',placeholder:'Voor / na 2001'},
@@ -117,6 +119,20 @@
 
   function randomDrawVariant(){
     return 1+Math.floor(Math.random()*3);
+  }
+
+  function normalizeCardSize(value){
+    const size = Number(value);
+    return CARD_SIZES.includes(size) ? size : DEFAULT_CARD_SIZE;
+  }
+
+  function selectedCardSize(){
+    return normalizeCardSize(document.querySelector('[data-card-size].active')?.dataset.cardSize);
+  }
+
+  function cardSizeFromCard(card,fallback=DEFAULT_CARD_SIZE){
+    const inferred = Math.sqrt(Array.isArray(card) ? card.length : 0);
+    return CARD_SIZES.includes(inferred) ? inferred : normalizeCardSize(fallback);
   }
 
   function playerAnimal(id,player){
@@ -216,7 +232,11 @@
   }
 
   function setStep(step){
-    const requested = Math.max(1,Math.min(4,Number(step)||1));
+    let requested = Math.max(1,Math.min(4,Number(step)||1));
+    if(requested>2 && !state.room?.settings?.cardSizeConfirmed){
+      requested = 2;
+      setStatus('roomStatus','Bevestig eerst de grootte van de bingokaart.','error');
+    }
     state.currentStep = requested;
     $$('.hostStep').forEach(panel => {
       panel.classList.toggle('active',Number(panel.dataset.step)===requested);
@@ -248,6 +268,10 @@
     const savedDuration = localStorage.getItem('bb_duration') || '20';
     const savedDurationButton = document.querySelector(`[data-duration="${savedDuration}"]`);
     if(savedDurationButton) savedDurationButton.click();
+    $$('[data-card-size]').forEach(button => {
+      button.addEventListener('click',() => setCardSizeChoice(button.dataset.cardSize));
+    });
+    setCardSizeChoice(DEFAULT_CARD_SIZE);
 
     $('spotifyButton')?.addEventListener('click',() => {
       if(state.spotifyProfile) spotifyLogout();
@@ -256,6 +280,7 @@
     $('choosePlaylistButton')?.addEventListener('click',openPlaylistPicker);
     $('importPlaylistButton')?.addEventListener('click',importSelectedPlaylist);
     $('newRoomButton')?.addEventListener('click',() => createRoom(true).catch(showRoomError));
+    $('confirmCardSizeButton')?.addEventListener('click',() => confirmCardSize().catch(showRoomError));
     $('copyLinkButton')?.addEventListener('click',copyRoomLink);
     $('hostNameInput')?.addEventListener('change',saveHostName);
     $('joinButton')?.addEventListener('click',joinRoom);
@@ -712,15 +737,79 @@
     return Array.from({length:4},() => chars[Math.floor(Math.random()*chars.length)]).join('');
   }
 
-  function createBingoCard(){
+  function createBingoCard(requestedSize=DEFAULT_CARD_SIZE){
+    const size = normalizeCardSize(requestedSize);
+    const cellCount = size*size;
+    const colorKeys = COLORS.map(color => color.key);
+    for(let index=colorKeys.length-1;index>0;index--){
+      const swap = Math.floor(Math.random()*(index+1));
+      [colorKeys[index],colorKeys[swap]] = [colorKeys[swap],colorKeys[index]];
+    }
     const colors = [];
-    while(colors.length<36) colors.push(...COLORS.map(color => color.key));
-    colors.length = 36;
+    while(colors.length<cellCount) colors.push(...colorKeys);
+    colors.length = cellCount;
     for(let index=colors.length-1;index>0;index--){
       const swap = Math.floor(Math.random()*(index+1));
       [colors[index],colors[swap]] = [colors[swap],colors[index]];
     }
     return colors;
+  }
+
+  function setCardSizeChoice(value){
+    const size = normalizeCardSize(value);
+    $$('[data-card-size]').forEach(button => {
+      const active = Number(button.dataset.cardSize)===size;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    return size;
+  }
+
+  function syncCardSizeControls(room){
+    if(!room || isPlayerPage()) return;
+    const confirmed = room.settings?.cardSizeConfirmed===true;
+    if(confirmed) setCardSizeChoice(room.settings?.cardSize);
+    $$('[data-card-size]').forEach(button => button.disabled = confirmed);
+    const confirmButton = $('confirmCardSizeButton');
+    if(confirmButton){
+      confirmButton.disabled = confirmed;
+      confirmButton.textContent = confirmed
+        ? `${normalizeCardSize(room.settings?.cardSize)} × ${normalizeCardSize(room.settings?.cardSize)} BEVESTIGD ✓`
+        : 'BEVESTIG BINGOKAART';
+    }
+    if($('roomNextButton')) $('roomNextButton').disabled = !confirmed;
+  }
+
+  async function confirmCardSize(){
+    const code = await ensureRoom();
+    const size = selectedCardSize();
+    const roomRef = state.db.ref(`rooms/${code}`);
+    const room = (await roomRef.once('value')).val() || {};
+    if(Number(room.roundNumber||0)>0 || (room.gameStatus && room.gameStatus!=='lobby')){
+      throw new Error('De bingokaart kan niet meer worden gewijzigd nadat het spel is gestart.');
+    }
+    if(room.settings?.cardSizeConfirmed===true) return;
+    const updates = {
+      'settings/cardSize':size,
+      'settings/cardSizeConfirmed':true
+    };
+    Object.entries(room.players||{}).forEach(([id,player]) => {
+      const card = createBingoCard(size);
+      updates[`players/${id}/card`] = card;
+      updates[`players/${id}/marked`] = {};
+      updates[`players/${id}/powerCells`] = powerCellsFor(id,card,{});
+      updates[`players/${id}/bingo`] = false;
+      updates[`players/${id}/ready`] = false;
+      updates[`players/${id}/lastPickedRound`] = null;
+      updates[`players/${id}/lastPowerEffect`] = null;
+    });
+    await roomRef.update(updates);
+    state.room = {
+      ...(state.room||room),
+      settings:{...((state.room||room).settings||{}),cardSize:size,cardSizeConfirmed:true}
+    };
+    syncCardSizeControls(state.room);
+    setStatus('roomStatus',`Bingokaart ${size} × ${size} bevestigd. Spelers zien nu hun kaart.`,'ok');
   }
 
   function hostName(){
@@ -738,19 +827,21 @@
     if(state.roomCode && !replace) return state.roomCode;
     if(state.roomRef) state.roomRef.off();
     const code = generateRoomCode();
+    setCardSizeChoice(DEFAULT_CARD_SIZE);
+    syncCardSizeControls({settings:{cardSize:DEFAULT_CARD_SIZE,cardSizeConfirmed:false},gameStatus:'lobby',roundNumber:0});
     await state.db.ref(`rooms/${code}`).set({
       createdAt:firebase.database.ServerValue.TIMESTAMP,
       roundNumber:0,
       gameStatus:'lobby',
-      gameState:{blockRound:0,version:210},
-      settings:currentSettings()
+      gameState:{blockRound:0,version:215},
+      settings:{...currentSettings(),cardSize:DEFAULT_CARD_SIZE,cardSizeConfirmed:false}
     });
     state.roomCode = code;
     localStorage.setItem('hb_host_room',code);
     renderRoomShare();
     await ensureHostPlayer();
     listenToRoom(code);
-    setStatus('roomStatus','Kamer klaar. Laat spelers de QR-code scannen.','ok');
+    setStatus('roomStatus','Kamer klaar. Kies en bevestig nu de bingokaart.','ok');
     return code;
   }
 
@@ -768,6 +859,8 @@
         localStorage.removeItem('hb_host_room');
         return;
       }
+      if(snapshot.val()?.settings?.cardSizeConfirmed) setCardSizeChoice(snapshot.val().settings.cardSize);
+      else setCardSizeChoice(DEFAULT_CARD_SIZE);
       state.roomCode = saved;
       renderRoomShare();
       await ensureHostPlayer();
@@ -782,10 +875,15 @@
       localStorage.setItem('bb_host_player_id',state.hostPlayerId);
     }
     saveHostName();
+    const room = (await state.db.ref(`rooms/${state.roomCode}`).once('value')).val() || {};
+    const confirmed = room.settings?.cardSizeConfirmed===true;
+    const size = normalizeCardSize(room.settings?.cardSize);
     const reference = state.db.ref(`rooms/${state.roomCode}/players/${state.hostPlayerId}`);
     const existing = (await reference.once('value')).val() || {};
-    const card = Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard();
-    await reference.update({
+    const card = confirmed
+      ? (Array.isArray(existing.card) && existing.card.length===size*size ? existing.card : createBingoCard(size))
+      : [];
+    const playerData = {
       name:hostName(),
       emoji:existing.emoji || playerAnimal(state.hostPlayerId,existing),
       isHost:true,
@@ -795,17 +893,20 @@
       blockScore:Number(existing.blockScore)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
-      card,
-      marked:existing.marked || {},
-      powerCells:powerCellsFor(state.hostPlayerId,card,existing.powerCells),
-      bingo:!!existing.bingo
-    });
+      card:confirmed ? card : null,
+      marked:confirmed ? (existing.marked || {}) : null,
+      powerCells:confirmed ? powerCellsFor(state.hostPlayerId,card,existing.powerCells) : null,
+      bingo:confirmed ? !!existing.bingo : false
+    };
+    await reference.update(playerData);
     reference.child('online').onDisconnect().set(false);
   }
 
   function currentSettings(){
     return {
       duration:Number(document.querySelector('.durationGrid button.active')?.dataset.duration || 20),
+      cardSize:normalizeCardSize(state.room?.settings?.cardSize || selectedCardSize()),
+      cardSizeConfirmed:state.room?.settings?.cardSizeConfirmed===true,
       randomStart:!!$('randomStart')?.checked,
       noRepeat:!!$('noRepeat')?.checked
     };
@@ -843,6 +944,7 @@
       state.room = snapshot.val() || null;
       if(!state.room) return;
       updatePlayerCounts();
+      syncCardSizeControls(state.room);
       if(isPlayerPage()) renderPlayer();
       else{
         renderHost();
@@ -977,12 +1079,12 @@
     if(typeof picked==='object' && picked.previousMarked){
       updates[`players/${playerId}/marked`] = picked.previousMarked;
       updates[`players/${playerId}/powerCells`] = picked.previousPower || player.powerCells || {};
-      updates[`players/${playerId}/bingo`] = checkBingo(picked.previousMarked);
+      updates[`players/${playerId}/bingo`] = checkBingo(picked.previousMarked,player.card);
     }else{
       const marked = {...(player.marked || {})};
       delete marked[Number(picked)];
       updates[`players/${playerId}/marked`] = marked;
-      updates[`players/${playerId}/bingo`] = checkBingo(marked);
+      updates[`players/${playerId}/bingo`] = checkBingo(marked,player.card);
     }
     updates[`players/${playerId}/lastPickedRound`] = null;
     updates[`players/${playerId}/lastPowerEffect`] = null;
@@ -1083,6 +1185,7 @@
     const room = snapshot.val() || {};
     const round = room.currentRound || {};
     const players = activePlayers(room);
+    if(room.settings?.cardSizeConfirmed!==true) return;
     if(room.gameStatus==='finished' || !players.length || !players.every(([,player]) => player.ready===true)) return;
     if(round.id && round.status!=='judged') return;
     if(room.gameState?.pendingAdvantageWinnerId) return;
@@ -1406,7 +1509,11 @@
     localStorage.setItem('hb_player_room',state.roomCode);
     const reference = state.db.ref(`rooms/${state.roomCode}/players/${state.playerId}`);
     const existing = (await reference.once('value')).val() || {};
-    const card = Array.isArray(existing.card) && existing.card.length===36 ? existing.card : createBingoCard();
+    const confirmed = room.settings?.cardSizeConfirmed===true;
+    const size = normalizeCardSize(room.settings?.cardSize);
+    const card = confirmed
+      ? (Array.isArray(existing.card) && existing.card.length===size*size ? existing.card : createBingoCard(size))
+      : [];
     await reference.update({
       name,
       emoji:existing.emoji || playerAnimal(state.playerId,existing),
@@ -1416,11 +1523,28 @@
       blockScore:Number(existing.blockScore)||0,
       joinedAt:existing.joinedAt || firebase.database.ServerValue.TIMESTAMP,
       lastSeen:firebase.database.ServerValue.TIMESTAMP,
-      card,
-      marked:existing.marked || {},
-      powerCells:powerCellsFor(state.playerId,card,existing.powerCells),
-      bingo:!!existing.bingo
+      card:confirmed ? card : null,
+      marked:confirmed ? (existing.marked || {}) : null,
+      powerCells:confirmed ? powerCellsFor(state.playerId,card,existing.powerCells) : null,
+      bingo:confirmed ? !!existing.bingo : false
     });
+    if(!confirmed){
+      const latestRoom = (await state.db.ref(`rooms/${state.roomCode}`).once('value')).val() || {};
+      if(latestRoom.settings?.cardSizeConfirmed===true){
+        const latestSize = normalizeCardSize(latestRoom.settings.cardSize);
+        const latestPlayer = (await reference.once('value')).val() || {};
+        if(!Array.isArray(latestPlayer.card) || latestPlayer.card.length!==latestSize*latestSize){
+          const latestCard = createBingoCard(latestSize);
+          await reference.update({
+            card:latestCard,
+            marked:null,
+            powerCells:powerCellsFor(state.playerId,latestCard,{}),
+            bingo:false,
+            ready:false
+          });
+        }
+      }
+    }
     reference.child('online').onDisconnect().set(false);
     $('joinScreen').classList.add('hidden');
     $('playerGameScreen').classList.remove('hidden');
@@ -1460,7 +1584,7 @@
     const liveAnswerSignature = ownAnswer
       ? activePlayers(room).map(([id]) => `${id}:${room.answers?.[round.id]?.[id]?.answer || ''}`).join('|')
       : '';
-    const key = `${room.gameStatus||'lobby'}:${round.id||'lobby'}:${round.status||'lobby'}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${liveAnswerSignature}:${JSON.stringify(room.specialResults?.[round.id]?.[userId]||null)}:${JSON.stringify(room.gameState||{})}:${JSON.stringify(me.powerCells||{})}:${markedCount(me)}:${activePlayers(room).map(([id,player])=>`${id}:${!!player.ready}:${player.score||0}:${player.blockScore||0}`).join('|')}`;
+    const key = `${room.gameStatus||'lobby'}:${round.id||'lobby'}:${round.status||'lobby'}:${!!room.settings?.cardSizeConfirmed}:${room.settings?.cardSize||''}:${Array.isArray(me.card)?me.card.length:0}:${!!ownAnswer}:${ownCorrect}:${!!me.ready}:${me.lastPickedRound||''}:${liveAnswerSignature}:${JSON.stringify(room.specialResults?.[round.id]?.[userId]||null)}:${JSON.stringify(room.gameState||{})}:${JSON.stringify(me.powerCells||{})}:${markedCount(me)}:${activePlayers(room).map(([id,player])=>`${id}:${!!player.ready}:${player.score||0}:${player.blockScore||0}`).join('|')}`;
     const keyName = isHost ? 'lastHostRender' : 'lastPlayerRender';
     if(key===state[keyName]) return;
     state[keyName] = key;
@@ -1496,13 +1620,23 @@
   function playerLobbyMarkup(room,me){
     const players = activePlayers(room);
     const ready = players.filter(([,player]) => player.ready===true).length;
+    if(room.settings?.cardSizeConfirmed!==true){
+      return `<div class="playerState cardChoiceWaitingState">
+        <section class="openStage cardChoiceWaiting">
+          <img src="bb_logo_lime.webp" alt="Bingo Beats">
+          <small>EVEN GEDULD</small>
+          <h1>DE HOST KIEST DE BINGOKAART</h1>
+          <p>Je kaart verschijnt automatisch zodra de grootte is bevestigd.</p>
+        </section>
+      </div>`;
+    }
     return `<div class="playerState lobbyGameState">
       <section class="playerHero compactLobbyHero">
         <img src="bb_logo_lime.webp" alt="Bingo Beats">
         <div><h1>Iedereen READY?</h1><p>Zodra iedereen klaar is, start de ronde automatisch.</p></div>
       </section>
       <section class="playerPanel lobbyCardPanel">
-        <div class="bingoCard">${bingoCardHtml(me,null,false)}</div>
+        ${bingoCardMarkup(me,null,false)}
       </section>
       <section class="playerPanel lobbyRosterPanel">
         <div class="readySummary"><span>SPELERS</span><strong>${ready} / ${players.length} READY</strong></div>
@@ -1776,7 +1910,7 @@
         <div class="trackAnswer"><strong>${escapeHtml(answer.track || '-')}</strong><small>${escapeHtml(answer.artist || '-')} · ${escapeHtml(answer.year || '-')}</small></div>
       </section>
       <section class="playerPanel resultBoardPanel">
-        <div class="bingoCard">${bingoCardHtml(me,round,canPick)}</div>
+        ${bingoCardMarkup(me,round,canPick)}
       </section>
       <div class="resultActions ${isHost?'withJury':''}">
         ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
@@ -1798,7 +1932,7 @@
       return `<article class="roundScoreRow ${index===0?'leader':''}">
         <b>${index+1}</b>
         <span>${playerAnimal(id,player)}</span>
-        <div><strong>${escapeHtml(player.name || 'Speler')}</strong><small>${markedCount(player)} van 36 vakken</small></div>
+        <div><strong>${escapeHtml(player.name || 'Speler')}</strong><small>${markedCount(player)} van ${Array.isArray(player.card)?player.card.length:normalizeCardSize(room.settings?.cardSize)**2} vakken</small></div>
         ${block ? '' : `<em>+${Number(points[id]||0)}</em>`}
         <strong>${total} <small>PT</small></strong>
       </article>`;
@@ -1879,7 +2013,7 @@
         <div class="specialResultDetails">${labels}</div>
       </section>
       <section class="playerPanel resultBoardPanel">
-        <div class="bingoCard">${bingoCardHtml(me,round,true,true)}</div>
+        ${bingoCardMarkup(me,round,true,true)}
       </section>
       <div class="resultActions ${isHost?'withJury':''}">
         ${isHost?'<button type="button" class="juryButton" data-game-action="jury">JURY CONTROLEREN</button>':''}
@@ -1982,6 +2116,7 @@
 
   async function markReady(playerId){
     if(!playerId) return;
+    if(state.room?.settings?.cardSizeConfirmed!==true) return;
     await state.db.ref(`rooms/${state.roomCode}/players/${playerId}/ready`).set(true);
   }
 
@@ -1998,6 +2133,11 @@
       const icon = bombTriggered ? '💣' : engineerVisible ? '👷' : isMarked ? '✓' : '';
       return `<button type="button" class="bingoCell ${isMarked?'marked':''} ${pickable?'pickable':''} ${bombTriggered?'bombLocked':''} ${engineerVisible?'engineerCell':''}" data-index="${index}" style="--cell:${colorInfo?.hex || '#777'}" ${pickable?'':'disabled'}><span>${icon}</span></button>`;
     }).join('');
+  }
+
+  function bingoCardMarkup(player,round,canPick,freeChoice=false){
+    const size = cardSizeFromCard(player?.card,state.room?.settings?.cardSize);
+    return `<div class="bingoCard" style="--card-size:${size}">${bingoCardHtml(player,round,canPick,freeChoice)}</div>`;
   }
 
   async function pickBingoCell(playerId,index){
@@ -2044,7 +2184,7 @@
       }else{
         marked[index] = true;
       }
-      bingo = checkBingo(marked);
+      bingo = checkBingo(marked,card);
       return {
         ...player,
         marked,
@@ -2174,11 +2314,15 @@
     });
   }
 
-  function checkBingo(marked){
+  function checkBingo(marked,card){
+    const size = cardSizeFromCard(card,state.room?.settings?.cardSize);
     const lines = [];
-    for(let row=0;row<6;row++) lines.push(Array.from({length:6},(_,column) => row*6+column));
-    for(let column=0;column<6;column++) lines.push(Array.from({length:6},(_,row) => row*6+column));
-    lines.push([0,7,14,21,28,35],[5,10,15,20,25,30]);
+    for(let row=0;row<size;row++) lines.push(Array.from({length:size},(_,column) => row*size+column));
+    for(let column=0;column<size;column++) lines.push(Array.from({length:size},(_,row) => row*size+column));
+    lines.push(
+      Array.from({length:size},(_,index) => index*(size+1)),
+      Array.from({length:size},(_,index) => (index+1)*(size-1))
+    );
     return lines.some(line => line.every(index => !!marked[index]));
   }
 
@@ -2198,7 +2342,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2140',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2150',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }

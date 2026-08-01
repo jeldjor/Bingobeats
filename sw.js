@@ -1,14 +1,17 @@
-const CACHE = 'bingo-beats-clean-v213';
+const CACHE = 'bingo-beats-clean-v214';
 const CORE = [
   './',
   './index.html',
-  './style.css?v=2130',
-  './app.js?v=2130',
+  './style.css?v=2140',
+  './app.js?v=2140',
   './manifest.json',
   './bb_logo.png',
   './bb_logo_lime.webp',
   './bb_logo_orange.png',
   './bb_mascot_dj.png',
+  './bb_draw_variant_1.mp4',
+  './bb_draw_variant_2.mp4',
+  './bb_draw_variant_3.mp4',
   './app-icon.png',
   './app-icon-192.png'
 ];

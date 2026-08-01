@@ -1,4 +1,4 @@
-/* Bingo Beats Clean V213
+/* Bingo Beats Clean V214
    Eén applicatiebestand: Spotify, Firebase, automatische spelrondes,
    scoreborden en de vaste Bingo Beats-spelregels. */
 (() => {
@@ -30,6 +30,13 @@
     {key:'blue',name:'LIME',hex:'#93f500',category:'Jaartal ± 2'},
     {key:'green',name:'KORAAL',hex:'#ff6173',category:'Titel van track'}
   ];
+  const CATEGORY_DRAW_MS = 8000;
+  const CATEGORY_DRAW_VIDEO_SECONDS = 6;
+  const CATEGORY_DRAW_VARIANTS = {
+    1:{file:'bb_draw_variant_1.mp4',label:'Pet schudden en diep graaien'},
+    2:{file:'bb_draw_variant_2.mp4',label:'Eerst een lege hand, daarna opnieuw'},
+    3:{file:'bb_draw_variant_3.mp4',label:'Eerst een verkeerde bal terug, daarna opnieuw'}
+  };
   const ANIMALS = ['🦁','🐯','🐼','🦊','🐨','🐸','🐵','🦄','🐙','🦋','🐧','🦉','🐬','🦖','🐝','🐢','🦜','🐺','🦩','🐳','🦔','🐿️','🦦','🐮','🐷','🐰','🐱','🐶','🐹','🐻'];
   const SPECIAL_FIELDS = [
     {key:'era',label:'Voor of na 2001',placeholder:'Voor / na 2001'},
@@ -106,6 +113,10 @@
 
   function randomItem(items){
     return items[Math.floor(Math.random()*items.length)];
+  }
+
+  function randomDrawVariant(){
+    return 1+Math.floor(Math.random()*3);
   }
 
   function playerAnimal(id,player){
@@ -1039,7 +1050,7 @@
       return;
     }
     if(round.status==='ready'){
-      queueAutomation(`play:${round.id}`,() => playRoundTrack(round.id),850);
+      queueAutomation(`play:${round.id}`,() => playRoundTrack(round.id),round.isBingoBeats?850:250);
       return;
     }
     if(round.status==='answering'){
@@ -1082,6 +1093,11 @@
     const number = Number(room.roundNumber || 0)+1;
     const isBingoBeats = number%5===0;
     const roundId = `r_${Date.now()}`;
+    const selectedColor = isBingoBeats ? null : randomItem(COLORS);
+    const plannedRound = {
+      number,
+      advantage:room.gameState?.activeAdvantage || null
+    };
     $('juryModal')?.classList.add('hidden');
     const updates = {
       roundNumber:number,
@@ -1094,11 +1110,16 @@
         isBingoBeats,
         status:'picking',
         startedAt:firebase.database.ServerValue.TIMESTAMP,
-        categoryAt:Date.now()+(isBingoBeats?3400:2600),
+        categoryAt:Date.now()+(isBingoBeats?3400:CATEGORY_DRAW_MS),
         seconds:isBingoBeats ? 60 : currentSettings().duration,
         trackId:track.id,
         advantage:room.gameState?.activeAdvantage || null,
-        jokerOwnerId:''
+        jokerOwnerId:isBingoBeats ? '' : jokerOwner(room,plannedRound),
+        colorKey:selectedColor?.key || '',
+        colorName:selectedColor?.name || '',
+        colorHex:selectedColor?.hex || '',
+        category:selectedColor?.category || '',
+        drawVariant:isBingoBeats ? 0 : randomDrawVariant()
       }
     };
     players.forEach(([id]) => {
@@ -1120,16 +1141,8 @@
       });
       return;
     }
-    const color = randomItem(COLORS);
-    const room = state.room || {};
-    const owner = jokerOwner(room,round);
     await state.db.ref(`rooms/${state.roomCode}/currentRound`).update({
       status:'ready',
-      colorKey:color.key,
-      colorName:color.name,
-      colorHex:color.hex,
-      category:color.category,
-      jokerOwnerId:owner,
       categoryChosenAt:firebase.database.ServerValue.TIMESTAMP
     });
   }
@@ -1475,6 +1488,7 @@
     }else{
       root.innerHTML = playerLobbyMarkup(room,me);
     }
+    if(round.status==='picking' && !round.isBingoBeats) syncCategoryDraw(root,round);
     maybeShowPowerEffect(me,round,userId);
     bindGameActions(root,userId,isHost);
   }
@@ -1514,17 +1528,39 @@
   }
 
   function categoryPickerMarkup(round){
-    return `<section class="openStage categoryPickerState">
-      <img class="pickerMainLogo" src="bb_logo_lime.webp" alt="Bingo Beats">
+    const color = colorForRound(round);
+    const variant = CATEGORY_DRAW_VARIANTS[Number(round.drawVariant)] || CATEGORY_DRAW_VARIANTS[1];
+    const elapsed = Math.max(0,Math.min(CATEGORY_DRAW_MS,CATEGORY_DRAW_MS-Math.max(0,Number(round.categoryAt||Date.now())-Date.now())));
+    return `<section class="openStage categoryPickerState bbDrawState" data-category-draw style="--round-color:${color.hex};--draw-delay:-${elapsed}ms">
       <small>NIEUWE RONDE</small>
       <h1>Categorie kiezen</h1>
-      <div class="categoryWheel" aria-label="De categorie wordt automatisch gekozen">
-        <span class="categoryWheelPointer" aria-hidden="true"></span>
-        <div class="categoryWheelOrbit"></div>
-        <strong class="categoryWheelCenter">BB</strong>
+      <div class="bbDrawScene" aria-label="De BB-aap trekt een categoriebal uit zijn pet">
+        <video class="bbDrawVideo" muted playsinline autoplay preload="auto" data-draw-video aria-hidden="true">
+          <source src="${variant.file}" type="video/mp4">
+        </video>
+        <span class="bbDrawSelectedBall" aria-hidden="true"></span>
       </div>
-      <p><strong>Het rad kiest de vraag…</strong></p>
+      <div class="bbDrawCopy">
+        <p class="bbDrawPrompt"><strong>${escapeHtml(variant.label)}</strong><small>15 ballen · 3 per categoriekleur</small></p>
+        <div class="bbDrawResult" role="status" aria-live="polite">
+          <span class="bbDrawResultBall" aria-hidden="true"></span>
+          <div><small>${escapeHtml(color.name)} GETROKKEN</small><strong>${escapeHtml(color.category)}</strong></div>
+        </div>
+      </div>
     </section>`;
+  }
+
+  function syncCategoryDraw(root,round){
+    const video = root?.querySelector('[data-draw-video]');
+    if(!video) return;
+    const elapsed = Math.max(0,Math.min(CATEGORY_DRAW_MS,CATEGORY_DRAW_MS-Math.max(0,Number(round.categoryAt||Date.now())-Date.now())));
+    const targetTime = Math.min(CATEGORY_DRAW_VIDEO_SECONDS,elapsed/1000);
+    const startVideo = () => {
+      if(targetTime>0.12 && Number.isFinite(video.duration)) video.currentTime = Math.min(targetTime,Math.max(0,video.duration-0.04));
+      video.play().catch(()=>{});
+    };
+    if(video.readyState>=1) startVideo();
+    else video.addEventListener('loadedmetadata',startVideo,{once:true});
   }
 
   function specialPickerMarkup(round){
@@ -2162,7 +2198,7 @@
 
   function registerWorker(){
     if('serviceWorker' in navigator && location.protocol!=='file:'){
-      navigator.serviceWorker.register('./sw.js?v=2130',{updateViaCache:'none'})
+      navigator.serviceWorker.register('./sw.js?v=2140',{updateViaCache:'none'})
         .then(registration => registration.update())
         .catch(()=>{});
     }
